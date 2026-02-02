@@ -1,11 +1,7 @@
 # Apiconvert.Core
 
-# Apiconvert.Core
-
 [![NuGet Version](https://img.shields.io/nuget/v/Apiconvert.Core.svg)](https://www.nuget.org/packages/Apiconvert.Core/)
 [![NuGet Downloads](https://img.shields.io/nuget/dt/Apiconvert.Core.svg)](https://www.nuget.org/packages/Apiconvert.Core/)
-[![Build](https://github.com/apiconvert/apiconvert-core/actions/workflows/ci.yml/badge.svg)](https://github.com/apiconvert/apiconvert-core/actions/workflows/ci.yml)
-[![License](https://img.shields.io/github/license/apiconvert/apiconvert-core.svg)](LICENSE)
 
 Core conversion and mapping engine for Apiconvert.
 
