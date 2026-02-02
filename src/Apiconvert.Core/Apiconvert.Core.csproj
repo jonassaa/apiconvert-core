@@ -11,12 +11,12 @@
     <RepositoryUrl>https://github.com/jonassaa/apiconvert-core</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>conversion;mapping;json;xml;rules</PackageTags>
-    <PackageReadmeFile>../../README.md</PackageReadmeFile>
+    <PackageReadmeFile>README.MD</PackageReadmeFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="README.md" Pack="true" PackagePath="\" />
+    <None Include="../../README.MD" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>

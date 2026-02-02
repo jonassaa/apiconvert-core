@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Xml.Linq;
 
 namespace Apiconvert.Core.Converters;
@@ -103,7 +104,7 @@ internal static class XmlConverter
                 {
                     if (entry.Value != null)
                     {
-                        element.Value = entry.Value.ToString();
+                        element.Value = ToInvariantString(entry.Value);
                     }
                     continue;
                 }
@@ -134,8 +135,13 @@ internal static class XmlConverter
 
         if (value != null)
         {
-            element.Value = value.ToString();
+            element.Value = ToInvariantString(value);
         }
         return element;
+    }
+
+    private static string ToInvariantString(object value)
+    {
+        return Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty;
     }
 }
