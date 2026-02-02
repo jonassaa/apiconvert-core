@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>true</IsPackable>
+    <PackageId>Apiconvert.Core</PackageId>
+    <Authors>Apiconvert</Authors>
+    <Description>Core conversion engine, rules, and contracts for Apiconvert.</Description>
+    <RepositoryUrl>https://github.com/jonassaa/apiconvert</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>conversion;mapping;json;xml;rules</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseExpression>LicenseRef-Proprietary</PackageLicenseExpression>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+</Project>
