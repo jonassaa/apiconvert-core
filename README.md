@@ -1,30 +1,81 @@
 # Apiconvert.Core
 
-Core conversion engine, rule models, and contracts for Apiconvert.
+Apiconvert.Core is the core library for converting API descriptions and generating interoperable models. It provides a composable conversion engine, rule configuration, and contracts for generation targets.
 
-## Highlights
-- Normalize and apply conversion rules across JSON, XML, and query-string payloads.
-- Typed rule models for mapping definitions.
-- Contracts for rule generation providers.
+## Quickstart
 
-## Quick start
+Install from NuGet:
+
+```bash
+dotnet add package Apiconvert.Core
+```
+
+Minimal example:
+
 ```csharp
 using Apiconvert.Core.Converters;
 using Apiconvert.Core.Rules;
+using Apiconvert.Core.Contracts;
 
+// Create rules/config (example placeholders)
 var rules = new ConversionRules
 {
-    InputFormat = DataFormat.Json,
-    OutputFormat = DataFormat.Json
+    // configure rules here
 };
 
-var (value, error) = ConversionEngine.ParsePayload("{\"name\":\"Ada\"}", rules.InputFormat);
-if (error is null)
-{
-    var result = ConversionEngine.ApplyConversion(value, rules);
-    var output = ConversionEngine.FormatPayload(result.Output, rules.OutputFormat, pretty: true);
-}
+var engine = new ConversionEngine(rules);
+
+// Convert input into generation models (example placeholders)
+var result = engine.Convert(input);
+
+// Use result (generation models / contracts)
+```
+
+## Features
+
+- Deterministic conversion pipeline
+- Rule-based configuration
+- Contracts for generation / interop targets
+- Nullable-aware, side-effect-free core paths
+
+## Concepts
+
+- **ConversionEngine**: Orchestrates conversion execution.
+- **Rules**: Models + configuration for conversion behavior.
+- **Contracts**: Shared DTOs for generators and interop.
+
+## Usage
+
+Typical flow:
+
+1. Build rules/configuration.
+2. Instantiate `ConversionEngine`.
+3. Convert input models to generation models.
+4. Consume generation models in your tooling.
+
+## Compatibility
+
+- Target framework: .NET (see NuGet package metadata)
+- `Nullable` enabled
+
+## Versioning
+
+This project follows SemVer. Breaking changes are documented in release notes.
+
+## Contributing
+
+Build:
+
+```bash
+dotnet build Apiconvert.Core.sln
+```
+
+Test:
+
+```bash
+dotnet test Apiconvert.Core.sln
 ```
 
 ## License
-License: LicenseRef-Proprietary (update to match your repository license before publishing).
+
+Proprietary. See `LICENSE`.

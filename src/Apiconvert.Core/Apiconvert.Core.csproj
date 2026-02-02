@@ -8,11 +8,10 @@
     <PackageId>Apiconvert.Core</PackageId>
     <Authors>Apiconvert</Authors>
     <Description>Core conversion engine, rules, and contracts for Apiconvert.</Description>
-    <RepositoryUrl>https://github.com/jonassaa/apiconvert</RepositoryUrl>
+    <RepositoryUrl>https://github.com/jonassaa/apiconvert-core</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>conversion;mapping;json;xml;rules</PackageTags>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageLicenseExpression>LicenseRef-Proprietary</PackageLicenseExpression>
+    <PackageReadmeFile>../../README.md</PackageReadmeFile>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
