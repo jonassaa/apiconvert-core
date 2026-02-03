@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>95dcd73c-749a-4186-a478-d86b8853a1bc</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Apiconvert.Core" Version="0.0.5" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
+    <PackageReference Include="Npgsql" Version="8.0.5" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Infrastructure/bin/**" />
+    <Compile Remove="Infrastructure/obj/**" />
+    <None Remove="Infrastructure/bin/**" />
+    <None Remove="Infrastructure/obj/**" />
+  </ItemGroup>
+
+</Project>

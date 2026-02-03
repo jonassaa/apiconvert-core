@@ -1,0 +1,54 @@
+import { expect, test } from "@playwright/test";
+
+test.describe("converter flow", () => {
+  test("creates org + converter and validates preview", async ({ page }) => {
+    await page.goto("/login");
+
+    await page.getByLabel(/email/i).fill("asdf@asdf.com");
+    await page.getByLabel(/password/i).fill("P@ssw0rd");
+    await page.getByRole("button", { name: /sign in with email/i }).click();
+    await page.waitForURL(/\/org(\/|$)/);
+
+    await page.goto("/org");
+
+    const orgName = `E2E Organization ${Date.now()}`;
+    await page.getByLabel(/organization name/i).fill(orgName);
+    await page.getByRole("button", { name: /create organization/i }).click();
+
+    await page.waitForURL(/\/org\/.+\/dashboard/);
+    const url = new URL(page.url());
+    const orgId = url.pathname.split("/")[2];
+
+    await page.goto(`/org/${orgId}/converters/new`);
+
+    const converterName = `E2E Converter ${Date.now()}`;
+    await page.getByLabel(/^name$/i).fill(converterName);
+    await page.getByLabel(/inbound path/i).fill(`partner-${Date.now()}`);
+    await page.getByLabel(/forward url/i).fill("https://example.com/webhook");
+    await page.getByRole("button", { name: /create converter/i }).click();
+
+    await page.waitForURL(/\/org\/.+\/converters\/.+/);
+
+    await page.getByRole("tab", { name: /conversion/i }).click();
+
+    await page.getByRole("textbox", { name: /example input/i }).fill(
+      JSON.stringify({ name: "Ada" }, null, 2)
+    );
+    await page.getByRole("textbox", { name: /expected output/i }).fill(
+      JSON.stringify({ name: "Ada" }, null, 2)
+    );
+
+    await page.getByLabel(/output path/i).first().fill("name");
+    await page.getByLabel(/source path/i).first().fill("name");
+
+    await expect(
+      page.getByText(/no differences detected/i)
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: /save rules/i }).click();
+
+    await expect(
+      page.getByText(/no differences detected/i)
+    ).toBeVisible();
+  });
+});

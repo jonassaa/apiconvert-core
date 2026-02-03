@@ -1,39 +1,89 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- `Apiconvert.Core.sln` is the solution entry point.
-- Source lives in `src/Apiconvert.Core/` with core modules under:
-  - `Converters/` for conversion execution (`ConversionEngine`).
-  - `Rules/` for rule models and configuration.
-  - `Contracts/` for generation/interop contracts.
-- `tests/` exists but is currently empty; add new test projects here (e.g., `tests/Apiconvert.Core.Tests/`).
-- `src/Apiconvert.Core/Dockerfile` provides a container build path if needed.
+This is a multi-project solution. Current layout:
+
+- `src/Apiconvert.Client/`: Next.js App Router client (app, components, lib, public, configs).
+- `src/Apiconvert.Api/`: .NET API (controllers only).
+- `src/Apiconvert.Api/Infrastructure/`: .NET Infrastructure integrations (merged into API project).
+- `src/Apiconvert.Apphost/`: .NET Aspire AppHost for local orchestration.
+- `src/Apiconvert.Client/tests/`: unit tests (Vitest).
+- `tests/Apiconvert.E2e.Tests/`: Playwright E2E tests.
+- `tests/Apiconvert.*.Tests/`: .NET test projects.
+- `docs/`: notes, decisions, and documentation.
+- `supabase/`: local Supabase config/migrations.
+
+If you introduce a new top-level folder, document it here with a brief purpose.
 
 ## Build, Test, and Development Commands
-- `dotnet build Apiconvert.Core.sln` — compile the solution.
-- `dotnet test Apiconvert.Core.sln` — run unit tests.
-- `dotnet test Apiconvert.Core.sln --settings coverlet.runsettings --collect:"XPlat Code Coverage"` — run tests with coverage (Cobertura output under `TestResults/`).
-- `dotnet pack src/Apiconvert.Core/Apiconvert.Core.csproj -c Release` — produce the NuGet package.
-- `dotnet build src/Apiconvert.Core/Apiconvert.Core.csproj` — compile only the core library.
+Use these exact commands:
+
+- `npm run dev`: start the local dev server on port 3123.
+- `npm run build`: production build.
+- `npm start`: run the production server.
+- `npm run lint`: run ESLint.
+- `npm test`: run Vitest (single run).
+- `npm run e2e`: run Playwright E2E tests (starts dev server).
+- `npm run e2e:headed`: run Playwright with UI visible.
+- `npm run e2e:ui`: run Playwright UI mode.
 
 ## Coding Style & Naming Conventions
-- C# with `<Nullable>enable</Nullable>` and `<ImplicitUsings>enable</ImplicitUsings>`.
-- Indentation: 4 spaces, no tabs.
-- Types, public members: `PascalCase`; locals/parameters: `camelCase`.
-- File names match the primary type (e.g., `ConversionEngine.cs`).
-- Prefer explicit, side-effect-free methods in core conversion paths.
+- Language: TypeScript/TSX.
+- Indentation: 2 spaces.
+- Naming: `camelCase` for variables/functions, `PascalCase` for components/types, `kebab-case` for files.
+- Prefer role/label-based selectors in E2E tests (`getByRole`, `getByLabel`).
 
 ## Testing Guidelines
-- Tests use xUnit.
-- Name test projects `*.Tests` and test files `*Tests.cs`.
-- Place tests under `tests/` mirroring `src/` namespaces.
-- Keep unit tests deterministic; avoid network and filesystem dependencies.
+- Unit tests: Vitest.
+  - Location: `src/Apiconvert.Client/tests/*.test.ts`.
+  - Run all: `npm test`.
+- E2E tests: Playwright.
+  - Location: `tests/Apiconvert.E2e.Tests/**/*.spec.ts`.
+  - Run all: `npm run e2e`.
 
 ## Commit & Pull Request Guidelines
-- Existing history is minimal and does not show a convention. Use short, imperative commit messages (e.g., `Add conversion rule validation`).
-- PRs should include: a clear summary, rationale, and any API changes.
-- If you add public surface area, update `src/Apiconvert.Core/README.md` with usage examples.
+- Commit messages: clear, imperative, and scoped (e.g., "Add converter log table").
+- Keep changes focused; avoid mixing refactors with features.
+- PRs should include: summary, testing notes, and any relevant screenshots/API examples.
 
-## Configuration & Security Notes
-- The package metadata is defined in `src/Apiconvert.Core/Apiconvert.Core.csproj`.
-- License metadata is set to `LicenseRef-Proprietary`; confirm before publishing.
+## Task Tracking (Agent Instructions)
+- Feature work should be tracked in GitHub Issues.
+- Show the proposed issue before creating it.
+- Add a task description to each issue explaining the implementation plan.
+- Before starting an issue: ensure a clean git status, create a branch off the latest `main`.
+- Before starting an issue: Assign `jonassaa`.
+- When complete: open a PR, review/fix issues, squash-merge, and close the issue.
+
+## Git Configuration
+- Do not edit `.git/` files directly.
+- Perform git operations via the command line only.
+
+## Security & Configuration
+- Never commit secrets.
+- Use `.env.example` for required env vars.
+- Document setup steps in `docs/` and link them here if needed (see `docs/local-dev.md`).
+
+## Validation Checklist
+Before finishing work:
+1. Run the app and confirm there are no errors.
+2. `npm run build`
+3. `npm test`
+4. `npm run e2e`
+
+## Authentication (Local Dev)
+- Username: `asdf@asdf.com`
+- Password: `P@ssw0rd`
+
+## Review
+When reviewing a PR:
+Prioritize correctness, security, data integrity, and user-facing regressions.
+Check for missing edge cases, error handling, and loading/empty states.
+Look for unintended API changes and breaking UI behavior.
+Verify tests cover the new behavior; suggest additions if coverage is thin.
+Ensure E2E selectors are role/label-based and stable.
+Confirm `npm run build`, `npm test`, and `npm run e2e` pass locally.
+Call out performance risks (N+1 queries, large client bundles, blocking calls).
+Note any follow-ups (docs, migrations, env vars) explicitly.
+
+## Database migrations
+Never edit existing database migrations that are applied when doing edits in the database. Always add new migration in order to change the database.

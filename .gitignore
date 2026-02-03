@@ -5,6 +5,8 @@
 
 # dotenv files
 .env
+.env.*
+!.env.example
 
 # User-specific files
 *.rsuser
@@ -290,6 +292,31 @@ FakesAssemblies/
 # Node.js Tools for Visual Studio
 .ntvs_analysis.dat
 node_modules/
+**/node_modules/
+
+# Next.js build output
+.next/
+**/.next/
+out/
+**/out/
+
+# Frontend build output
+dist/
+**/dist/
+
+# Test output
+coverage/
+**/coverage/
+playwright-report/
+**/playwright-report/
+test-results/
+**/test-results/
+
+# Tooling caches
+.turbo/
+**/.turbo/
+.vercel/
+**/.vercel/
 
 # Visual Studio 6 build log
 *.plg
