@@ -19,7 +19,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Apiconvert.Core\Apiconvert.Core.csproj" />
+    <Content Include="..\..\cases\**\*">
+      <Link>cases\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Apiconvert.Core\Apiconvert.Core.csproj" />
   </ItemGroup>
 
 </Project>

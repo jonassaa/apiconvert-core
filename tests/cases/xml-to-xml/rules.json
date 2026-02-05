@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "inputFormat": "xml",
+  "outputFormat": "xml",
+  "fieldMappings": [
+    {
+      "outputPath": "receipt.id",
+      "source": { "type": "path", "path": "order.id" }
+    },
+    {
+      "outputPath": "receipt.status",
+      "source": { "type": "path", "path": "order.status" }
+    }
+  ],
+  "arrayMappings": []
+}

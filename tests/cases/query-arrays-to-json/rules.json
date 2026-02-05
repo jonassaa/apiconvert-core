@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "inputFormat": "query",
+  "outputFormat": "json",
+  "fieldMappings": [
+    {
+      "outputPath": "items",
+      "source": { "type": "path", "path": "items" }
+    },
+    {
+      "outputPath": "flag",
+      "source": { "type": "path", "path": "flag" }
+    }
+  ],
+  "arrayMappings": []
+}

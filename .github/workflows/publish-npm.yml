@@ -1,0 +1,52 @@
+name: Publish npm Package
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+
+      - name: Install npm test dependencies
+        working-directory: tests/npm/apiconvert-core-tests
+        run: npm install
+
+      - name: Run npm tests
+        working-directory: tests/npm/apiconvert-core-tests
+        run: npm test
+
+  publish:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          registry-url: https://registry.npmjs.org/
+
+      - name: Install
+        working-directory: src/apiconvert-core
+        run: npm install
+
+      - name: Build
+        working-directory: src/apiconvert-core
+        run: npm run build
+
+      - name: Publish
+        working-directory: src/apiconvert-core
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public

@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "inputFormat": "query",
+  "outputFormat": "query",
+  "fieldMappings": [
+    {
+      "outputPath": "person.name",
+      "source": { "type": "path", "path": "user.name" }
+    },
+    {
+      "outputPath": "person.age",
+      "source": { "type": "path", "path": "user.age" }
+    }
+  ],
+  "arrayMappings": []
+}

@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "inputFormat": "json",
+  "outputFormat": "json",
+  "fieldMappings": [
+    {
+      "outputPath": "user.name",
+      "source": { "type": "path", "path": "name" }
+    }
+  ],
+  "arrayMappings": []
+}

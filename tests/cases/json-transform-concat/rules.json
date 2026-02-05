@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "inputFormat": "json",
+  "outputFormat": "json",
+  "fieldMappings": [
+    {
+      "outputPath": "fullName",
+      "source": {
+        "type": "transform",
+        "transform": "concat",
+        "path": "user.first,const:-,user.last"
+      }
+    }
+  ],
+  "arrayMappings": []
+}

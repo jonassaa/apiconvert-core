@@ -44,6 +44,15 @@ var result = engine.Convert(input);
 - **Rules**: Models + configuration for conversion behavior.
 - **Contracts**: Shared DTOs for generators and interop.
 
+## Schema
+
+The canonical JSON Schema for conversion rules lives at `schemas/rules/rules.schema.json`. Treat it as the single source of truth for rule shape changes.
+
+GitHub source (for reference):
+```
+https://github.com/jonassaa/apiconvert-core/blob/main/schemas/rules/rules.schema.json
+```
+
 ## Usage
 
 Typical flow:

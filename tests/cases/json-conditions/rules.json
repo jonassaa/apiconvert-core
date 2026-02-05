@@ -1,0 +1,53 @@
+{
+  "version": 2,
+  "inputFormat": "json",
+  "outputFormat": "json",
+  "fieldMappings": [
+    {
+      "outputPath": "exists",
+      "source": {
+        "type": "condition",
+        "condition": { "path": "flag", "operator": "exists" },
+        "trueValue": "yes",
+        "falseValue": "no"
+      }
+    },
+    {
+      "outputPath": "equals",
+      "source": {
+        "type": "condition",
+        "condition": { "path": "flag", "operator": "equals", "value": "yes" },
+        "trueValue": "match",
+        "falseValue": "no"
+      }
+    },
+    {
+      "outputPath": "includes",
+      "source": {
+        "type": "condition",
+        "condition": { "path": "tags", "operator": "includes", "value": "b" },
+        "trueValue": "y",
+        "falseValue": "n"
+      }
+    },
+    {
+      "outputPath": "gt",
+      "source": {
+        "type": "condition",
+        "condition": { "path": "count", "operator": "gt", "value": "3" },
+        "trueValue": "y",
+        "falseValue": "n"
+      }
+    },
+    {
+      "outputPath": "lt",
+      "source": {
+        "type": "condition",
+        "condition": { "path": "count", "operator": "lt", "value": "10" },
+        "trueValue": "y",
+        "falseValue": "n"
+      }
+    }
+  ],
+  "arrayMappings": []
+}
