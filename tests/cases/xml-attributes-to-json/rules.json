@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "inputFormat": "xml",
+  "outputFormat": "json",
+  "fieldMappings": [
+    {
+      "outputPath": "orderId",
+      "source": { "type": "path", "path": "order.@_id" }
+    },
+    {
+      "outputPath": "name",
+      "source": { "type": "path", "path": "order.#text" }
+    }
+  ],
+  "arrayMappings": []
+}

@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/jonassaa/apiconvert-core/main/schemas/rules/rules.schema.json",
+  "$comment": "Canonical schema for Apiconvert conversion rules. Source of truth for C# and TypeScript models.",
+  "title": "Apiconvert Conversion Rules",
+  "description": "Canonical schema for Apiconvert conversion rules.",
+  "type": "object",
+  "additionalProperties": false,
+  "unevaluatedProperties": false,
+  "properties": {
+    "version": { "type": "integer", "enum": [2] },
+    "inputFormat": { "$ref": "#/$defs/DataFormat" },
+    "outputFormat": { "$ref": "#/$defs/DataFormat" },
+    "fieldMappings": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/FieldRule" }
+    },
+    "arrayMappings": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/ArrayRule" }
+    }
+  },
+  "$defs": {
+    "DataFormat": {
+      "type": "string",
+      "enum": ["json", "xml", "query"]
+    },
+    "TransformType": {
+      "type": "string",
+      "enum": ["toLowerCase", "toUpperCase", "number", "boolean", "concat"]
+    },
+    "ConditionOperator": {
+      "type": "string",
+      "enum": ["exists", "equals", "notEquals", "includes", "gt", "lt"]
+    },
+    "ConditionRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": { "type": "string" },
+        "operator": { "$ref": "#/$defs/ConditionOperator" },
+        "value": { "type": ["string", "null"] }
+      },
+      "required": ["path", "operator"]
+    },
+    "ValueSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["path", "value", "transform", "condition", "constant"]
+        },
+        "path": { "type": ["string", "null"] },
+        "value": { "type": ["string", "null"] },
+        "transform": { "$ref": "#/$defs/TransformType" },
+        "condition": { "$ref": "#/$defs/ConditionRule" },
+        "trueValue": { "type": ["string", "null"] },
+        "falseValue": { "type": ["string", "null"] }
+      },
+      "required": ["type"]
+    },
+    "FieldRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "outputPath": { "type": "string" },
+        "source": { "$ref": "#/$defs/ValueSource" },
+        "defaultValue": { "type": ["string", "null"] }
+      },
+      "required": ["outputPath", "source"]
+    },
+    "ArrayRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "inputPath": { "type": "string" },
+        "outputPath": { "type": "string" },
+        "itemMappings": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/FieldRule" }
+        },
+        "coerceSingle": { "type": "boolean" }
+      },
+      "required": ["inputPath", "outputPath", "itemMappings"]
+    }
+  }
+}

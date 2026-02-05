@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "inputFormat": "json",
+  "outputFormat": "xml",
+  "fieldMappings": [
+    {
+      "outputPath": "profile.name",
+      "source": { "type": "path", "path": "user.name" }
+    },
+    {
+      "outputPath": "profile.age",
+      "source": { "type": "path", "path": "user.age" }
+    }
+  ],
+  "arrayMappings": []
+}

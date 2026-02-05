@@ -291,6 +291,16 @@ FakesAssemblies/
 .ntvs_analysis.dat
 node_modules/
 
+# Node/TypeScript build artifacts
+dist/
+*.tsbuildinfo
+
+# Node test/coverage artifacts
+coverage/
+.nyc_output/
+*.tgz
+*.log
+
 # Visual Studio 6 build log
 *.plg
 

@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "inputFormat": "json",
+  "outputFormat": "query",
+  "fieldMappings": [
+    {
+      "outputPath": "tags",
+      "source": { "type": "path", "path": "tags" }
+    },
+    {
+      "outputPath": "user.name",
+      "source": { "type": "path", "path": "user.name" }
+    }
+  ],
+  "arrayMappings": []
+}

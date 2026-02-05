@@ -1,0 +1,16 @@
+{
+  "version": 2,
+  "inputFormat": "query",
+  "outputFormat": "json",
+  "fieldMappings": [
+    {
+      "outputPath": "name",
+      "source": { "type": "path", "path": "user.name" }
+    },
+    {
+      "outputPath": "active",
+      "source": { "type": "transform", "path": "user.active", "transform": "boolean" }
+    }
+  ],
+  "arrayMappings": []
+}

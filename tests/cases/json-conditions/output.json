@@ -1,0 +1,7 @@
+{
+  "exists": "yes",
+  "equals": "match",
+  "includes": "y",
+  "gt": "y",
+  "lt": "y"
+}

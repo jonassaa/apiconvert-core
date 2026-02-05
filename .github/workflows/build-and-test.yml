@@ -26,3 +26,16 @@ jobs:
       run: dotnet build --no-restore
     - name: Test
       run: dotnet test --no-build --verbosity normal
+
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: 20.x
+
+    - name: Install npm test dependencies
+      working-directory: tests/npm/apiconvert-core-tests
+      run: npm install
+
+    - name: Run npm tests
+      working-directory: tests/npm/apiconvert-core-tests
+      run: npm test
