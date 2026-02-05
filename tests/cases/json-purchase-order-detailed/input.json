@@ -1,0 +1,54 @@
+{
+  "purchaseOrderNumber": "PO-2026-000123",
+  "orderDate": "2026-02-05",
+  "currency": "USD",
+  "buyer": {
+    "id": "BUY-789",
+    "name": "Acme Manufacturing Inc."
+  },
+  "supplier": {
+    "id": "SUP-456",
+    "name": "Global Parts Ltd."
+  },
+  "billingAddress": {
+    "line1": "123 Industrial Way",
+    "city": "Detroit",
+    "state": "MI",
+    "postalCode": "48201",
+    "country": "US"
+  },
+  "shippingAddress": {
+    "line1": "500 Warehouse Ave",
+    "city": "Toledo",
+    "state": "OH",
+    "postalCode": "43604",
+    "country": "US"
+  },
+  "lineItems": [
+    {
+      "lineNumber": 1,
+      "sku": "BOLT-M8-SS",
+      "description": "Stainless Steel Bolt M8",
+      "quantity": 500,
+      "unitOfMeasure": "EA",
+      "unitPrice": 0.45,
+      "lineTotal": 225.0
+    },
+    {
+      "lineNumber": 2,
+      "sku": "NUT-M8-SS",
+      "description": "Stainless Steel Nut M8",
+      "quantity": 500,
+      "unitOfMeasure": "EA",
+      "unitPrice": 0.3,
+      "lineTotal": 150.0
+    }
+  ],
+  "subTotal": 375.0,
+  "tax": {
+    "rate": 0.06,
+    "amount": 22.5
+  },
+  "totalAmount": 397.5,
+  "status": "OPEN"
+}
