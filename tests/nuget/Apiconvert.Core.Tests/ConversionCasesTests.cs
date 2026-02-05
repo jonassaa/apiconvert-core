@@ -1,6 +1,8 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Xml;
+using System.Xml.Linq;
 using Apiconvert.Core.Converters;
 using Apiconvert.Core.Rules;
 using Xunit;
@@ -52,7 +54,10 @@ public sealed class ConversionCasesTests
         Assert.True(result.Errors.Count == 0, BuildErrorMessage(caseDirectory, result.Errors));
 
         var actualText = outputFormat.HasValue
-            ? ConversionEngine.FormatPayload(result.Output, outputFormat.Value, pretty: false)
+            ? ConversionEngine.FormatPayload(
+                result.Output,
+                outputFormat.Value,
+                pretty: outputFormat.Value is DataFormat.Xml)
             : Convert.ToString(result.Output) ?? string.Empty;
 
         var normalizedActual = NormalizeOutput(actualText, outputFormat);
@@ -150,6 +155,31 @@ public sealed class ConversionCasesTests
         {
             using var document = JsonDocument.Parse(string.IsNullOrWhiteSpace(normalized) ? "{}" : normalized);
             return JsonSerializer.Serialize(document.RootElement, JsonOptions);
+        }
+
+        if (format is DataFormat.Xml)
+        {
+            if (string.IsNullOrWhiteSpace(normalized))
+            {
+                return string.Empty;
+            }
+
+            var document = XDocument.Parse(normalized, LoadOptions.None);
+            var settings = new XmlWriterSettings
+            {
+                OmitXmlDeclaration = true,
+                Indent = true,
+                NewLineHandling = NewLineHandling.Replace,
+                NewLineChars = "\n"
+            };
+
+            using var writer = new StringWriter();
+            using (var xmlWriter = XmlWriter.Create(writer, settings))
+            {
+                document.Save(xmlWriter);
+            }
+
+            return writer.ToString().Trim();
         }
 
         return normalized;

@@ -211,7 +211,7 @@ export async function runConversionCase(args: {
     return result.output == null ? "" : String(result.output);
   }
 
-  return formatPayload(result.output, outputFormat, false);
+  return formatPayload(result.output, outputFormat, outputFormat === DataFormat.Xml);
 }
 
 function parsePayloadOrThrow(text: string, format: DataFormat): unknown {
@@ -528,6 +528,16 @@ function parseXml(text: string): Record<string, unknown> {
 }
 
 function formatXml(value: unknown, pretty: boolean): string {
+  if (!isRecord(value) || Object.keys(value).length === 0) {
+    return new XMLBuilder({
+      ignoreAttributes: false,
+      attributeNamePrefix: "@_",
+      textNodeName: "#text",
+      format: pretty,
+      indentBy: "  "
+    }).build({ root: null });
+  }
+
   const builder = new XMLBuilder({
     ignoreAttributes: false,
     attributeNamePrefix: "@_",
