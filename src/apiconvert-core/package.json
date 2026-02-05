@@ -1,6 +1,6 @@
 {
   "name": "@apiconvert/core",
-  "version": "0.0.3",
+  "version": "0.0.18",
   "description": "Apiconvert core contracts and schemas for conversion rules.",
   "license": "GPL-3.0-or-later",
   "repository": {
