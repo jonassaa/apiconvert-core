@@ -26,7 +26,7 @@ internal static class PayloadConverter
     {
         return format switch
         {
-            DataFormat.Xml => XmlConverter.FormatXml(value),
+            DataFormat.Xml => XmlConverter.FormatXml(value, pretty),
             DataFormat.Query => QueryStringConverter.FormatQueryString(value),
             _ => JsonSerializer.Serialize(
                 value ?? new Dictionary<string, object?>(),
