@@ -13,11 +13,11 @@
     "outputFormat": { "$ref": "#/$defs/DataFormat" },
     "fieldMappings": {
       "type": "array",
-      "items": { "$ref": "#/definitions/FieldRule" }
+      "items": { "$ref": "#/$defs/FieldRule" }
     },
     "arrayMappings": {
       "type": "array",
-      "items": { "$ref": "#/definitions/ArrayRule" }
+      "items": { "$ref": "#/$defs/ArrayRule" }
     }
   },
   "$defs": {
