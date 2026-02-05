@@ -182,7 +182,7 @@ export function parsePayload(text: string, format: DataFormat): { value: unknown
 export function formatPayload(value: unknown, format: DataFormat, pretty: boolean): string {
   switch (format) {
     case DataFormat.Xml:
-      return formatXml(value);
+      return formatXml(value, pretty);
     case DataFormat.Query:
       return formatQueryString(value);
     default:
@@ -527,22 +527,18 @@ function parseXml(text: string): Record<string, unknown> {
   return normalizeXmlValue(parsed) as Record<string, unknown>;
 }
 
-function formatXml(value: unknown): string {
-  if (!isRecord(value) || Object.keys(value).length === 0) {
-    return new XMLBuilder({
-      ignoreAttributes: false,
-      attributeNamePrefix: "@_",
-      textNodeName: "#text",
-      format: false
-    }).build({ root: null });
-  }
-
+function formatXml(value: unknown, pretty: boolean): string {
   const builder = new XMLBuilder({
     ignoreAttributes: false,
     attributeNamePrefix: "@_",
     textNodeName: "#text",
-    format: false
+    format: pretty,
+    indentBy: "  "
   });
+
+  if (!isRecord(value) || Object.keys(value).length === 0) {
+    return builder.build({ root: null });
+  }
 
   const keys = Object.keys(value);
   if (keys.length === 1) {

@@ -16,18 +16,19 @@ internal static class XmlConverter
         return result;
     }
 
-    internal static string FormatXml(object? value)
+    internal static string FormatXml(object? value, bool pretty)
     {
+        var saveOptions = pretty ? SaveOptions.None : SaveOptions.DisableFormatting;
         if (value is not Dictionary<string, object?> root || root.Count == 0)
         {
-            return new XDocument(new XElement("root")).ToString(SaveOptions.DisableFormatting);
+            return new XDocument(new XElement("root")).ToString(saveOptions);
         }
 
         if (root.Count == 1)
         {
             var pair = root.First();
             var element = BuildXmlElement(pair.Key, pair.Value);
-            return new XDocument(element).ToString(SaveOptions.DisableFormatting);
+            return new XDocument(element).ToString(saveOptions);
         }
 
         var fallbackRoot = new XElement("root");
@@ -35,7 +36,7 @@ internal static class XmlConverter
         {
             fallbackRoot.Add(BuildXmlElement(entry.Key, entry.Value));
         }
-        return new XDocument(fallbackRoot).ToString(SaveOptions.DisableFormatting);
+        return new XDocument(fallbackRoot).ToString(saveOptions);
     }
 
     private static object? ParseXmlElement(XElement element)

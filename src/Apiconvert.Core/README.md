@@ -41,6 +41,10 @@ var (value, error) = ConversionEngine.ParsePayload("{\"user\":{\"name\":\"Ada\"}
 if (error is null)
 {
     var result = ConversionEngine.ApplyConversion(value, rules);
-    var output = ConversionEngine.FormatPayload(result.Output, DataFormat.Xml, pretty: false);
+    var output = ConversionEngine.FormatPayload(result.Output, DataFormat.Xml, pretty: true);
 }
 ```
+
+## Formatting Notes
+
+`ConversionEngine.FormatPayload(..., pretty: true)` enables indented output for both JSON and XML. Use `pretty: false` to keep compact, single-line XML payloads.

@@ -18,3 +18,7 @@ This package exports TypeScript types for conversion rules, generation contracts
 ## Conversion API
 
 `runConversionCase` is implemented and powers the shared conversion case runner used by the npm tests.
+
+## Formatting Notes
+
+`formatPayload(value, DataFormat.Xml, true)` produces indented XML output. Use `false` for compact XML strings.
