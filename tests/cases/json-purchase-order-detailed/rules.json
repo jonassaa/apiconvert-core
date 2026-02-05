@@ -1,0 +1,393 @@
+{
+  "version": 2,
+  "inputFormat": "json",
+  "outputFormat": "json",
+  "fieldMappings": [
+    {
+      "outputPath": "po.number",
+      "source": {
+        "type": "path",
+        "path": "purchaseOrderNumber",
+        "value": null,
+        "transform": null,
+        "condition": null,
+        "trueValue": null,
+        "falseValue": null
+      },
+      "defaultValue": ""
+    },
+    {
+      "outputPath": "po.dates.ordered",
+      "source": {
+        "type": "path",
+        "path": "orderDate",
+        "value": null,
+        "transform": null,
+        "condition": null,
+        "trueValue": null,
+        "falseValue": null
+      },
+      "defaultValue": ""
+    },
+    {
+      "outputPath": "po.status",
+      "source": {
+        "type": "path",
+        "path": "status",
+        "value": null,
+        "transform": null,
+        "condition": null,
+        "trueValue": null,
+        "falseValue": null
+      },
+      "defaultValue": ""
+    },
+    {
+      "outputPath": "po.currency",
+      "source": {
+        "type": "path",
+        "path": "currency",
+        "value": null,
+        "transform": null,
+        "condition": null,
+        "trueValue": null,
+        "falseValue": null
+      },
+      "defaultValue": ""
+    },
+    {
+      "outputPath": "parties.buyer.buyerId",
+      "source": {
+        "type": "path",
+        "path": "buyer.id",
+        "value": null,
+        "transform": null,
+        "condition": null,
+        "trueValue": null,
+        "falseValue": null
+      },
+      "defaultValue": ""
+    },
+    {
+      "outputPath": "parties.buyer.buyerName",
+      "source": {
+        "type": "path",
+        "path": "buyer.name",
+        "value": null,
+        "transform": null,
+        "condition": null,
+        "trueValue": null,
+        "falseValue": null
+      },
+      "defaultValue": ""
+    },
+    {
+      "outputPath": "parties.supplier.supplierId",
+      "source": {
+        "type": "path",
+        "path": "supplier.id",
+        "value": null,
+        "transform": null,
+        "condition": null,
+        "trueValue": null,
+        "falseValue": null
+      },
+      "defaultValue": ""
+    },
+    {
+      "outputPath": "parties.supplier.supplierName",
+      "source": {
+        "type": "path",
+        "path": "supplier.name",
+        "value": null,
+        "transform": null,
+        "condition": null,
+        "trueValue": null,
+        "falseValue": null
+      },
+      "defaultValue": ""
+    },
+    {
+      "outputPath": "addresses.billing.street",
+      "source": {
+        "type": "path",
+        "path": "billingAddress.line1",
+        "value": null,
+        "transform": null,
+        "condition": null,
+        "trueValue": null,
+        "falseValue": null
+      },
+      "defaultValue": ""
+    },
+    {
+      "outputPath": "addresses.billing.city",
+      "source": {
+        "type": "path",
+        "path": "billingAddress.city",
+        "value": null,
+        "transform": null,
+        "condition": null,
+        "trueValue": null,
+        "falseValue": null
+      },
+      "defaultValue": ""
+    },
+    {
+      "outputPath": "addresses.billing.region",
+      "source": {
+        "type": "path",
+        "path": "billingAddress.state",
+        "value": null,
+        "transform": null,
+        "condition": null,
+        "trueValue": null,
+        "falseValue": null
+      },
+      "defaultValue": ""
+    },
+    {
+      "outputPath": "addresses.billing.postal",
+      "source": {
+        "type": "path",
+        "path": "billingAddress.postalCode",
+        "value": null,
+        "transform": null,
+        "condition": null,
+        "trueValue": null,
+        "falseValue": null
+      },
+      "defaultValue": ""
+    },
+    {
+      "outputPath": "addresses.billing.country",
+      "source": {
+        "type": "path",
+        "path": "billingAddress.country",
+        "value": null,
+        "transform": null,
+        "condition": null,
+        "trueValue": null,
+        "falseValue": null
+      },
+      "defaultValue": ""
+    },
+    {
+      "outputPath": "addresses.shipping.street",
+      "source": {
+        "type": "path",
+        "path": "shippingAddress.line1",
+        "value": null,
+        "transform": null,
+        "condition": null,
+        "trueValue": null,
+        "falseValue": null
+      },
+      "defaultValue": ""
+    },
+    {
+      "outputPath": "addresses.shipping.city",
+      "source": {
+        "type": "path",
+        "path": "shippingAddress.city",
+        "value": null,
+        "transform": null,
+        "condition": null,
+        "trueValue": null,
+        "falseValue": null
+      },
+      "defaultValue": ""
+    },
+    {
+      "outputPath": "addresses.shipping.region",
+      "source": {
+        "type": "path",
+        "path": "shippingAddress.state",
+        "value": null,
+        "transform": null,
+        "condition": null,
+        "trueValue": null,
+        "falseValue": null
+      },
+      "defaultValue": ""
+    },
+    {
+      "outputPath": "addresses.shipping.postal",
+      "source": {
+        "type": "path",
+        "path": "shippingAddress.postalCode",
+        "value": null,
+        "transform": null,
+        "condition": null,
+        "trueValue": null,
+        "falseValue": null
+      },
+      "defaultValue": ""
+    },
+    {
+      "outputPath": "addresses.shipping.country",
+      "source": {
+        "type": "path",
+        "path": "shippingAddress.country",
+        "value": null,
+        "transform": null,
+        "condition": null,
+        "trueValue": null,
+        "falseValue": null
+      },
+      "defaultValue": ""
+    },
+    {
+      "outputPath": "summary.subTotal",
+      "source": {
+        "type": "path",
+        "path": "subTotal",
+        "value": null,
+        "transform": null,
+        "condition": null,
+        "trueValue": null,
+        "falseValue": null
+      },
+      "defaultValue": ""
+    },
+    {
+      "outputPath": "summary.tax.rate",
+      "source": {
+        "type": "path",
+        "path": "tax.rate",
+        "value": null,
+        "transform": null,
+        "condition": null,
+        "trueValue": null,
+        "falseValue": null
+      },
+      "defaultValue": ""
+    },
+    {
+      "outputPath": "summary.tax.amount",
+      "source": {
+        "type": "path",
+        "path": "tax.amount",
+        "value": null,
+        "transform": null,
+        "condition": null,
+        "trueValue": null,
+        "falseValue": null
+      },
+      "defaultValue": ""
+    },
+    {
+      "outputPath": "summary.grandTotal",
+      "source": {
+        "type": "path",
+        "path": "totalAmount",
+        "value": null,
+        "transform": null,
+        "condition": null,
+        "trueValue": null,
+        "falseValue": null
+      },
+      "defaultValue": ""
+    }
+  ],
+  "arrayMappings": [
+    {
+      "inputPath": "lineItems",
+      "outputPath": "items",
+      "coerceSingle": false,
+      "itemMappings": [
+        {
+          "outputPath": "id",
+          "source": {
+            "type": "path",
+            "path": "lineNumber",
+            "value": null,
+            "transform": null,
+            "condition": null,
+            "trueValue": null,
+            "falseValue": null
+          },
+          "defaultValue": ""
+        },
+        {
+          "outputPath": "product.code",
+          "source": {
+            "type": "path",
+            "path": "sku",
+            "value": null,
+            "transform": null,
+            "condition": null,
+            "trueValue": null,
+            "falseValue": null
+          },
+          "defaultValue": ""
+        },
+        {
+          "outputPath": "product.name",
+          "source": {
+            "type": "path",
+            "path": "description",
+            "value": null,
+            "transform": null,
+            "condition": null,
+            "trueValue": null,
+            "falseValue": null
+          },
+          "defaultValue": ""
+        },
+        {
+          "outputPath": "qty.amount",
+          "source": {
+            "type": "path",
+            "path": "quantity",
+            "value": null,
+            "transform": null,
+            "condition": null,
+            "trueValue": null,
+            "falseValue": null
+          },
+          "defaultValue": ""
+        },
+        {
+          "outputPath": "qty.uom",
+          "source": {
+            "type": "path",
+            "path": "unitOfMeasure",
+            "value": null,
+            "transform": null,
+            "condition": null,
+            "trueValue": null,
+            "falseValue": null
+          },
+          "defaultValue": ""
+        },
+        {
+          "outputPath": "pricing.unit",
+          "source": {
+            "type": "path",
+            "path": "unitPrice",
+            "value": null,
+            "transform": null,
+            "condition": null,
+            "trueValue": null,
+            "falseValue": null
+          },
+          "defaultValue": ""
+        },
+        {
+          "outputPath": "pricing.total",
+          "source": {
+            "type": "path",
+            "path": "lineTotal",
+            "value": null,
+            "transform": null,
+            "condition": null,
+            "trueValue": null,
+            "falseValue": null
+          },
+          "defaultValue": ""
+        }
+      ]
+    }
+  ]
+}
