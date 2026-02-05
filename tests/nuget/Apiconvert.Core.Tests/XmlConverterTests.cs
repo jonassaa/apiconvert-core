@@ -1,5 +1,6 @@
 using Apiconvert.Core.Converters;
 using Apiconvert.Core.Rules;
+using System.Xml.Linq;
 using Xunit;
 
 namespace Apiconvert.Core.Tests;
@@ -17,10 +18,16 @@ public sealed class XmlConverterTests
             }
         };
 
-        var output = ConversionEngine.FormatPayload(payload, DataFormat.Xml, pretty: true);
+        var prettyOutput = ConversionEngine.FormatPayload(payload, DataFormat.Xml, pretty: true);
+        var compactOutput = ConversionEngine.FormatPayload(payload, DataFormat.Xml, pretty: false);
 
-        Assert.Contains(Environment.NewLine, output);
-        Assert.Contains($"{Environment.NewLine}  <child>", output);
+        var prettyDoc = XDocument.Parse(prettyOutput);
+        var compactDoc = XDocument.Parse(compactOutput);
+
+        Assert.Equal(
+            prettyDoc.ToString(SaveOptions.DisableFormatting),
+            compactDoc.ToString(SaveOptions.DisableFormatting));
+        Assert.NotEqual(compactOutput, prettyOutput);
     }
 
     [Fact]
