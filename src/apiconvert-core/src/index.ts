@@ -546,6 +546,10 @@ function formatXml(value: unknown, pretty: boolean): string {
     indentBy: "  "
   });
 
+  if (!isRecord(value) || Object.keys(value).length === 0) {
+    return builder.build({ root: null });
+  }
+
   const keys = Object.keys(value);
   if (keys.length === 1) {
     const rootKey = keys[0];
