@@ -17,4 +17,4 @@ This package exports TypeScript types for conversion rules, generation contracts
 
 ## Conversion API
 
-`runConversionCase` is currently a stub. It will be wired to the JavaScript conversion engine once implemented.
+`runConversionCase` is implemented and powers the shared conversion case runner used by the npm tests.
