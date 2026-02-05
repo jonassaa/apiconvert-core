@@ -1,0 +1,4 @@
+interface:
+  display_name: "Apiconvert Rules Generator"
+  short_description: "Generate Apiconvert rules from example input/output"
+  default_prompt: "Given example input and output payloads, produce Apiconvert conversion rules using the latest schema."
