@@ -2,7 +2,7 @@
 
 ## Schema Location
 
-- Local: `schemas/rules/rules.schema.json`
+- Canonical (raw): `https://raw.githubusercontent.com/jonassaa/apiconvert-core/main/schemas/rules/rules.schema.json`
 - Version: `2`
 
 ## Supported Formats
