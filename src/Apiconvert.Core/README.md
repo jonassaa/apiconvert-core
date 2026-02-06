@@ -70,6 +70,69 @@ if (result.Errors.Count > 0) throw new Exception(string.Join("; ", result.Errors
 var outputJson = ConversionEngine.FormatPayload(result.Output, rules.OutputFormat, pretty: true);
 ```
 
+## Stream Input And Output
+
+```csharp
+using System.IO;
+using System.Text;
+using Apiconvert.Core.Converters;
+using Apiconvert.Core.Rules;
+
+var rules = new ConversionRules
+{
+    InputFormat = DataFormat.Json,
+    OutputFormat = DataFormat.Json,
+    FieldMappings = new()
+    {
+        new FieldRule
+        {
+            OutputPath = "profile.name",
+            Source = new ValueSource { Type = "path", Path = "user.name" }
+        }
+    }
+};
+
+using var inputStream = new MemoryStream(Encoding.UTF8.GetBytes("""{"user":{"name":"Ada"}}"""));
+var (value, error) = ConversionEngine.ParsePayload(inputStream, rules.InputFormat);
+if (error != null) throw new Exception(error);
+
+var result = ConversionEngine.ApplyConversion(value, rules);
+if (result.Errors.Count > 0) throw new Exception(string.Join("; ", result.Errors));
+
+using var outputStream = new MemoryStream();
+ConversionEngine.FormatPayload(result.Output, rules.OutputFormat, outputStream, pretty: true);
+outputStream.Position = 0;
+using var reader = new StreamReader(outputStream);
+var outputJson = reader.ReadToEnd();
+```
+
+Input:
+
+```json
+{ "user": { "name": "Ada" } }
+```
+
+Output:
+
+```json
+{ "profile": { "name": "Ada" } }
+```
+
+`ParsePayload(Stream, ...)` and `FormatPayload(..., Stream, ...)` default to `leaveOpen: true`.
+
+## Parse JSON From JsonNode
+
+```csharp
+using System.Text.Json.Nodes;
+using Apiconvert.Core.Converters;
+
+var jsonNode = JsonNode.Parse("""{"user":{"name":"Ada"}}""");
+var (value, error) = ConversionEngine.ParsePayload(jsonNode);
+if (error != null) throw new Exception(error);
+```
+
+`JsonNode` input is supported only for `DataFormat.Json`.
+
 ## XML Attributes And Text
 
 XML attributes are addressed with `@_` and element text with `#text`.

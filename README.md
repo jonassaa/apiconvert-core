@@ -75,6 +75,25 @@ if (result.errors.length) throw new Error(result.errors.join("; "));
 const outputJson = formatPayload(result.output, rules.outputFormat!, true);
 ```
 
+## Releasing
+
+Package publishing is tag-driven and shared across NuGet and npm.
+
+1. Open GitHub Actions and run `Create Release Tag`.
+2. Choose `bump`:
+   - `patch` for bug-fix releases.
+   - `minor` for backward-compatible features.
+   - `major` for breaking changes.
+3. The workflow creates and pushes the next `vX.Y.Z` tag.
+4. That tag triggers `Publish Packages`, which publishes both packages with the same version (`X.Y.Z`).
+
+You can also push a tag manually:
+
+```bash
+git tag v1.2.3
+git push origin v1.2.3
+```
+
 ## Core Concepts
 
 - `ConversionEngine` (C#) / `applyConversion` (TS) applies rules to an already-parsed payload.

@@ -1,4 +1,6 @@
+using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Apiconvert.Core.Converters;
 using Apiconvert.Core.Rules;
 using Xunit;
@@ -102,6 +104,56 @@ public sealed class ConversionEngineTests
         var formatted = ConversionEngine.FormatPayload(value, DataFormat.Query, pretty: false);
 
         Assert.Equal("user.age=37&user.name=Ada", formatted);
+    }
+
+    [Fact]
+    public void ParsePayload_Stream_ParsesJson()
+    {
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes("""{"name":"Ada"}"""));
+
+        var (value, error) = ConversionEngine.ParsePayload(stream, DataFormat.Json);
+
+        Assert.Null(error);
+        var output = Assert.IsType<Dictionary<string, object?>>(value);
+        Assert.Equal("Ada", output["name"]);
+    }
+
+    [Fact]
+    public void FormatPayload_Stream_WritesJson()
+    {
+        var input = new Dictionary<string, object?> { ["name"] = "Ada" };
+        using var stream = new MemoryStream();
+
+        ConversionEngine.FormatPayload(input, DataFormat.Json, stream, pretty: false);
+        stream.Position = 0;
+        using var reader = new StreamReader(stream);
+        var json = reader.ReadToEnd();
+
+        Assert.Equal("""{"name":"Ada"}""", json);
+    }
+
+    [Fact]
+    public void ParsePayload_JsonNode_ParsesJson()
+    {
+        var node = JsonNode.Parse("""{"name":"Ada","active":true}""");
+
+        var (value, error) = ConversionEngine.ParsePayload(node);
+
+        Assert.Null(error);
+        var output = Assert.IsType<Dictionary<string, object?>>(value);
+        Assert.Equal("Ada", output["name"]);
+        Assert.Equal(true, output["active"]);
+    }
+
+    [Fact]
+    public void ParsePayload_JsonNode_ReturnsErrorForNonJsonFormat()
+    {
+        var node = JsonNode.Parse("""{"name":"Ada"}""");
+
+        var (value, error) = ConversionEngine.ParsePayload(node, DataFormat.Xml);
+
+        Assert.Null(value);
+        Assert.Equal("JsonNode input is only supported for DataFormat.Json.", error);
     }
 
     [Fact]

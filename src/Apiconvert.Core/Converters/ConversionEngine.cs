@@ -1,4 +1,6 @@
 using Apiconvert.Core.Rules;
+using System.Text;
+using System.Text.Json.Nodes;
 
 namespace Apiconvert.Core.Converters;
 
@@ -40,6 +42,34 @@ public static class ConversionEngine
     }
 
     /// <summary>
+    /// Parses a raw payload stream into a structured object for the specified format.
+    /// </summary>
+    /// <param name="stream">Raw payload stream.</param>
+    /// <param name="format">Input format.</param>
+    /// <param name="encoding">Text encoding used to read the stream. Defaults to UTF-8.</param>
+    /// <param name="leaveOpen">Whether to leave the stream open after reading.</param>
+    /// <returns>Parsed value and an optional error message.</returns>
+    public static (object? Value, string? Error) ParsePayload(
+        Stream stream,
+        DataFormat format,
+        Encoding? encoding = null,
+        bool leaveOpen = true)
+    {
+        return PayloadConverter.ParsePayload(stream, format, encoding, leaveOpen);
+    }
+
+    /// <summary>
+    /// Parses a JSON payload from a <see cref="JsonNode"/>.
+    /// </summary>
+    /// <param name="jsonNode">JSON payload node.</param>
+    /// <param name="format">Input format. Must be <see cref="DataFormat.Json"/>.</param>
+    /// <returns>Parsed value and an optional error message.</returns>
+    public static (object? Value, string? Error) ParsePayload(JsonNode? jsonNode, DataFormat format = DataFormat.Json)
+    {
+        return PayloadConverter.ParsePayload(jsonNode, format);
+    }
+
+    /// <summary>
     /// Formats a structured payload into a string for the specified format.
     /// </summary>
     /// <param name="value">Structured payload.</param>
@@ -49,5 +79,25 @@ public static class ConversionEngine
     public static string FormatPayload(object? value, DataFormat format, bool pretty)
     {
         return PayloadConverter.FormatPayload(value, format, pretty);
+    }
+
+    /// <summary>
+    /// Formats a structured payload and writes it to a stream.
+    /// </summary>
+    /// <param name="value">Structured payload.</param>
+    /// <param name="format">Output format.</param>
+    /// <param name="stream">Destination stream.</param>
+    /// <param name="pretty">Whether to use pretty formatting.</param>
+    /// <param name="encoding">Text encoding used to write the stream. Defaults to UTF-8 (without BOM).</param>
+    /// <param name="leaveOpen">Whether to leave the stream open after writing.</param>
+    public static void FormatPayload(
+        object? value,
+        DataFormat format,
+        Stream stream,
+        bool pretty,
+        Encoding? encoding = null,
+        bool leaveOpen = true)
+    {
+        PayloadConverter.FormatPayload(value, format, stream, pretty, encoding, leaveOpen);
     }
 }

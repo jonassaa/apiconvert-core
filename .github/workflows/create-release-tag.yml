@@ -1,0 +1,97 @@
+name: Create Release Tag
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: Version bump type
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  contents: write
+
+jobs:
+  create-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Determine next semantic version
+        id: next
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          bump="${{ github.event.inputs.bump }}"
+          latest_tag="$(git tag --list 'v*' --sort=-v:refname | head -n 1)"
+
+          if [[ -z "${latest_tag}" ]]; then
+            latest_tag="v0.0.0"
+          fi
+
+          version="${latest_tag#v}"
+          if [[ ! "${version}" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            echo "Latest tag '${latest_tag}' is not in v<major>.<minor>.<patch> format."
+            exit 1
+          fi
+
+          major="${BASH_REMATCH[1]}"
+          minor="${BASH_REMATCH[2]}"
+          patch="${BASH_REMATCH[3]}"
+
+          case "${bump}" in
+            patch)
+              patch="$((patch + 1))"
+              ;;
+            minor)
+              minor="$((minor + 1))"
+              patch=0
+              ;;
+            major)
+              major="$((major + 1))"
+              minor=0
+              patch=0
+              ;;
+            *)
+              echo "Unknown bump type: ${bump}"
+              exit 1
+              ;;
+          esac
+
+          new_tag="v${major}.${minor}.${patch}"
+          if git rev-parse "${new_tag}" >/dev/null 2>&1; then
+            echo "Tag ${new_tag} already exists."
+            exit 1
+          fi
+
+          echo "latest_tag=${latest_tag}" >> "${GITHUB_OUTPUT}"
+          echo "new_tag=${new_tag}" >> "${GITHUB_OUTPUT}"
+          echo "bump=${bump}" >> "${GITHUB_OUTPUT}"
+
+      - name: Create and push tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "${{ steps.next.outputs.new_tag }}" -m "Release ${{ steps.next.outputs.new_tag }}"
+          git push origin "${{ steps.next.outputs.new_tag }}"
+
+      - name: Summary
+        run: |
+          {
+            echo "Created tag: \`${{ steps.next.outputs.new_tag }}\`"
+            echo "From: \`${{ steps.next.outputs.latest_tag }}\`"
+            echo "Bump: \`${{ steps.next.outputs.bump }}\`"
+            echo ""
+            echo "Pushing this tag triggers \`publish-packages.yml\`."
+          } >> "${GITHUB_STEP_SUMMARY}"
