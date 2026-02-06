@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Optional tag to publish (for example v1.2.3). If empty, latest v* tag is used.
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -44,23 +50,58 @@ jobs:
     needs: test
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
 
-      - name: Resolve version from tag
+      - name: Resolve publish tag and version
         id: version
         shell: bash
         run: |
-          if [[ "${GITHUB_REF_TYPE}" != "tag" ]]; then
-            echo "This workflow publishes packages only from git tags."
+          set -euo pipefail
+
+          requested_tag="${{ github.event.inputs.tag }}"
+          selected_tag=""
+
+          if [[ -n "${requested_tag}" ]]; then
+            selected_tag="${requested_tag}"
+          elif [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+            selected_tag="${GITHUB_REF_NAME}"
+          else
+            selected_tag="$(git tag --list 'v*' --sort=-v:refname | head -n 1)"
+          fi
+
+          if [[ -z "${selected_tag}" ]]; then
+            echo "No publishable tag found."
             exit 1
           fi
-          TAG="${GITHUB_REF_NAME}"
-          VERSION="${TAG#v}"
+
+          if ! git rev-parse "${selected_tag}" >/dev/null 2>&1; then
+            echo "Tag '${selected_tag}' does not exist in this repository."
+            exit 1
+          fi
+
+          VERSION="${selected_tag#v}"
           if [[ -z "${VERSION}" ]]; then
-            echo "Failed to resolve version from tag '${TAG}'."
+            echo "Failed to resolve version from tag '${selected_tag}'."
             exit 1
           fi
+
+          if [[ ! "${VERSION}" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            echo "Tag '${selected_tag}' is not in v<major>.<minor>.<patch> format."
+            exit 1
+          fi
+
+          echo "tag=${selected_tag}" >> "${GITHUB_OUTPUT}"
           echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
+          echo "Resolved publish tag: ${selected_tag}"
           echo "Resolved package version: ${VERSION}"
+
+      - name: Checkout selected tag
+        shell: bash
+        run: |
+          set -euo pipefail
+          git checkout "tags/${{ steps.version.outputs.tag }}"
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
