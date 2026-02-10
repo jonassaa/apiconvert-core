@@ -286,6 +286,67 @@ public sealed class ConversionEngineTests
     }
 
     [Fact]
+    public void ApplyConversion_ArrayMappingsSupportRootPrefixedPaths()
+    {
+        var input = new Dictionary<string, object?>
+        {
+            ["items"] = new List<object?>
+            {
+                new Dictionary<string, object?> { ["sku"] = "A1", ["qty"] = 2 },
+                new Dictionary<string, object?> { ["sku"] = "B2", ["qty"] = 1 }
+            },
+            ["meta"] = new Dictionary<string, object?> { ["tenant"] = "t-1" }
+        };
+
+        var rules = new ConversionRules
+        {
+            ArrayMappings = new List<ArrayRule>
+            {
+                new()
+                {
+                    InputPath = "$.items",
+                    OutputPath = "$.lines",
+                    ItemMappings = new List<FieldRule>
+                    {
+                        new()
+                        {
+                            OutputPath = "code",
+                            Source = new ValueSource { Type = "path", Path = "sku" }
+                        },
+                        new()
+                        {
+                            OutputPath = "quantity",
+                            Source = new ValueSource { Type = "path", Path = "qty" }
+                        },
+                        new()
+                        {
+                            OutputPath = "tenant",
+                            Source = new ValueSource { Type = "path", Path = "$.meta.tenant" }
+                        }
+                    }
+                }
+            }
+        };
+
+        var result = ConversionEngine.ApplyConversion(input, rules);
+
+        Assert.Empty(result.Errors);
+
+        var output = Assert.IsType<Dictionary<string, object?>>(result.Output);
+        var lines = Assert.IsType<List<object?>>(output["lines"]);
+
+        var first = Assert.IsType<Dictionary<string, object?>>(lines[0]);
+        Assert.Equal("A1", first["code"]);
+        Assert.Equal(2, first["quantity"]);
+        Assert.Equal("t-1", first["tenant"]);
+
+        var second = Assert.IsType<Dictionary<string, object?>>(lines[1]);
+        Assert.Equal("B2", second["code"]);
+        Assert.Equal(1, second["quantity"]);
+        Assert.Equal("t-1", second["tenant"]);
+    }
+
+    [Fact]
     public void ApplyConversion_ConditionSourceResolvesTrueFalse()
     {
         var input = new Dictionary<string, object?> { ["flag"] = true };

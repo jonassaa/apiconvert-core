@@ -1,0 +1,6 @@
+{
+  "lines": [
+    { "code": "A1", "quantity": 2, "tenant": "t-1" },
+    { "code": "B2", "quantity": 1, "tenant": "t-1" }
+  ]
+}

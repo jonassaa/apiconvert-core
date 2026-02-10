@@ -133,7 +133,7 @@ export function applyConversion(input: unknown, rawRules: unknown): ConversionRe
   applyFieldMappings(input, null, fieldMappings, output, errors, "Field");
 
   arrayMappings.forEach((arrayRule, index) => {
-    const value = getValueByPath(input, arrayRule.inputPath ?? "");
+    const value = resolvePathValue(input, null, arrayRule.inputPath ?? "");
     let items = Array.isArray(value) ? value : null;
     if (!items && arrayRule.coerceSingle && value != null) {
       items = [value];
@@ -158,7 +158,13 @@ export function applyConversion(input: unknown, rawRules: unknown): ConversionRe
       return;
     }
 
-    setValueByPath(output, arrayRule.outputPath, mappedItems);
+    const outputPath = normalizeWritePath(arrayRule.outputPath);
+    if (!outputPath || outputPath.trim().length === 0) {
+      errors.push(`Array ${index + 1}: output path is required.`);
+      return;
+    }
+
+    setValueByPath(output, outputPath, mappedItems);
   });
 
   return { output, errors };
@@ -485,6 +491,22 @@ function setValueByPath(target: Record<string, unknown>, path: string, value: un
     }
     current = current[part] as Record<string, unknown>;
   }
+}
+
+function normalizeWritePath(path: string): string {
+  if (!path || path.trim().length === 0) {
+    return path;
+  }
+
+  if (path.startsWith("$.", 0)) {
+    return path.slice(2);
+  }
+
+  if (path === "$") {
+    return "";
+  }
+
+  return path;
 }
 
 function parsePrimitive(value: string): unknown {

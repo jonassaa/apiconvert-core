@@ -176,6 +176,12 @@ Output:
 
 ## Array Mapping
 
+Array mapping paths support root-prefixed JSONPath-style syntax:
+- `inputPath`: `orders` and `$.orders` are equivalent.
+- `outputPath`: `orders` and `$.orders` are equivalent.
+
+`$` resolves from the root input for reads, and `$.<path>` writes at the root output path.
+
 ```csharp
 var rules = new ConversionRules
 {
@@ -185,8 +191,8 @@ var rules = new ConversionRules
     {
         new ArrayRule
         {
-            InputPath = "orders",
-            OutputPath = "orders",
+            InputPath = "$.orders",
+            OutputPath = "$.ordersNormalized",
             ItemMappings = new()
             {
                 new FieldRule
@@ -218,7 +224,7 @@ Output:
 
 ```json
 {
-  "orders": [
+  "ordersNormalized": [
     { "id": "A1", "currency": "USD" },
     { "id": "A2", "currency": "USD" }
   ]

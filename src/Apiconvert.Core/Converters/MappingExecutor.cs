@@ -23,7 +23,7 @@ internal static class MappingExecutor
         for (var index = 0; index < rules.ArrayMappings.Count; index++)
         {
             var arrayRule = rules.ArrayMappings[index];
-            var value = GetValueByPath(input, arrayRule.InputPath);
+            var value = ResolvePathValue(input, null, arrayRule.InputPath);
             var items = value as List<object?>;
             if (items == null && arrayRule.CoerceSingle && value != null)
             {
@@ -50,7 +50,14 @@ internal static class MappingExecutor
                 continue;
             }
 
-            SetValueByPath(output, arrayRule.OutputPath, mappedItems);
+            var outputPath = NormalizeWritePath(arrayRule.OutputPath);
+            if (string.IsNullOrWhiteSpace(outputPath))
+            {
+                errors.Add($"Array {index + 1}: output path is required.");
+                continue;
+            }
+
+            SetValueByPath(output, outputPath, mappedItems);
         }
 
         return new ConversionResult { Output = output, Errors = errors };
@@ -249,6 +256,26 @@ internal static class MappingExecutor
             }
             current = nested;
         }
+    }
+
+    private static string NormalizeWritePath(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return path;
+        }
+
+        if (path.StartsWith("$.", StringComparison.Ordinal))
+        {
+            return path[2..];
+        }
+
+        if (path == "$")
+        {
+            return string.Empty;
+        }
+
+        return path;
     }
 
     private static object? ParsePrimitive(string value)

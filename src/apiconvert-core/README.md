@@ -111,6 +111,12 @@ Output:
 
 ## Array Mapping
 
+Array mapping paths support root-prefixed JSONPath-style syntax:
+- `inputPath`: `orders` and `$.orders` are equivalent.
+- `outputPath`: `orders` and `$.orders` are equivalent.
+
+`$` resolves from the root input for reads, and `$.<path>` writes at the root output path.
+
 ```ts
 const rules = normalizeConversionRules({
   version: 2,
@@ -118,8 +124,8 @@ const rules = normalizeConversionRules({
   outputFormat: DataFormat.Json,
   arrayMappings: [
     {
-      inputPath: "orders",
-      outputPath: "orders",
+      inputPath: "$.orders",
+      outputPath: "$.ordersNormalized",
       itemMappings: [
         { outputPath: "id", source: { type: "path", path: "orderId" } },
         { outputPath: "currency", source: { type: "path", path: "$.defaults.currency" } }
@@ -145,7 +151,7 @@ Output:
 
 ```json
 {
-  "orders": [
+  "ordersNormalized": [
     { "id": "A1", "currency": "USD" },
     { "id": "A2", "currency": "USD" }
   ]

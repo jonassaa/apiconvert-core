@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "inputFormat": "json",
+  "outputFormat": "json",
+  "fieldMappings": [],
+  "arrayMappings": [
+    {
+      "inputPath": "$.items",
+      "outputPath": "$.lines",
+      "itemMappings": [
+        { "outputPath": "code", "source": { "type": "path", "path": "sku" } },
+        { "outputPath": "quantity", "source": { "type": "path", "path": "qty" } },
+        { "outputPath": "tenant", "source": { "type": "path", "path": "$.meta.tenant" } }
+      ]
+    }
+  ]
+}
