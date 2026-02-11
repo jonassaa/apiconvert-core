@@ -220,14 +220,59 @@ Input:
 }
 ```
 
+## Split And Merge Field Rules
+
+Use `outputPaths` to split one source value into multiple output fields.  
+Use `source.type = "merge"` with `paths` to combine multiple inputs into one output.
+
+```csharp
+var rules = new ConversionRules
+{
+    InputFormat = DataFormat.Json,
+    OutputFormat = DataFormat.Json,
+    FieldMappings = new()
+    {
+        new FieldRule
+        {
+            OutputPaths = new() { "profile.name", "profile.displayName" },
+            Source = new ValueSource { Type = "path", Path = "user.name" }
+        },
+        new FieldRule
+        {
+            OutputPath = "profile.fullName",
+            Source = new ValueSource
+            {
+                Type = "merge",
+                Paths = new() { "user.firstName", "user.lastName" },
+                MergeMode = MergeMode.Concat,
+                Separator = " "
+            }
+        }
+    }
+};
+```
+
+Input:
+
+```json
+{
+  "user": {
+    "name": "Ada Lovelace",
+    "firstName": "Ada",
+    "lastName": "Lovelace"
+  }
+}
+```
+
 Output:
 
 ```json
 {
-  "ordersNormalized": [
-    { "id": "A1", "currency": "USD" },
-    { "id": "A2", "currency": "USD" }
-  ]
+  "profile": {
+    "name": "Ada Lovelace",
+    "displayName": "Ada Lovelace",
+    "fullName": "Ada Lovelace"
+  }
 }
 ```
 
@@ -265,16 +310,74 @@ var rules = new ConversionRules
 };
 ```
 
+For splitting a full name into parts, use `transform = Split`, `separator`, and `tokenIndex`.
+`tokenIndex` supports negative values (`-1` = last token):
+`trimAfterSplit` defaults to `true` and can be set to `false` to preserve token whitespace.
+`separator = ""` is invalid for split transforms.
+
+```csharp
+var rules = new ConversionRules
+{
+    InputFormat = DataFormat.Json,
+    OutputFormat = DataFormat.Json,
+    FieldMappings = new()
+    {
+        new FieldRule
+        {
+            OutputPath = "firstName",
+            Source = new ValueSource
+            {
+                Type = "transform",
+                Transform = TransformType.Split,
+                Path = "name",
+                Separator = " ",
+                TokenIndex = 0
+            }
+        },
+        new FieldRule
+        {
+            OutputPath = "lastName",
+            Source = new ValueSource
+            {
+                Type = "transform",
+                Transform = TransformType.Split,
+                Path = "name",
+                Separator = " ",
+                TokenIndex = -1
+            }
+        }
+    }
+};
+```
+
 Input:
 
 ```json
-{ "user": { "country": "se", "age": 21 } }
+{ "name": "Jonas Strand Aasberg" }
 ```
 
 Output:
 
 ```json
-{ "profile": { "country": "SE", "isAdult": true } }
+{ "firstName": "Jonas", "lastName": "Aasberg" }
+```
+
+Comma-separated names are supported as well. With default trim (`trimAfterSplit` omitted or `true`):
+
+```json
+{ "name": "Jonas, Aasberg" }
+```
+
+maps to:
+
+```json
+{ "firstName": "Jonas", "lastName": "Aasberg" }
+```
+
+With `trimAfterSplit = false`, whitespace is preserved:
+
+```json
+{ "firstName": "Jonas", "lastName": " Aasberg" }
 ```
 
 ## Formatting

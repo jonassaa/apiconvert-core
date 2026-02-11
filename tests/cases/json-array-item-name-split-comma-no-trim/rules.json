@@ -1,0 +1,36 @@
+{
+  "version": 2,
+  "inputFormat": "json",
+  "outputFormat": "json",
+  "fieldMappings": [],
+  "arrayMappings": [
+    {
+      "inputPath": "people",
+      "outputPath": "contacts",
+      "itemMappings": [
+        {
+          "outputPath": "firstName",
+          "source": {
+            "type": "transform",
+            "transform": "split",
+            "path": "name",
+            "separator": ",",
+            "tokenIndex": 0,
+            "trimAfterSplit": false
+          }
+        },
+        {
+          "outputPath": "lastName",
+          "source": {
+            "type": "transform",
+            "transform": "split",
+            "path": "name",
+            "separator": ",",
+            "tokenIndex": -1,
+            "trimAfterSplit": false
+          }
+        }
+      ]
+    }
+  ]
+}

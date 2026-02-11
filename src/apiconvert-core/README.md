@@ -147,14 +147,55 @@ Input:
 }
 ```
 
+## Split And Merge Field Rules
+
+Use `outputPaths` to split one source value into multiple output fields.  
+Use `source.type = "merge"` with `paths` to combine multiple inputs into one output.
+
+```ts
+const rules = normalizeConversionRules({
+  version: 2,
+  inputFormat: DataFormat.Json,
+  outputFormat: DataFormat.Json,
+  fieldMappings: [
+    {
+      outputPaths: ["profile.name", "profile.displayName"],
+      source: { type: "path", path: "user.name" }
+    },
+    {
+      outputPath: "profile.fullName",
+      source: {
+        type: "merge",
+        paths: ["user.firstName", "user.lastName"],
+        mergeMode: "concat",
+        separator: " "
+      }
+    }
+  ]
+});
+```
+
+Input:
+
+```json
+{
+  "user": {
+    "name": "Ada Lovelace",
+    "firstName": "Ada",
+    "lastName": "Lovelace"
+  }
+}
+```
+
 Output:
 
 ```json
 {
-  "ordersNormalized": [
-    { "id": "A1", "currency": "USD" },
-    { "id": "A2", "currency": "USD" }
-  ]
+  "profile": {
+    "name": "Ada Lovelace",
+    "displayName": "Ada Lovelace",
+    "fullName": "Ada Lovelace"
+  }
 }
 ```
 
@@ -183,16 +224,69 @@ const rules = normalizeConversionRules({
 });
 ```
 
+For splitting a full name into parts, use `transform: "split"`, `separator`, and `tokenIndex`.
+`tokenIndex` supports negative values (`-1` = last token):
+`trimAfterSplit` defaults to `true` and can be set to `false` to preserve token whitespace.
+`separator: ""` is invalid for split transforms.
+
+```ts
+const rules = normalizeConversionRules({
+  version: 2,
+  inputFormat: DataFormat.Json,
+  outputFormat: DataFormat.Json,
+  fieldMappings: [
+    {
+      outputPath: "firstName",
+      source: {
+        type: "transform",
+        transform: "split",
+        path: "name",
+        separator: " ",
+        tokenIndex: 0
+      }
+    },
+    {
+      outputPath: "lastName",
+      source: {
+        type: "transform",
+        transform: "split",
+        path: "name",
+        separator: " ",
+        tokenIndex: -1
+      }
+    }
+  ]
+});
+```
+
 Input:
 
 ```json
-{ "user": { "country": "no", "age": 21 } }
+{ "name": "Jonas Strand Aasberg" }
 ```
 
 Output:
 
 ```json
-{ "profile": { "country": "NO", "isAdult": true } }
+{ "firstName": "Jonas", "lastName": "Aasberg" }
+```
+
+Comma-separated names are supported as well. With default trim (`trimAfterSplit` omitted or `true`):
+
+```json
+{ "name": "Jonas, Aasberg" }
+```
+
+maps to:
+
+```json
+{ "firstName": "Jonas", "lastName": "Aasberg" }
+```
+
+With `trimAfterSplit: false`, whitespace is preserved:
+
+```json
+{ "firstName": "Jonas", "lastName": " Aasberg" }
 ```
 
 ## Formatting

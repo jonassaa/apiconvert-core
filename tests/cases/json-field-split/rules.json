@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "inputFormat": "json",
+  "outputFormat": "json",
+  "fieldMappings": [
+    {
+      "outputPaths": ["profile.name", "profile.displayName"],
+      "source": { "type": "path", "path": "user.name" }
+    }
+  ],
+  "arrayMappings": []
+}

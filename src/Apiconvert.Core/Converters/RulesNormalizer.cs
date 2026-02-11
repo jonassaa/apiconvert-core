@@ -51,14 +51,30 @@ internal static class RulesNormalizer
             InputFormat = rules.InputFormat,
             OutputFormat = rules.OutputFormat,
             FieldMappings = rules.FieldMappings
-                .Select(rule => rule with { DefaultValue = rule.DefaultValue ?? string.Empty })
+                .Select(rule => rule with
+                {
+                    DefaultValue = rule.DefaultValue ?? string.Empty,
+                    OutputPaths = rule.OutputPaths ?? new List<string>(),
+                    Source = rule.Source with
+                    {
+                        Paths = rule.Source.Paths ?? new List<string>()
+                    }
+                })
                 .ToList(),
             ArrayMappings = rules.ArrayMappings
                 .Select(mapping => mapping with
                 {
                     CoerceSingle = mapping.CoerceSingle,
                     ItemMappings = mapping.ItemMappings
-                        .Select(rule => rule with { DefaultValue = rule.DefaultValue ?? string.Empty })
+                        .Select(rule => rule with
+                        {
+                            DefaultValue = rule.DefaultValue ?? string.Empty,
+                            OutputPaths = rule.OutputPaths ?? new List<string>(),
+                            Source = rule.Source with
+                            {
+                                Paths = rule.Source.Paths ?? new List<string>()
+                            }
+                        })
                         .ToList()
                 })
                 .ToList()

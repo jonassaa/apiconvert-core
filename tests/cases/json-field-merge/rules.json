@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "inputFormat": "json",
+  "outputFormat": "json",
+  "fieldMappings": [
+    {
+      "outputPath": "profile.fullName",
+      "source": {
+        "type": "merge",
+        "paths": ["user.firstName", "user.lastName"],
+        "mergeMode": "concat",
+        "separator": " "
+      }
+    }
+  ],
+  "arrayMappings": []
+}

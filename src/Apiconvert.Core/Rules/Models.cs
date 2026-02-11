@@ -45,7 +45,30 @@ public enum TransformType
     /// <summary>
     /// Concatenate multiple values.
     /// </summary>
-    Concat
+    Concat,
+    /// <summary>
+    /// Split a string into tokens and return a token by index.
+    /// </summary>
+    Split
+}
+
+/// <summary>
+/// Strategies for combining multiple input values.
+/// </summary>
+public enum MergeMode
+{
+    /// <summary>
+    /// Concatenate values as text.
+    /// </summary>
+    Concat,
+    /// <summary>
+    /// Return the first non-empty value.
+    /// </summary>
+    FirstNonEmpty,
+    /// <summary>
+    /// Return all values as an array.
+    /// </summary>
+    Array
 }
 
 /// <summary>
@@ -121,6 +144,12 @@ public sealed record ValueSource
     public string? Path { get; init; }
 
     /// <summary>
+    /// Input paths for multi-source merge.
+    /// </summary>
+    [JsonPropertyName("paths")]
+    public List<string> Paths { get; init; } = new();
+
+    /// <summary>
     /// Literal value for the source type "value".
     /// </summary>
     [JsonPropertyName("value")]
@@ -149,6 +178,30 @@ public sealed record ValueSource
     /// </summary>
     [JsonPropertyName("falseValue")]
     public string? FalseValue { get; init; }
+
+    /// <summary>
+    /// Merge mode when source type is "merge".
+    /// </summary>
+    [JsonPropertyName("mergeMode")]
+    public MergeMode? MergeMode { get; init; }
+
+    /// <summary>
+    /// Delimiter used by concat merge mode and split transform.
+    /// </summary>
+    [JsonPropertyName("separator")]
+    public string? Separator { get; init; }
+
+    /// <summary>
+    /// Token index used by split transform.
+    /// </summary>
+    [JsonPropertyName("tokenIndex")]
+    public int? TokenIndex { get; init; }
+
+    /// <summary>
+    /// Trim tokens after split transform. Defaults to true when omitted.
+    /// </summary>
+    [JsonPropertyName("trimAfterSplit")]
+    public bool? TrimAfterSplit { get; init; }
 }
 
 /// <summary>
@@ -161,6 +214,12 @@ public sealed record FieldRule
     /// </summary>
     [JsonPropertyName("outputPath")]
     public string OutputPath { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Output paths for split mapping.
+    /// </summary>
+    [JsonPropertyName("outputPaths")]
+    public List<string> OutputPaths { get; init; } = new();
 
     /// <summary>
     /// Source definition for the mapped value.

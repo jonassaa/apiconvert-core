@@ -75,7 +75,8 @@ internal static class MappingExecutor
         foreach (var rule in mappings)
         {
             index++;
-            if (string.IsNullOrWhiteSpace(rule.OutputPath))
+            var writePaths = GetWritePaths(rule);
+            if (writePaths.Count == 0)
             {
                 errors.Add($"{label} {index}: output path is required.");
                 continue;
@@ -86,7 +87,11 @@ internal static class MappingExecutor
             {
                 value = ParsePrimitive(rule.DefaultValue);
             }
-            SetValueByPath(output, rule.OutputPath, value);
+
+            foreach (var writePath in writePaths)
+            {
+                SetValueByPath(output, writePath, value);
+            }
         }
     }
 
@@ -98,6 +103,8 @@ internal static class MappingExecutor
                 return ParsePrimitive(source.Value ?? string.Empty);
             case "path":
                 return ResolvePathValue(root, item, source.Path ?? string.Empty);
+            case "merge":
+                return ResolveMergeSourceValue(root, item, source);
             case "transform":
             {
                 if (source.Transform == TransformType.Concat)
@@ -119,6 +126,41 @@ internal static class MappingExecutor
                     return sb.ToString();
                 }
 
+                if (source.Transform == TransformType.Split)
+                {
+                    var splitBaseValue = ResolvePathValue(root, item, source.Path ?? string.Empty);
+                    if (splitBaseValue == null)
+                    {
+                        return null;
+                    }
+
+                    var separator = source.Separator ?? " ";
+                    if (separator.Length == 0)
+                    {
+                        return null;
+                    }
+                    var tokenIndex = source.TokenIndex ?? 0;
+                    var trimAfterSplit = source.TrimAfterSplit ?? true;
+                    var rawTokens = splitBaseValue
+                        .ToString()
+                        ?.Split(separator, StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+                    var tokens = trimAfterSplit
+                        ? rawTokens.Select(token => token.Trim()).Where(token => token.Length > 0).ToArray()
+                        : rawTokens;
+
+                    if (tokenIndex < 0)
+                    {
+                        tokenIndex = tokens.Length + tokenIndex;
+                    }
+
+                    if (tokenIndex < 0 || tokenIndex >= tokens.Length)
+                    {
+                        return null;
+                    }
+
+                    return tokens[tokenIndex];
+                }
+
                 var baseValue = ResolvePathValue(root, item, source.Path ?? string.Empty);
                 return ResolveTransform(baseValue, source.Transform ?? TransformType.ToLowerCase);
             }
@@ -135,6 +177,23 @@ internal static class MappingExecutor
             default:
                 return null;
         }
+    }
+
+    private static object? ResolveMergeSourceValue(object? root, object? item, ValueSource source)
+    {
+        var values = source.Paths
+            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .Select(path => ResolvePathValue(root, item, path))
+            .ToList();
+
+        var mode = source.MergeMode ?? MergeMode.Concat;
+
+        return mode switch
+        {
+            MergeMode.FirstNonEmpty => values.FirstOrDefault(v => v != null && (v is not string s || s.Length > 0)),
+            MergeMode.Array => values,
+            _ => string.Join(source.Separator ?? string.Empty, values.Select(v => v?.ToString() ?? string.Empty))
+        };
     }
 
     private static object? ResolvePathValue(object? root, object? item, string path)
@@ -276,6 +335,25 @@ internal static class MappingExecutor
         }
 
         return path;
+    }
+
+    private static List<string> GetWritePaths(FieldRule rule)
+    {
+        var paths = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(rule.OutputPath))
+        {
+            paths.Add(rule.OutputPath);
+        }
+
+        if (rule.OutputPaths.Count > 0)
+        {
+            paths.AddRange(rule.OutputPaths.Where(path => !string.IsNullOrWhiteSpace(path)));
+        }
+
+        return paths
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
     }
 
     private static object? ParsePrimitive(string value)

@@ -1,0 +1,27 @@
+{
+  "version": 2,
+  "inputFormat": "json",
+  "outputFormat": "json",
+  "fieldMappings": [],
+  "arrayMappings": [
+    {
+      "inputPath": "people",
+      "outputPath": "contacts",
+      "itemMappings": [
+        {
+          "outputPath": "fullName",
+          "source": {
+            "type": "merge",
+            "paths": ["first", "last"],
+            "mergeMode": "concat",
+            "separator": " "
+          }
+        },
+        {
+          "outputPath": "id",
+          "source": { "type": "path", "path": "id" }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "contacts": [
+    { "fullName": "Grace Hopper", "id": 1 },
+    { "fullName": "Katherine Johnson", "id": 2 }
+  ]
+}

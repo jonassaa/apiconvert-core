@@ -27,7 +27,11 @@
     },
     "TransformType": {
       "type": "string",
-      "enum": ["toLowerCase", "toUpperCase", "number", "boolean", "concat"]
+      "enum": ["toLowerCase", "toUpperCase", "number", "boolean", "concat", "split"]
+    },
+    "MergeMode": {
+      "type": "string",
+      "enum": ["concat", "firstNonEmpty", "array"]
     },
     "ConditionOperator": {
       "type": "string",
@@ -49,15 +53,43 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["path", "value", "transform", "condition", "constant"]
+          "enum": ["path", "value", "transform", "condition", "constant", "merge"]
         },
         "path": { "type": ["string", "null"] },
+        "paths": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
         "value": { "type": ["string", "null"] },
         "transform": { "$ref": "#/$defs/TransformType" },
         "condition": { "$ref": "#/$defs/ConditionRule" },
         "trueValue": { "type": ["string", "null"] },
-        "falseValue": { "type": ["string", "null"] }
+        "falseValue": { "type": ["string", "null"] },
+        "mergeMode": { "$ref": "#/$defs/MergeMode" },
+        "separator": { "type": ["string", "null"] },
+        "tokenIndex": { "type": ["integer", "null"] },
+        "trimAfterSplit": { "type": ["boolean", "null"] }
       },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "transform": { "const": "split" }
+            },
+            "required": ["transform"]
+          },
+          "then": {
+            "properties": {
+              "separator": {
+                "anyOf": [
+                  { "type": "null" },
+                  { "type": "string", "minLength": 1 }
+                ]
+              }
+            }
+          }
+        }
+      ],
       "required": ["type"]
     },
     "FieldRule": {
@@ -65,10 +97,22 @@
       "additionalProperties": false,
       "properties": {
         "outputPath": { "type": "string" },
+        "outputPaths": {
+          "type": ["array", "null"],
+          "items": { "type": "string" }
+        },
         "source": { "$ref": "#/$defs/ValueSource" },
         "defaultValue": { "type": ["string", "null"] }
       },
-      "required": ["outputPath", "source"]
+      "allOf": [
+        {
+          "anyOf": [
+            { "required": ["outputPath"] },
+            { "required": ["outputPaths"] }
+          ]
+        }
+      ],
+      "required": ["source"]
     },
     "ArrayRule": {
       "type": "object",

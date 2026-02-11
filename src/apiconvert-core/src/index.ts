@@ -11,7 +11,14 @@ export enum TransformType {
   ToUpperCase = "toUpperCase",
   Number = "number",
   Boolean = "boolean",
-  Concat = "concat"
+  Concat = "concat",
+  Split = "split"
+}
+
+export enum MergeMode {
+  Concat = "concat",
+  FirstNonEmpty = "firstNonEmpty",
+  Array = "array"
 }
 
 export enum ConditionOperator {
@@ -32,15 +39,21 @@ export interface ConditionRule {
 export interface ValueSource {
   type: string;
   path?: string | null;
+  paths?: string[] | null;
   value?: string | null;
   transform?: TransformType | null;
   condition?: ConditionRule | null;
   trueValue?: string | null;
   falseValue?: string | null;
+  mergeMode?: MergeMode | null;
+  separator?: string | null;
+  tokenIndex?: number | null;
+  trimAfterSplit?: boolean | null;
 }
 
 export interface FieldRule {
-  outputPath: string;
+  outputPath?: string;
+  outputPaths?: string[] | null;
   source: ValueSource;
   defaultValue?: string | null;
 }
@@ -243,6 +256,7 @@ function normalizeRules(rules: ConversionRules): ConversionRules {
     outputFormat: rules.outputFormat ?? DataFormat.Json,
     fieldMappings: (rules.fieldMappings ?? []).map((rule) => ({
       outputPath: rule.outputPath,
+      outputPaths: rule.outputPaths ?? [],
       source: rule.source ?? { type: "path" },
       defaultValue: rule.defaultValue ?? ""
     })),
@@ -252,6 +266,7 @@ function normalizeRules(rules: ConversionRules): ConversionRules {
       coerceSingle: mapping.coerceSingle ?? false,
       itemMappings: (mapping.itemMappings ?? []).map((rule) => ({
         outputPath: rule.outputPath,
+        outputPaths: rule.outputPaths ?? [],
         source: rule.source ?? { type: "path" },
         defaultValue: rule.defaultValue ?? ""
       }))
@@ -326,7 +341,8 @@ function applyFieldMappings(
   label: string
 ): void {
   mappings.forEach((rule, index) => {
-    if (!rule.outputPath || rule.outputPath.trim().length === 0) {
+    const writePaths = getWritePaths(rule);
+    if (writePaths.length === 0) {
       errors.push(`${label} ${index + 1}: output path is required.`);
       return;
     }
@@ -335,7 +351,9 @@ function applyFieldMappings(
     if ((value == null || value === "") && rule.defaultValue) {
       value = parsePrimitive(rule.defaultValue);
     }
-    setValueByPath(output, rule.outputPath, value);
+    writePaths.forEach((writePath) => {
+      setValueByPath(output, writePath, value);
+    });
   });
 }
 
@@ -345,6 +363,8 @@ function resolveSourceValue(root: unknown, item: unknown, source: ValueSource): 
       return parsePrimitive(source.value ?? "");
     case "path":
       return resolvePathValue(root, item, source.path ?? "");
+    case "merge":
+      return resolveMergeSourceValue(root, item, source);
     case "transform": {
       if (source.transform === TransformType.Concat) {
         const tokens = (source.path ?? "")
@@ -363,6 +383,32 @@ function resolveSourceValue(root: unknown, item: unknown, source: ValueSource): 
         return result;
       }
 
+      if (source.transform === TransformType.Split) {
+        const baseValue = resolvePathValue(root, item, source.path ?? "");
+        if (baseValue == null) {
+          return null;
+        }
+
+        const separator = source.separator ?? " ";
+        if (separator.length === 0) {
+          return null;
+        }
+        let tokenIndex = source.tokenIndex ?? 0;
+        const trimAfterSplit = source.trimAfterSplit ?? true;
+        const rawTokens = String(baseValue).split(separator).filter((token) => token.length > 0);
+        const tokens = trimAfterSplit
+          ? rawTokens.map((token) => token.trim()).filter((token) => token.length > 0)
+          : rawTokens;
+        if (tokenIndex < 0) {
+          tokenIndex = tokens.length + tokenIndex;
+        }
+        if (tokenIndex < 0 || tokenIndex >= tokens.length) {
+          return null;
+        }
+
+        return tokens[tokenIndex];
+      }
+
       const baseValue = resolvePathValue(root, item, source.path ?? "");
       return resolveTransform(baseValue, source.transform ?? TransformType.ToLowerCase);
     }
@@ -376,6 +422,22 @@ function resolveSourceValue(root: unknown, item: unknown, source: ValueSource): 
     }
     default:
       return null;
+  }
+}
+
+function resolveMergeSourceValue(root: unknown, item: unknown, source: ValueSource): unknown {
+  const values = (source.paths ?? [])
+    .filter((path) => !!path && path.trim().length > 0)
+    .map((path) => resolvePathValue(root, item, path));
+
+  const mode = source.mergeMode ?? MergeMode.Concat;
+  switch (mode) {
+    case MergeMode.FirstNonEmpty:
+      return values.find((value) => value != null && (typeof value !== "string" || value.length > 0)) ?? null;
+    case MergeMode.Array:
+      return values;
+    default:
+      return values.map((value) => (value == null ? "" : String(value))).join(source.separator ?? "");
   }
 }
 
@@ -507,6 +569,22 @@ function normalizeWritePath(path: string): string {
   }
 
   return path;
+}
+
+function getWritePaths(rule: FieldRule): string[] {
+  const paths: string[] = [];
+
+  if (rule.outputPath && rule.outputPath.trim().length > 0) {
+    paths.push(rule.outputPath);
+  }
+
+  (rule.outputPaths ?? []).forEach((path) => {
+    if (path && path.trim().length > 0) {
+      paths.push(path);
+    }
+  });
+
+  return Array.from(new Set(paths));
 }
 
 function parsePrimitive(value: string): unknown {

@@ -8,7 +8,7 @@ This README is a comprehensive guide to the conversion engine, rule capabilities
 
 - Parse and format `json`, `xml`, and `query` payloads.
 - Map scalar fields and arrays using a declarative rule model.
-- Built-in transforms: lowercase, uppercase, number, boolean, concat.
+- Built-in transforms: lowercase, uppercase, number, boolean, concat, split.
 - Conditional value selection with comparison operators.
 - Consistent rule schema shared across .NET and TypeScript.
 
@@ -207,6 +207,17 @@ A `ValueSource` describes where a field value comes from.
 }
 ```
 
+### `merge`
+
+```json
+{
+  "type": "merge",
+  "paths": ["user.firstName", "user.lastName"],
+  "mergeMode": "concat",
+  "separator": " "
+}
+```
+
 ## Transforms
 
 Supported `transform` values:
@@ -216,6 +227,7 @@ Supported `transform` values:
 - `number`
 - `boolean`
 - `concat`
+- `split`
 
 `concat` uses a comma-separated list of tokens in `path`. Tokens are either input paths or string literals prefixed with `const:`.
 
@@ -224,6 +236,23 @@ Supported `transform` values:
   "type": "transform",
   "transform": "concat",
   "path": "user.firstName, const: , user.lastName"
+}
+```
+
+`split` tokenizes a string from `path` using `separator` and returns one token by `tokenIndex`.
+
+- `tokenIndex` supports negative indexes (`-1` = last token).
+- `trimAfterSplit` defaults to `true` (tokens are trimmed).
+- Set `trimAfterSplit` to `false` to preserve whitespace around tokens.
+- Empty string separators are invalid for `split`.
+
+```json
+{
+  "type": "transform",
+  "transform": "split",
+  "path": "name",
+  "separator": " ",
+  "tokenIndex": -1
 }
 ```
 
@@ -260,6 +289,115 @@ Notes:
 
 - `itemMappings` are resolved relative to the current array item by default.
 - `coerceSingle` treats a non-array value as a single-item array.
+
+## Split And Merge Examples
+
+### Split copy (one source value to multiple outputs)
+
+```json
+{
+  "version": 2,
+  "inputFormat": "json",
+  "outputFormat": "json",
+  "fieldMappings": [
+    {
+      "outputPaths": ["profile.name", "profile.displayName"],
+      "source": { "type": "path", "path": "user.name" }
+    }
+  ],
+  "arrayMappings": []
+}
+```
+
+### Merge (multiple sources to one output)
+
+```json
+{
+  "version": 2,
+  "inputFormat": "json",
+  "outputFormat": "json",
+  "fieldMappings": [
+    {
+      "outputPath": "profile.fullName",
+      "source": {
+        "type": "merge",
+        "paths": ["user.firstName", "user.lastName"],
+        "mergeMode": "concat",
+        "separator": " "
+      }
+    }
+  ],
+  "arrayMappings": []
+}
+```
+
+### Name parsing with split (first + last token)
+
+```json
+{
+  "version": 2,
+  "inputFormat": "json",
+  "outputFormat": "json",
+  "fieldMappings": [
+    {
+      "outputPath": "firstName",
+      "source": {
+        "type": "transform",
+        "transform": "split",
+        "path": "name",
+        "separator": " ",
+        "tokenIndex": 0
+      }
+    },
+    {
+      "outputPath": "lastName",
+      "source": {
+        "type": "transform",
+        "transform": "split",
+        "path": "name",
+        "separator": " ",
+        "tokenIndex": -1
+      }
+    }
+  ],
+  "arrayMappings": []
+}
+```
+
+### Comma split with trim disabled
+
+```json
+{
+  "version": 2,
+  "inputFormat": "json",
+  "outputFormat": "json",
+  "fieldMappings": [
+    {
+      "outputPath": "firstName",
+      "source": {
+        "type": "transform",
+        "transform": "split",
+        "path": "name",
+        "separator": ",",
+        "tokenIndex": 0,
+        "trimAfterSplit": false
+      }
+    },
+    {
+      "outputPath": "lastName",
+      "source": {
+        "type": "transform",
+        "transform": "split",
+        "path": "name",
+        "separator": ",",
+        "tokenIndex": -1,
+        "trimAfterSplit": false
+      }
+    }
+  ],
+  "arrayMappings": []
+}
+```
 
 ## Error Handling & Validation
 

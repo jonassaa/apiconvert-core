@@ -1,0 +1,14 @@
+{
+  "lines": [
+    {
+      "code": "A-100",
+      "identifiers": { "sku": "A-100" },
+      "quantity": 2
+    },
+    {
+      "code": "B-200",
+      "identifiers": { "sku": "B-200" },
+      "quantity": 3
+    }
+  ]
+}

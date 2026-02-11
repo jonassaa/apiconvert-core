@@ -1,0 +1,6 @@
+{
+  "contacts": [
+    { "firstName": "Jonas", "lastName": " Aasberg" },
+    { "firstName": "Ada", "lastName": " Lovelace" }
+  ]
+}
