@@ -89,6 +89,7 @@ export interface LegacyMappingConfig {
 export interface ConversionResult {
   output?: unknown;
   errors: string[];
+  warnings: string[];
 }
 
 export interface ConversionRulesGenerationRequest {
@@ -137,11 +138,12 @@ export function applyConversion(input: unknown, rawRules: unknown): ConversionRe
   const arrayMappings = rules.arrayMappings ?? [];
 
   if (fieldMappings.length === 0 && arrayMappings.length === 0) {
-    return { output: input ?? {}, errors: [] };
+    return { output: input ?? {}, errors: [], warnings: [] };
   }
 
   const output: Record<string, unknown> = {};
   const errors: string[] = [];
+  const warnings: string[] = [];
 
   applyFieldMappings(input, null, fieldMappings, output, errors, "Field");
 
@@ -153,9 +155,15 @@ export function applyConversion(input: unknown, rawRules: unknown): ConversionRe
     }
 
     if (!items) {
-      errors.push(
-        `Array ${index + 1}: input path did not resolve to an array (${arrayRule.inputPath}).`
-      );
+      if (value == null) {
+        warnings.push(
+          `Array mapping skipped: inputPath "${arrayRule.inputPath}" not found (arrayMappings[${index}]).`
+        );
+      } else {
+        errors.push(
+          `Array ${index + 1}: input path did not resolve to an array (${arrayRule.inputPath}).`
+        );
+      }
       return;
     }
 
@@ -180,7 +188,7 @@ export function applyConversion(input: unknown, rawRules: unknown): ConversionRe
     setValueByPath(output, outputPath, mappedItems);
   });
 
-  return { output, errors };
+  return { output, errors, warnings };
 }
 
 export function parsePayload(text: string, format: DataFormat): { value: unknown; error?: string } {

@@ -362,4 +362,9 @@ public sealed record ConversionResult
     /// Errors encountered during conversion.
     /// </summary>
     public List<string> Errors { get; init; } = new();
+
+    /// <summary>
+    /// Non-fatal warnings encountered during conversion.
+    /// </summary>
+    public List<string> Warnings { get; init; } = new();
 }

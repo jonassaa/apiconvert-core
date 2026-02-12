@@ -12,11 +12,17 @@ internal static class MappingExecutor
         var rules = RulesNormalizer.NormalizeConversionRules(rawRules);
         if (!rules.FieldMappings.Any() && !rules.ArrayMappings.Any())
         {
-            return new ConversionResult { Output = input ?? new Dictionary<string, object?>(), Errors = new List<string>() };
+            return new ConversionResult
+            {
+                Output = input ?? new Dictionary<string, object?>(),
+                Errors = new List<string>(),
+                Warnings = new List<string>()
+            };
         }
 
         var output = new Dictionary<string, object?>();
         var errors = new List<string>();
+        var warnings = new List<string>();
 
         ApplyFieldMappings(input, null, rules.FieldMappings, output, errors, "Field");
 
@@ -32,7 +38,15 @@ internal static class MappingExecutor
 
             if (items == null)
             {
-                errors.Add($"Array {index + 1}: input path did not resolve to an array ({arrayRule.InputPath}).");
+                if (value == null)
+                {
+                    warnings.Add(
+                        $"Array mapping skipped: inputPath \"{arrayRule.InputPath}\" not found (arrayMappings[{index}]).");
+                }
+                else
+                {
+                    errors.Add($"Array {index + 1}: input path did not resolve to an array ({arrayRule.InputPath}).");
+                }
                 continue;
             }
 
@@ -60,7 +74,7 @@ internal static class MappingExecutor
             SetValueByPath(output, outputPath, mappedItems);
         }
 
-        return new ConversionResult { Output = output, Errors = errors };
+        return new ConversionResult { Output = output, Errors = errors, Warnings = warnings };
     }
 
     private static void ApplyFieldMappings(

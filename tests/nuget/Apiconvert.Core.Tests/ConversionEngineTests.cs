@@ -246,6 +246,55 @@ public sealed class ConversionEngineTests
         var result = ConversionEngine.ApplyConversion(input, rules);
 
         Assert.NotEmpty(result.Errors);
+        Assert.Empty(result.Warnings);
+    }
+
+    [Fact]
+    public void ApplyConversion_MissingArrayPath_AddsWarningAndSkipsArrayMapping()
+    {
+        var input = new Dictionary<string, object?>
+        {
+            ["name"] = "Ada"
+        };
+
+        var rules = new ConversionRules
+        {
+            FieldMappings = new List<FieldRule>
+            {
+                new()
+                {
+                    OutputPath = "user.name",
+                    Source = new ValueSource { Type = "path", Path = "name" }
+                }
+            },
+            ArrayMappings = new List<ArrayRule>
+            {
+                new()
+                {
+                    InputPath = "items",
+                    OutputPath = "lines",
+                    ItemMappings = new List<FieldRule>
+                    {
+                        new()
+                        {
+                            OutputPath = "id",
+                            Source = new ValueSource { Type = "path", Path = "id" }
+                        }
+                    }
+                }
+            }
+        };
+
+        var result = ConversionEngine.ApplyConversion(input, rules);
+
+        Assert.Empty(result.Errors);
+        Assert.Single(result.Warnings);
+        Assert.Contains("Array mapping skipped: inputPath \"items\" not found (arrayMappings[0]).", result.Warnings[0]);
+
+        var output = Assert.IsType<Dictionary<string, object?>>(result.Output);
+        var user = Assert.IsType<Dictionary<string, object?>>(output["user"]);
+        Assert.Equal("Ada", user["name"]);
+        Assert.False(output.ContainsKey("lines"));
     }
 
     [Fact]
