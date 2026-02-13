@@ -77,83 +77,97 @@ internal static class RulesNormalizer
                 continue;
             }
 
-            if (kind == "field")
+            switch (kind)
             {
-                var outputPaths = NormalizeOutputPaths(node.OutputPaths);
-                if (outputPaths.Count == 0)
-                {
-                    validationErrors.Add($"{nodePath}: outputPaths is required.");
-                }
-
-                normalized.Add(node with
-                {
-                    Kind = kind,
-                    OutputPaths = outputPaths,
-                    Source = NormalizeValueSource(node.Source ?? new ValueSource()),
-                    DefaultValue = node.DefaultValue ?? string.Empty
-                });
-                continue;
+                case "field":
+                    normalized.Add(NormalizeFieldNode(node, nodePath, validationErrors));
+                    break;
+                case "array":
+                    normalized.Add(NormalizeArrayNode(node, nodePath, validationErrors));
+                    break;
+                default:
+                    normalized.Add(NormalizeBranchNode(node, nodePath, validationErrors));
+                    break;
             }
-
-            if (kind == "array")
-            {
-                var outputPaths = NormalizeOutputPaths(node.OutputPaths);
-                if (string.IsNullOrWhiteSpace(node.InputPath))
-                {
-                    validationErrors.Add($"{nodePath}: inputPath is required.");
-                }
-
-                if (outputPaths.Count == 0)
-                {
-                    validationErrors.Add($"{nodePath}: outputPaths is required.");
-                }
-
-                normalized.Add(node with
-                {
-                    Kind = kind,
-                    InputPath = node.InputPath?.Trim() ?? string.Empty,
-                    OutputPaths = outputPaths,
-                    ItemRules = NormalizeRuleNodes(node.ItemRules ?? new List<RuleNode>(), $"{nodePath}.itemRules", validationErrors)
-                });
-                continue;
-            }
-
-            var expression = NormalizeExpression(node.Expression);
-            if (expression == null)
-            {
-                validationErrors.Add($"{nodePath}: expression is required.");
-            }
-
-            var elseIf = new List<BranchElseIfRule>();
-            var elseIfRules = node.ElseIf ?? new List<BranchElseIfRule>();
-            for (var elseIfIndex = 0; elseIfIndex < elseIfRules.Count; elseIfIndex++)
-            {
-                var branch = elseIfRules[elseIfIndex] ?? new BranchElseIfRule();
-                var branchPath = $"{nodePath}.elseIf[{elseIfIndex}]";
-                var branchExpression = NormalizeExpression(branch.Expression);
-                if (branchExpression == null)
-                {
-                    validationErrors.Add($"{branchPath}: expression is required.");
-                }
-
-                elseIf.Add(branch with
-                {
-                    Expression = branchExpression,
-                    Then = NormalizeRuleNodes(branch.Then ?? new List<RuleNode>(), $"{branchPath}.then", validationErrors)
-                });
-            }
-
-            normalized.Add(node with
-            {
-                Kind = kind,
-                Expression = expression,
-                Then = NormalizeRuleNodes(node.Then ?? new List<RuleNode>(), $"{nodePath}.then", validationErrors),
-                ElseIf = elseIf,
-                Else = NormalizeRuleNodes(node.Else ?? new List<RuleNode>(), $"{nodePath}.else", validationErrors)
-            });
         }
 
         return normalized;
+    }
+
+    private static RuleNode NormalizeFieldNode(RuleNode node, string nodePath, List<string> validationErrors)
+    {
+        var outputPaths = NormalizeOutputPaths(node.OutputPaths);
+        if (outputPaths.Count == 0)
+        {
+            validationErrors.Add($"{nodePath}: outputPaths is required.");
+        }
+
+        return node with
+        {
+            Kind = "field",
+            OutputPaths = outputPaths,
+            Source = NormalizeValueSource(node.Source ?? new ValueSource()),
+            DefaultValue = node.DefaultValue ?? string.Empty
+        };
+    }
+
+    private static RuleNode NormalizeArrayNode(RuleNode node, string nodePath, List<string> validationErrors)
+    {
+        var outputPaths = NormalizeOutputPaths(node.OutputPaths);
+        if (string.IsNullOrWhiteSpace(node.InputPath))
+        {
+            validationErrors.Add($"{nodePath}: inputPath is required.");
+        }
+
+        if (outputPaths.Count == 0)
+        {
+            validationErrors.Add($"{nodePath}: outputPaths is required.");
+        }
+
+        return node with
+        {
+            Kind = "array",
+            InputPath = node.InputPath?.Trim() ?? string.Empty,
+            OutputPaths = outputPaths,
+            ItemRules = NormalizeRuleNodes(node.ItemRules ?? new List<RuleNode>(), $"{nodePath}.itemRules", validationErrors)
+        };
+    }
+
+    private static RuleNode NormalizeBranchNode(RuleNode node, string nodePath, List<string> validationErrors)
+    {
+        var expression = NormalizeExpression(node.Expression);
+        if (expression == null)
+        {
+            validationErrors.Add($"{nodePath}: expression is required.");
+        }
+
+        var elseIf = new List<BranchElseIfRule>();
+        var elseIfRules = node.ElseIf ?? new List<BranchElseIfRule>();
+        for (var elseIfIndex = 0; elseIfIndex < elseIfRules.Count; elseIfIndex++)
+        {
+            var branch = elseIfRules[elseIfIndex] ?? new BranchElseIfRule();
+            var branchPath = $"{nodePath}.elseIf[{elseIfIndex}]";
+            var branchExpression = NormalizeExpression(branch.Expression);
+            if (branchExpression == null)
+            {
+                validationErrors.Add($"{branchPath}: expression is required.");
+            }
+
+            elseIf.Add(branch with
+            {
+                Expression = branchExpression,
+                Then = NormalizeRuleNodes(branch.Then ?? new List<RuleNode>(), $"{branchPath}.then", validationErrors)
+            });
+        }
+
+        return node with
+        {
+            Kind = "branch",
+            Expression = expression,
+            Then = NormalizeRuleNodes(node.Then ?? new List<RuleNode>(), $"{nodePath}.then", validationErrors),
+            ElseIf = elseIf,
+            Else = NormalizeRuleNodes(node.Else ?? new List<RuleNode>(), $"{nodePath}.else", validationErrors)
+        };
     }
 
     private static List<string> NormalizeOutputPaths(IEnumerable<string>? paths)
