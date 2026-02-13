@@ -48,3 +48,9 @@ This repo hosts the shared core for Apiconvert, shipping both a .NET library (Nu
 ## Configuration & Security Notes
 - The package metadata is defined in `src/Apiconvert.Core/Apiconvert.Core.csproj`.
 - License metadata is set to `LicenseRef-Proprietary`; confirm before publishing.
+
+## Skills
+A skill is a set of local instructions to follow that is stored in a `SKILL.md` file.
+
+### Available skills
+- `apiconvert-feature-delivery`: Plan, implement, test, and review new Apiconvert features across both runtimes with parity checks and deterministic test coverage. (file: `skills/apiconvert-feature-delivery/SKILL.md`)

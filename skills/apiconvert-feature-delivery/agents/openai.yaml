@@ -1,0 +1,4 @@
+interface:
+  display_name: "Apiconvert Feature Delivery"
+  short_description: "Plan, implement, test, and review cross-runtime features"
+  default_prompt: "Implement an Apiconvert feature end-to-end across .NET and TypeScript with matching tests and review checks."
