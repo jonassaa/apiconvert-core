@@ -32,6 +32,20 @@
       "type": "string",
       "enum": ["concat", "firstNonEmpty", "array"]
     },
+    "ConditionOutputMode": {
+      "type": "string",
+      "enum": ["branch", "match"]
+    },
+    "ConditionElseIfBranch": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "expression": { "type": ["string", "null"] },
+        "source": { "$ref": "#/$defs/ValueSource" },
+        "value": { "type": ["string", "null"] }
+      },
+      "required": ["expression"]
+    },
     "ValueSource": {
       "type": "object",
       "additionalProperties": false,
@@ -50,6 +64,13 @@
         "expression": { "type": ["string", "null"] },
         "trueValue": { "type": ["string", "null"] },
         "falseValue": { "type": ["string", "null"] },
+        "trueSource": { "$ref": "#/$defs/ValueSource" },
+        "falseSource": { "$ref": "#/$defs/ValueSource" },
+        "elseIf": {
+          "type": ["array", "null"],
+          "items": { "$ref": "#/$defs/ConditionElseIfBranch" }
+        },
+        "conditionOutput": { "$ref": "#/$defs/ConditionOutputMode" },
         "mergeMode": { "$ref": "#/$defs/MergeMode" },
         "separator": { "type": ["string", "null"] },
         "tokenIndex": { "type": ["integer", "null"] },

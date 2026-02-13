@@ -55,11 +55,7 @@ internal static class RulesNormalizer
                 {
                     DefaultValue = rule.DefaultValue ?? string.Empty,
                     OutputPaths = rule.OutputPaths ?? new List<string>(),
-                    Source = rule.Source with
-                    {
-                        Paths = rule.Source.Paths ?? new List<string>(),
-                        Expression = NormalizeExpression(rule.Source.Expression)
-                    }
+                    Source = NormalizeValueSource(rule.Source)
                 })
                 .ToList(),
             ArrayMappings = rules.ArrayMappings
@@ -72,11 +68,7 @@ internal static class RulesNormalizer
                         {
                             DefaultValue = rule.DefaultValue ?? string.Empty,
                             OutputPaths = rule.OutputPaths ?? new List<string>(),
-                            Source = rule.Source with
-                            {
-                                Paths = rule.Source.Paths ?? new List<string>(),
-                                Expression = NormalizeExpression(rule.Source.Expression)
-                            }
+                            Source = NormalizeValueSource(rule.Source)
                         })
                         .ToList()
                 })
@@ -141,5 +133,23 @@ internal static class RulesNormalizer
         }
 
         return expression.Trim();
+    }
+
+    private static ValueSource NormalizeValueSource(ValueSource source)
+    {
+        return source with
+        {
+            Paths = source.Paths ?? new List<string>(),
+            Expression = NormalizeExpression(source.Expression),
+            TrueSource = source.TrueSource is null ? null : NormalizeValueSource(source.TrueSource),
+            FalseSource = source.FalseSource is null ? null : NormalizeValueSource(source.FalseSource),
+            ElseIf = (source.ElseIf ?? new List<ConditionElseIfBranch>())
+                .Select(branch => branch with
+                {
+                    Expression = NormalizeExpression(branch.Expression),
+                    Source = branch.Source is null ? null : NormalizeValueSource(branch.Source)
+                })
+                .ToList()
+        };
     }
 }

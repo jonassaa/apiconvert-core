@@ -135,6 +135,35 @@ const rules = normalizeConversionRules({
 });
 ```
 
+`condition` sources also support chaining:
+- `trueSource` / `falseSource` for nested source resolution.
+- `elseIf` for ordered fallback condition checks.
+- `conditionOutput: "match"` to output the boolean match result directly.
+
+```ts
+const chainedRules = normalizeConversionRules({
+  version: 2,
+  inputFormat: DataFormat.Json,
+  outputFormat: DataFormat.Json,
+  fieldMappings: [
+    {
+      outputPath: "grade",
+      source: {
+        type: "condition",
+        expression: "path(score) >= 90",
+        trueSource: { type: "constant", value: "A" },
+        elseIf: [
+          { expression: "path(score) >= 80", value: "B" },
+          { expression: "path(score) >= 70", source: { type: "constant", value: "C" } }
+        ],
+        falseValue: "F"
+      }
+    }
+  ],
+  arrayMappings: []
+});
+```
+
 Input:
 
 ```json

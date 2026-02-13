@@ -7,6 +7,8 @@ namespace Apiconvert.Core.Converters;
 
 internal static class MappingExecutor
 {
+    private const int MaxConditionBranchDepth = 32;
+
     internal static ConversionResult ApplyConversion(object? input, object? rawRules)
     {
         var rules = RulesNormalizer.NormalizeConversionRules(rawRules);
@@ -111,8 +113,15 @@ internal static class MappingExecutor
         object? item,
         ValueSource source,
         List<string> errors,
-        string errorContext)
+        string errorContext,
+        int depth = 0)
     {
+        if (depth > MaxConditionBranchDepth)
+        {
+            errors.Add($"{errorContext}: condition/source recursion limit exceeded.");
+            return null;
+        }
+
         switch (source.Type)
         {
             case "constant":
@@ -182,26 +191,114 @@ internal static class MappingExecutor
             }
             case "condition":
             {
-                if (string.IsNullOrWhiteSpace(source.Expression))
-                {
-                    errors.Add($"{errorContext}: condition expression is required.");
-                    var missingResolved = source.FalseValue;
-                    return ParsePrimitive(missingResolved ?? string.Empty);
-                }
-
-                var evaluation = TryEvaluateConditionExpression(root, item, source.Expression!, out var matched, out var error);
-                if (!evaluation)
-                {
-                    errors.Add($"{errorContext}: invalid condition expression \"{source.Expression}\": {error}");
-                    matched = false;
-                }
-
-                var resolved = matched ? source.TrueValue : source.FalseValue;
-                return ParsePrimitive(resolved ?? string.Empty);
+                return ResolveConditionSourceValue(root, item, source, errors, errorContext, depth);
             }
             default:
                 return null;
         }
+    }
+
+    private static object? ResolveConditionSourceValue(
+        object? root,
+        object? item,
+        ValueSource source,
+        List<string> errors,
+        string errorContext,
+        int depth)
+    {
+        var matched = EvaluateCondition(root, item, source.Expression, errors, errorContext, "condition expression");
+
+        if (source.ConditionOutput == ConditionOutputMode.Match)
+        {
+            return matched;
+        }
+
+        if (matched)
+        {
+            return ResolveConditionBranchValue(
+                root,
+                item,
+                source.TrueSource,
+                source.TrueValue,
+                errors,
+                $"{errorContext} true branch",
+                depth);
+        }
+
+        for (var index = 0; index < source.ElseIf.Count; index++)
+        {
+            var branch = source.ElseIf[index];
+            var branchMatched = EvaluateCondition(
+                root,
+                item,
+                branch.Expression,
+                errors,
+                $"{errorContext} elseIf[{index}]",
+                "elseIf expression");
+            if (!branchMatched)
+            {
+                continue;
+            }
+
+            return ResolveConditionBranchValue(
+                root,
+                item,
+                branch.Source,
+                branch.Value,
+                errors,
+                $"{errorContext} elseIf[{index}] branch",
+                depth);
+        }
+
+        return ResolveConditionBranchValue(
+            root,
+            item,
+            source.FalseSource,
+            source.FalseValue,
+            errors,
+            $"{errorContext} false branch",
+            depth);
+    }
+
+    private static bool EvaluateCondition(
+        object? root,
+        object? item,
+        string? expression,
+        List<string> errors,
+        string errorContext,
+        string label)
+    {
+        if (string.IsNullOrWhiteSpace(expression))
+        {
+            errors.Add($"{errorContext}: {label} is required.");
+            return false;
+        }
+
+        var evaluation = TryEvaluateConditionExpression(root, item, expression, out var matched, out var error);
+        if (!evaluation)
+        {
+            errors.Add($"{errorContext}: invalid {label} \"{expression}\": {error}");
+            return false;
+        }
+
+        return matched;
+    }
+
+    private static object? ResolveConditionBranchValue(
+        object? root,
+        object? item,
+        ValueSource? branchSource,
+        string? branchValue,
+        List<string> errors,
+        string errorContext,
+        int depth)
+    {
+        if (branchSource != null)
+        {
+            return ResolveSourceValue(root, item, branchSource, errors, errorContext, depth + 1);
+        }
+
+        return ParsePrimitive(branchValue ?? string.Empty);
     }
 
     private static object? ResolveMergeSourceValue(object? root, object? item, ValueSource source)

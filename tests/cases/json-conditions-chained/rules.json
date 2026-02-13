@@ -1,0 +1,43 @@
+{
+  "version": 2,
+  "inputFormat": "json",
+  "outputFormat": "json",
+  "fieldMappings": [
+    {
+      "outputPath": "grade",
+      "source": {
+        "type": "condition",
+        "expression": "path(score) >= 90",
+        "trueSource": { "type": "constant", "value": "A" },
+        "elseIf": [
+          { "expression": "path(score) >= 80", "value": "B" },
+          { "expression": "path(score) >= 70", "source": { "type": "constant", "value": "C" } }
+        ],
+        "falseSource": { "type": "constant", "value": "F" }
+      }
+    },
+    {
+      "outputPath": "status",
+      "source": {
+        "type": "condition",
+        "expression": "path(meta.state) == 'ok'",
+        "trueSource": { "type": "constant", "value": "green" },
+        "falseSource": {
+          "type": "condition",
+          "expression": "path(meta.state) == 'warn'",
+          "trueSource": { "type": "constant", "value": "yellow" },
+          "falseValue": "red"
+        }
+      }
+    },
+    {
+      "outputPath": "isEnabled",
+      "source": {
+        "type": "condition",
+        "expression": "path(flags.enabled) == true",
+        "conditionOutput": "match"
+      }
+    }
+  ],
+  "arrayMappings": []
+}

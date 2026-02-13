@@ -305,6 +305,34 @@ var rules = new ConversionRules
 };
 ```
 
+`condition` sources also support chaining:
+- `trueSource` / `falseSource` for nested source resolution.
+- `elseIf` for ordered fallback condition checks.
+- `conditionOutput = Match` to output the boolean match result directly.
+
+```csharp
+new FieldRule
+{
+    OutputPath = "grade",
+    Source = new ValueSource
+    {
+        Type = "condition",
+        Expression = "path(score) >= 90",
+        TrueSource = new ValueSource { Type = "constant", Value = "A" },
+        ElseIf = new()
+        {
+            new ConditionElseIfBranch { Expression = "path(score) >= 80", Value = "B" },
+            new ConditionElseIfBranch
+            {
+                Expression = "path(score) >= 70",
+                Source = new ValueSource { Type = "constant", Value = "C" }
+            }
+        },
+        FalseValue = "F"
+    }
+}
+```
+
 Condition expressions support:
 - Value lookups with `path(...)` (including root lookups like `path($.meta.source)`).
 - `exists(...)`.

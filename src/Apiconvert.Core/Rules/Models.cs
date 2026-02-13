@@ -72,6 +72,45 @@ public enum MergeMode
 }
 
 /// <summary>
+/// Output behavior for condition sources.
+/// </summary>
+public enum ConditionOutputMode
+{
+    /// <summary>
+    /// Return the selected branch value.
+    /// </summary>
+    Branch,
+    /// <summary>
+    /// Return the boolean expression match result.
+    /// </summary>
+    Match
+}
+
+/// <summary>
+/// Else-if branch for condition sources.
+/// </summary>
+public sealed record ConditionElseIfBranch
+{
+    /// <summary>
+    /// Condition expression for this else-if branch.
+    /// </summary>
+    [JsonPropertyName("expression")]
+    public string? Expression { get; init; }
+
+    /// <summary>
+    /// Nested source used when this else-if matches.
+    /// </summary>
+    [JsonPropertyName("source")]
+    public ValueSource? Source { get; init; }
+
+    /// <summary>
+    /// Legacy literal used when this else-if matches.
+    /// </summary>
+    [JsonPropertyName("value")]
+    public string? Value { get; init; }
+}
+
+/// <summary>
 /// Describes where a field value is sourced from.
 /// </summary>
 public sealed record ValueSource
@@ -123,6 +162,30 @@ public sealed record ValueSource
     /// </summary>
     [JsonPropertyName("falseValue")]
     public string? FalseValue { get; init; }
+
+    /// <summary>
+    /// Source used when the condition is true.
+    /// </summary>
+    [JsonPropertyName("trueSource")]
+    public ValueSource? TrueSource { get; init; }
+
+    /// <summary>
+    /// Source used when the condition is false.
+    /// </summary>
+    [JsonPropertyName("falseSource")]
+    public ValueSource? FalseSource { get; init; }
+
+    /// <summary>
+    /// Else-if branches evaluated when the primary expression is false.
+    /// </summary>
+    [JsonPropertyName("elseIf")]
+    public List<ConditionElseIfBranch> ElseIf { get; init; } = new();
+
+    /// <summary>
+    /// Output behavior for condition sources.
+    /// </summary>
+    [JsonPropertyName("conditionOutput")]
+    public ConditionOutputMode? ConditionOutput { get; init; }
 
     /// <summary>
     /// Merge mode when source type is "merge".

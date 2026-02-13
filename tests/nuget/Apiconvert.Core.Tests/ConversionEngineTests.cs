@@ -1542,6 +1542,139 @@ public sealed class ConversionEngineTests
     }
 
     [Fact]
+    public void ApplyConversion_ConditionSupportsNestedSourcesAndElseIfChain()
+    {
+        var input = new Dictionary<string, object?>
+        {
+            ["score"] = 72d,
+            ["profile"] = new Dictionary<string, object?> { ["level"] = "silver" }
+        };
+
+        var rules = new ConversionRules
+        {
+            FieldMappings = new List<FieldRule>
+            {
+                new()
+                {
+                    OutputPath = "grade",
+                    Source = new ValueSource
+                    {
+                        Type = "condition",
+                        Expression = "path(score) >= 90",
+                        TrueSource = new ValueSource { Type = "constant", Value = "A" },
+                        ElseIf = new List<ConditionElseIfBranch>
+                        {
+                            new()
+                            {
+                                Expression = "path(score) >= 80",
+                                Value = "B"
+                            },
+                            new()
+                            {
+                                Expression = "path(score) >= 70",
+                                Source = new ValueSource { Type = "constant", Value = "C" }
+                            }
+                        },
+                        FalseSource = new ValueSource { Type = "constant", Value = "F" }
+                    }
+                },
+                new()
+                {
+                    OutputPath = "tier",
+                    Source = new ValueSource
+                    {
+                        Type = "condition",
+                        Expression = "path(profile.level) == 'gold'",
+                        TrueSource = new ValueSource { Type = "constant", Value = "priority" },
+                        FalseSource = new ValueSource
+                        {
+                            Type = "condition",
+                            Expression = "path(profile.level) == 'silver'",
+                            TrueSource = new ValueSource { Type = "constant", Value = "standard" },
+                            FalseValue = "basic"
+                        }
+                    }
+                }
+            }
+        };
+
+        var result = ConversionEngine.ApplyConversion(input, rules);
+        var output = Assert.IsType<Dictionary<string, object?>>(result.Output);
+
+        Assert.Empty(result.Errors);
+        Assert.Equal("C", output["grade"]);
+        Assert.Equal("standard", output["tier"]);
+    }
+
+    [Fact]
+    public void ApplyConversion_ConditionOutputModeMatchReturnsBoolean()
+    {
+        var input = new Dictionary<string, object?> { ["count"] = 5d };
+        var rules = new ConversionRules
+        {
+            FieldMappings = new List<FieldRule>
+            {
+                new()
+                {
+                    OutputPath = "isLarge",
+                    Source = new ValueSource
+                    {
+                        Type = "condition",
+                        Expression = "path(count) > 3",
+                        ConditionOutput = ConditionOutputMode.Match,
+                        TrueValue = "yes",
+                        FalseValue = "no"
+                    }
+                }
+            }
+        };
+
+        var result = ConversionEngine.ApplyConversion(input, rules);
+        var output = Assert.IsType<Dictionary<string, object?>>(result.Output);
+
+        Assert.Empty(result.Errors);
+        Assert.Equal(true, output["isLarge"]);
+    }
+
+    [Fact]
+    public void ApplyConversion_InvalidElseIfExpressionAddsErrorAndFallsThrough()
+    {
+        var input = new Dictionary<string, object?> { ["score"] = 65d };
+        var rules = new ConversionRules
+        {
+            FieldMappings = new List<FieldRule>
+            {
+                new()
+                {
+                    OutputPath = "grade",
+                    Source = new ValueSource
+                    {
+                        Type = "condition",
+                        Expression = "path(score) > 90",
+                        TrueValue = "A",
+                        ElseIf = new List<ConditionElseIfBranch>
+                        {
+                            new()
+                            {
+                                Expression = "path(score) ==",
+                                Value = "B"
+                            }
+                        },
+                        FalseValue = "F"
+                    }
+                }
+            }
+        };
+
+        var result = ConversionEngine.ApplyConversion(input, rules);
+        var output = Assert.IsType<Dictionary<string, object?>>(result.Output);
+
+        Assert.Single(result.Errors);
+        Assert.Contains("invalid elseIf expression", result.Errors[0]);
+        Assert.Equal("F", output["grade"]);
+    }
+
+    [Fact]
     public void ApplyConversion_TransformDefaultReturnsValue()
     {
         var input = new Dictionary<string, object?> { ["value"] = "Ada" };

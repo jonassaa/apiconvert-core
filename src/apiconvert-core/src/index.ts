@@ -21,6 +21,17 @@ export enum MergeMode {
   Array = "array"
 }
 
+export enum ConditionOutputMode {
+  Branch = "branch",
+  Match = "match"
+}
+
+export interface ConditionElseIfBranch {
+  expression?: string | null;
+  source?: ValueSource | null;
+  value?: string | null;
+}
+
 export interface ValueSource {
   type: string;
   path?: string | null;
@@ -30,6 +41,10 @@ export interface ValueSource {
   expression?: string | null;
   trueValue?: string | null;
   falseValue?: string | null;
+  trueSource?: ValueSource | null;
+  falseSource?: ValueSource | null;
+  elseIf?: ConditionElseIfBranch[] | null;
+  conditionOutput?: ConditionOutputMode | null;
   mergeMode?: MergeMode | null;
   separator?: string | null;
   tokenIndex?: number | null;
@@ -314,7 +329,17 @@ function normalizeValueSource(source: ValueSource | null | undefined): ValueSour
   return {
     ...normalized,
     paths: normalized.paths ?? [],
-    expression: expression && expression.length > 0 ? expression : null
+    expression: expression && expression.length > 0 ? expression : null,
+    trueSource: normalized.trueSource ? normalizeValueSource(normalized.trueSource) : null,
+    falseSource: normalized.falseSource ? normalizeValueSource(normalized.falseSource) : null,
+    elseIf: (normalized.elseIf ?? []).map((branch) => {
+      const branchExpression = branch.expression?.trim();
+      return {
+        expression: branchExpression && branchExpression.length > 0 ? branchExpression : null,
+        source: branch.source ? normalizeValueSource(branch.source) : null,
+        value: branch.value ?? null
+      };
+    })
   };
 }
 
@@ -364,8 +389,14 @@ function resolveSourceValue(
   item: unknown,
   source: ValueSource,
   errors: string[],
-  errorContext: string
+  errorContext: string,
+  depth = 0
 ): unknown {
+  if (depth > 32) {
+    errors.push(`${errorContext}: condition/source recursion limit exceeded.`);
+    return null;
+  }
+
   switch (source.type) {
     case "constant":
       return parsePrimitive(source.value ?? "");
@@ -421,25 +452,119 @@ function resolveSourceValue(
       return resolveTransform(baseValue, source.transform ?? TransformType.ToLowerCase);
     }
     case "condition": {
-      if (!source.expression || source.expression.trim().length === 0) {
-        errors.push(`${errorContext}: condition expression is required.`);
-        return parsePrimitive(source.falseValue ?? "");
-      }
-
-      const evaluation = tryEvaluateConditionExpression(root, item, source.expression);
-      const matched = evaluation.ok ? evaluation.value : false;
-      if (!evaluation.ok) {
-        errors.push(
-          `${errorContext}: invalid condition expression "${source.expression}": ${evaluation.error}`
-        );
-      }
-
-      const resolved = matched ? source.trueValue : source.falseValue;
-      return parsePrimitive(resolved ?? "");
+      return resolveConditionSourceValue(root, item, source, errors, errorContext, depth);
     }
     default:
       return null;
   }
+}
+
+function resolveConditionSourceValue(
+  root: unknown,
+  item: unknown,
+  source: ValueSource,
+  errors: string[],
+  errorContext: string,
+  depth: number
+): unknown {
+  const matched = evaluateCondition(
+    root,
+    item,
+    source.expression,
+    errors,
+    errorContext,
+    "condition expression"
+  );
+
+  if (source.conditionOutput === ConditionOutputMode.Match) {
+    return matched;
+  }
+
+  if (matched) {
+    return resolveConditionBranchValue(
+      root,
+      item,
+      source.trueSource ?? null,
+      source.trueValue ?? null,
+      errors,
+      `${errorContext} true branch`,
+      depth
+    );
+  }
+
+  const elseIfBranches = source.elseIf ?? [];
+  for (let index = 0; index < elseIfBranches.length; index += 1) {
+    const branch = elseIfBranches[index];
+    const elseIfMatched = evaluateCondition(
+      root,
+      item,
+      branch.expression,
+      errors,
+      `${errorContext} elseIf[${index}]`,
+      "elseIf expression"
+    );
+    if (!elseIfMatched) {
+      continue;
+    }
+
+    return resolveConditionBranchValue(
+      root,
+      item,
+      branch.source ?? null,
+      branch.value ?? null,
+      errors,
+      `${errorContext} elseIf[${index}] branch`,
+      depth
+    );
+  }
+
+  return resolveConditionBranchValue(
+    root,
+    item,
+    source.falseSource ?? null,
+    source.falseValue ?? null,
+    errors,
+    `${errorContext} false branch`,
+    depth
+  );
+}
+
+function evaluateCondition(
+  root: unknown,
+  item: unknown,
+  expression: string | null | undefined,
+  errors: string[],
+  errorContext: string,
+  label: string
+): boolean {
+  if (!expression || expression.trim().length === 0) {
+    errors.push(`${errorContext}: ${label} is required.`);
+    return false;
+  }
+
+  const evaluation = tryEvaluateConditionExpression(root, item, expression);
+  if (!evaluation.ok) {
+    errors.push(`${errorContext}: invalid ${label} "${expression}": ${evaluation.error}`);
+    return false;
+  }
+
+  return evaluation.value;
+}
+
+function resolveConditionBranchValue(
+  root: unknown,
+  item: unknown,
+  source: ValueSource | null,
+  value: string | null,
+  errors: string[],
+  errorContext: string,
+  depth: number
+): unknown {
+  if (source) {
+    return resolveSourceValue(root, item, source, errors, errorContext, depth + 1);
+  }
+
+  return parsePrimitive(value ?? "");
 }
 
 function resolveMergeSourceValue(root: unknown, item: unknown, source: ValueSource): unknown {
