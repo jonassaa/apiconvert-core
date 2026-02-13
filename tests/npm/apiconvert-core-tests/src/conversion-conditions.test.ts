@@ -10,7 +10,6 @@ test("condition expressions evaluate aliases and grouping", () => {
   };
 
   const rules = normalizeConversionRules({
-    version: 2,
     inputFormat: "json",
     outputFormat: "json",
     rules: [
@@ -59,7 +58,6 @@ test("condition expressions evaluate aliases and grouping", () => {
 test("branch rules execute then / elseIf / else", () => {
   const input = { score: 72 };
   const rules = normalizeConversionRules({
-    version: 2,
     inputFormat: "json",
     outputFormat: "json",
     rules: [
@@ -115,7 +113,6 @@ test("branch rules execute then / elseIf / else", () => {
 test("branch expression invalid adds error", () => {
   const input = { name: "Ada" };
   const rules = normalizeConversionRules({
-    version: 2,
     inputFormat: "json",
     outputFormat: "json",
     rules: [
@@ -148,26 +145,6 @@ test("branch expression invalid adds error", () => {
   assert.equal(output.match, "no");
 });
 
-test("legacy keys are rejected", () => {
-  const result = applyConversion(
-    { name: "Ada" },
-    {
-      version: 2,
-      inputFormat: "json",
-      outputFormat: "json",
-      fieldMappings: [
-        {
-          outputPath: "name",
-          source: { type: "path", path: "name" }
-        }
-      ]
-    }
-  );
-
-  assert.ok(result.errors.length >= 1);
-  assert.ok(result.errors.some((entry) => /legacy property 'fieldMappings' is not supported/.test(entry)));
-});
-
 test("rule recursion overflow is deterministic", () => {
   const deepBranch = (): Record<string, unknown> => ({
     kind: "branch",
@@ -183,6 +160,6 @@ test("rule recursion overflow is deterministic", () => {
     cursor = next;
   }
 
-  const result = applyConversion({}, { version: 2, inputFormat: "json", outputFormat: "json", rules: [root] });
+  const result = applyConversion({}, { inputFormat: "json", outputFormat: "json", rules: [root] });
   assert.ok(result.errors.some((entry) => entry.includes("rule recursion limit exceeded")));
 });

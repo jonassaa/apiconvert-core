@@ -9,12 +9,6 @@ Rules use a single ordered `rules` array with recursive nodes:
 - `kind: "array"` maps array items using recursive `itemRules`
 - `kind: "branch"` evaluates an expression and runs `then` / `elseIf` / `else`
 
-Legacy keys are rejected:
-- `fieldMappings`
-- `arrayMappings`
-- `itemMappings`
-- `outputPath`
-
 ## Example
 
 ```csharp

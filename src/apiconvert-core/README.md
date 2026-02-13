@@ -9,19 +9,12 @@ Canonical rules are defined by one ordered `rules` array of recursive nodes:
 - `kind: "array"` with `inputPath`, `outputPaths`, and recursive `itemRules`
 - `kind: "branch"` with `expression`, `then`, optional `elseIf`, optional `else`
 
-Legacy keys are rejected:
-- `fieldMappings`
-- `arrayMappings`
-- `itemMappings`
-- `outputPath`
-
 ## Example
 
 ```ts
 import { applyConversion, normalizeConversionRules } from "@apiconvert/core";
 
 const rules = normalizeConversionRules({
-  version: 2,
   inputFormat: "json",
   outputFormat: "json",
   rules: [

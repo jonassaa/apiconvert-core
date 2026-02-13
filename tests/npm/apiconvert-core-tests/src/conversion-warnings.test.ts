@@ -5,7 +5,6 @@ import { applyConversion, normalizeConversionRules } from "@apiconvert/core";
 test("missing array input path yields warning and no errors", () => {
   const input = { name: "Ada" };
   const rules = normalizeConversionRules({
-    version: 2,
     inputFormat: "json",
     outputFormat: "json",
     rules: [
@@ -46,7 +45,6 @@ test("missing array input path yields warning and no errors", () => {
 test("non-array value at array input path remains an error", () => {
   const input = { items: "not-an-array" };
   const rules = normalizeConversionRules({
-    version: 2,
     inputFormat: "json",
     outputFormat: "json",
     rules: [

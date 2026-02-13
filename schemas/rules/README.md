@@ -9,12 +9,6 @@ Rules now use a single ordered `rules` array with recursive nodes:
 - `kind: "array"` for array mappings (`inputPath`, `outputPaths`, `itemRules`, optional `coerceSingle`)
 - `kind: "branch"` for conditional blocks (`expression`, `then`, optional `elseIf`, optional `else`)
 
-Legacy keys are intentionally unsupported and should be rejected:
-- `fieldMappings`
-- `arrayMappings`
-- `itemMappings`
-- `outputPath`
-
 ## Consistency Across C# and TypeScript
 
 - The C# rules models live in `src/Apiconvert.Core/Rules/Models.cs`.
@@ -24,4 +18,3 @@ Legacy keys are intentionally unsupported and should be rejected:
 ## Condition Expressions
 
 `source.type = "condition"` uses a single `expression` string instead of a typed `condition` object.
-Legacy `condition` objects are intentionally unsupported.

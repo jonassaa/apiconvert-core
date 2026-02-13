@@ -82,7 +82,6 @@ export interface BranchRule {
 export type RuleNode = FieldRule | ArrayRule | BranchRule;
 
 export interface ConversionRules {
-  version?: number;
   inputFormat?: DataFormat;
   outputFormat?: DataFormat;
   rules?: RuleNode[] | null;
@@ -114,13 +113,8 @@ export const rulesSchemaPath = "/schemas/rules/rules.schema.json";
 
 export function normalizeConversionRules(raw: unknown): ConversionRules {
   if (raw && typeof raw === "object" && !Array.isArray(raw)) {
-    const validationErrors: string[] = [];
-    collectLegacyPropertyErrors(raw as Record<string, unknown>, "$", validationErrors);
     if (isConversionRules(raw)) {
-      return normalizeRules(raw, validationErrors);
-    }
-    if (validationErrors.length > 0) {
-      return emptyRules(validationErrors);
+      return normalizeRules(raw);
     }
     return emptyRules();
   }
@@ -220,10 +214,9 @@ function extensionToFormat(extension: string): DataFormat | null {
   return null;
 }
 
-function normalizeRules(rules: ConversionRules, seedErrors: string[] = []): ConversionRules {
-  const validationErrors = [...seedErrors];
+function normalizeRules(rules: ConversionRules): ConversionRules {
+  const validationErrors: string[] = [];
   return {
-    version: rules.version ?? 2,
     inputFormat: rules.inputFormat ?? DataFormat.Json,
     outputFormat: rules.outputFormat ?? DataFormat.Json,
     rules: normalizeRuleNodes(rules.rules ?? [], "rules", validationErrors),
@@ -233,7 +226,6 @@ function normalizeRules(rules: ConversionRules, seedErrors: string[] = []): Conv
 
 function emptyRules(validationErrors: string[] = []): ConversionRules {
   return {
-    version: 2,
     inputFormat: DataFormat.Json,
     outputFormat: DataFormat.Json,
     rules: [],
@@ -266,7 +258,7 @@ function isConversionRules(value: unknown): value is ConversionRules {
     return false;
   }
   const record = value as Record<string, unknown>;
-  return record.version === 2 || "rules" in record;
+  return "rules" in record || "inputFormat" in record || "outputFormat" in record;
 }
 
 function normalizeRuleNodes(
@@ -360,35 +352,6 @@ function normalizeOutputPaths(paths: string[]): string[] {
     .map((path) => normalizeWritePath(path))
     .filter((path) => path.length > 0)
   )];
-}
-
-function collectLegacyPropertyErrors(
-  value: Record<string, unknown> | unknown[],
-  path: string,
-  errors: string[]
-): void {
-  if (Array.isArray(value)) {
-    value.forEach((item, index) => {
-      if (item && typeof item === "object") {
-        collectLegacyPropertyErrors(item as Record<string, unknown> | unknown[], `${path}[${index}]`, errors);
-      }
-    });
-    return;
-  }
-
-  const forbidden = new Set(["fieldMappings", "arrayMappings", "itemMappings", "outputPath"]);
-  Object.entries(value).forEach(([key, child]) => {
-    const childPath = `${path}.${key}`;
-    if (forbidden.has(key)) {
-      errors.push(
-        `${childPath}: legacy property '${key}' is not supported; use rules[] with outputPaths/itemRules.`
-      );
-    }
-
-    if (child && typeof child === "object") {
-      collectLegacyPropertyErrors(child as Record<string, unknown> | unknown[], childPath, errors);
-    }
-  });
 }
 
 function executeRules(

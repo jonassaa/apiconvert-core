@@ -308,12 +308,6 @@ public sealed record RuleNode
 public sealed record ConversionRules
 {
     /// <summary>
-    /// Rules version.
-    /// </summary>
-    [JsonPropertyName("version")]
-    public int Version { get; init; } = 2;
-
-    /// <summary>
     /// Input payload format.
     /// </summary>
     [JsonPropertyName("inputFormat")]

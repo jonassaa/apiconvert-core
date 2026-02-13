@@ -5,14 +5,6 @@ namespace Apiconvert.Core.Converters;
 
 internal static class RulesNormalizer
 {
-    private static readonly HashSet<string> ForbiddenLegacyProperties = new(StringComparer.Ordinal)
-    {
-        "fieldMappings",
-        "arrayMappings",
-        "itemMappings",
-        "outputPath"
-    };
-
     internal static ConversionRules NormalizeConversionRules(object? raw)
     {
         if (raw is ConversionRules rules)
@@ -37,17 +29,9 @@ internal static class RulesNormalizer
         {
             if (element.ValueKind == JsonValueKind.Object)
             {
-                var validationErrors = new List<string>();
-                CollectLegacyPropertyErrors(element, "$", validationErrors);
-
                 if (TryDeserialize<ConversionRules>(element, out var parsedRules) && parsedRules != null)
                 {
-                    return NormalizeRules(parsedRules, validationErrors);
-                }
-
-                if (validationErrors.Count > 0)
-                {
-                    return new ConversionRules { ValidationErrors = validationErrors };
+                    return NormalizeRules(parsedRules);
                 }
             }
         }
@@ -55,13 +39,12 @@ internal static class RulesNormalizer
         return new ConversionRules();
     }
 
-    private static ConversionRules NormalizeRules(ConversionRules rules, List<string>? seedErrors = null)
+    private static ConversionRules NormalizeRules(ConversionRules rules)
     {
-        var validationErrors = seedErrors ?? new List<string>();
+        var validationErrors = new List<string>();
 
         return rules with
         {
-            Version = rules.Version <= 0 ? 2 : rules.Version,
             InputFormat = rules.InputFormat,
             OutputFormat = rules.OutputFormat,
             Rules = NormalizeRuleNodes(rules.Rules ?? new List<RuleNode>(), "rules", validationErrors),
@@ -238,32 +221,5 @@ internal static class RulesNormalizer
                 })
                 .ToList()
         };
-    }
-
-    private static void CollectLegacyPropertyErrors(JsonElement element, string path, List<string> errors)
-    {
-        switch (element.ValueKind)
-        {
-            case JsonValueKind.Object:
-                foreach (var property in element.EnumerateObject())
-                {
-                    var propertyPath = $"{path}.{property.Name}";
-                    if (ForbiddenLegacyProperties.Contains(property.Name))
-                    {
-                        errors.Add($"{propertyPath}: legacy property '{property.Name}' is not supported; use rules[] with outputPaths/itemRules.");
-                    }
-
-                    CollectLegacyPropertyErrors(property.Value, propertyPath, errors);
-                }
-                break;
-            case JsonValueKind.Array:
-                var index = 0;
-                foreach (var item in element.EnumerateArray())
-                {
-                    CollectLegacyPropertyErrors(item, $"{path}[{index}]", errors);
-                    index++;
-                }
-                break;
-        }
     }
 }

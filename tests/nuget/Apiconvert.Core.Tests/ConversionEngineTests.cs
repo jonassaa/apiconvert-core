@@ -13,7 +13,6 @@ public sealed class ConversionEngineTests
     {
         var json = """
         {
-          "version": 2,
           "inputFormat": "json",
           "outputFormat": "json",
           "rules": [
@@ -28,30 +27,9 @@ public sealed class ConversionEngineTests
 
         var rules = ConversionEngine.NormalizeConversionRules(json);
 
-        Assert.Equal(2, rules.Version);
         Assert.Single(rules.Rules);
         Assert.Equal("field", rules.Rules[0].Kind);
         Assert.Empty(rules.ValidationErrors);
-    }
-
-    [Fact]
-    public void NormalizeConversionRules_RejectsLegacyProperties()
-    {
-        var json = """
-        {
-          "version": 2,
-          "fieldMappings": [
-            {
-              "outputPath": "user.name",
-              "source": { "type": "path", "path": "name" }
-            }
-          ]
-        }
-        """;
-
-        var rules = ConversionEngine.NormalizeConversionRules(json);
-
-        Assert.Contains(rules.ValidationErrors, error => error.Contains("legacy property 'fieldMappings'"));
     }
 
     [Fact]
@@ -189,28 +167,6 @@ public sealed class ConversionEngineTests
         var second = Assert.IsType<Dictionary<string, object?>>(items[1]);
         Assert.Equal("normal", first["priority"]);
         Assert.Equal("high", second["priority"]);
-    }
-
-    [Fact]
-    public void ApplyConversion_AddsValidationErrorsFromLegacyPayload()
-    {
-        var input = new Dictionary<string, object?> { ["name"] = "Ada" };
-        var rawRules = """
-        {
-          "version": 2,
-          "fieldMappings": [
-            {
-              "outputPath": "user.name",
-              "source": { "type": "path", "path": "name" }
-            }
-          ]
-        }
-        """;
-
-        var result = ConversionEngine.ApplyConversion(input, rawRules);
-
-        Assert.NotEmpty(result.Errors);
-        Assert.Contains(result.Errors, error => error.Contains("legacy property 'fieldMappings'"));
     }
 
     [Fact]

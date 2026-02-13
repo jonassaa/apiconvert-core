@@ -8,7 +8,6 @@
   "additionalProperties": false,
   "unevaluatedProperties": false,
   "properties": {
-    "version": { "type": "integer", "minimum": 1 },
     "inputFormat": { "$ref": "#/$defs/DataFormat" },
     "outputFormat": { "$ref": "#/$defs/DataFormat" },
     "rules": {

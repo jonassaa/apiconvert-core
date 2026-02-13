@@ -1,5 +1,4 @@
 {
-  "version": 2,
   "inputFormat": "query",
   "outputFormat": "json",
   "rules": [
