@@ -493,3 +493,6 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Local planning notes
+plan.md
