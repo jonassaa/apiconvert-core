@@ -1,0 +1,15 @@
+{
+  "inputFormat": "json",
+  "outputFormat": "json",
+  "fieldMappings": [
+    {
+      "outputPaths": ["profile.firstName", "profile.displayName"],
+      "source": { "type": "path", "path": "user.firstName" }
+    },
+    {
+      "outputPaths": ["profile.lastName", "profile.familyName"],
+      "source": { "type": "path", "path": "user.lastName" }
+    }
+  ],
+  "arrayMappings": []
+}

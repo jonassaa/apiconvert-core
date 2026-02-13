@@ -1,0 +1,21 @@
+{
+  "inputFormat": "json",
+  "outputFormat": "json",
+  "fieldMappings": [],
+  "arrayMappings": [
+    {
+      "inputPath": "items",
+      "outputPaths": ["lines", "copies.lines"],
+      "itemMappings": [
+        {
+          "outputPaths": ["code", "identifiers.sku"],
+          "source": { "type": "path", "path": "sku" }
+        },
+        {
+          "outputPaths": ["quantity", "metrics.qty"],
+          "source": { "type": "path", "path": "qty" }
+        }
+      ]
+    }
+  ]
+}

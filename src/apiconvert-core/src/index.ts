@@ -60,7 +60,8 @@ export interface FieldRule {
 
 export interface ArrayRule {
   inputPath: string;
-  outputPath: string;
+  outputPath?: string;
+  outputPaths?: string[] | null;
   itemMappings: FieldRule[];
   coerceSingle?: boolean;
 }
@@ -174,18 +175,15 @@ export function applyConversion(input: unknown, rawRules: unknown): ConversionRe
       mappedItems.push(itemOutput);
     });
 
-    if (!arrayRule.outputPath || arrayRule.outputPath.trim().length === 0) {
+    const arrayWritePaths = getArrayWritePaths(arrayRule);
+    if (arrayWritePaths.length === 0) {
       errors.push(`Array ${index + 1}: output path is required.`);
       return;
     }
 
-    const outputPath = normalizeWritePath(arrayRule.outputPath);
-    if (!outputPath || outputPath.trim().length === 0) {
-      errors.push(`Array ${index + 1}: output path is required.`);
-      return;
-    }
-
-    setValueByPath(output, outputPath, mappedItems);
+    arrayWritePaths.forEach((outputPath) => {
+      setValueByPath(output, outputPath, mappedItems);
+    });
   });
 
   return { output, errors, warnings };
@@ -271,6 +269,7 @@ function normalizeRules(rules: ConversionRules): ConversionRules {
     arrayMappings: (rules.arrayMappings ?? []).map((mapping) => ({
       inputPath: mapping.inputPath,
       outputPath: mapping.outputPath,
+      outputPaths: mapping.outputPaths ?? [],
       coerceSingle: mapping.coerceSingle ?? false,
       itemMappings: (mapping.itemMappings ?? []).map((rule) => ({
         outputPath: rule.outputPath,
@@ -589,6 +588,28 @@ function getWritePaths(rule: FieldRule): string[] {
   (rule.outputPaths ?? []).forEach((path) => {
     if (path && path.trim().length > 0) {
       paths.push(path);
+    }
+  });
+
+  return Array.from(new Set(paths));
+}
+
+function getArrayWritePaths(rule: ArrayRule): string[] {
+  const paths: string[] = [];
+
+  if (rule.outputPath && rule.outputPath.trim().length > 0) {
+    const normalized = normalizeWritePath(rule.outputPath);
+    if (normalized && normalized.trim().length > 0) {
+      paths.push(normalized);
+    }
+  }
+
+  (rule.outputPaths ?? []).forEach((path) => {
+    if (path && path.trim().length > 0) {
+      const normalized = normalizeWritePath(path);
+      if (normalized && normalized.trim().length > 0) {
+        paths.push(normalized);
+      }
     }
   });
 

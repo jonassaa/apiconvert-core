@@ -8,7 +8,6 @@
   "additionalProperties": false,
   "unevaluatedProperties": false,
   "properties": {
-    "version": { "type": "integer", "enum": [2] },
     "inputFormat": { "$ref": "#/$defs/DataFormat" },
     "outputFormat": { "$ref": "#/$defs/DataFormat" },
     "fieldMappings": {
@@ -96,37 +95,39 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "outputPath": { "type": "string" },
         "outputPaths": {
-          "type": ["array", "null"],
-          "items": { "type": "string" }
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
         },
         "source": { "$ref": "#/$defs/ValueSource" },
         "defaultValue": { "type": ["string", "null"] }
       },
-      "allOf": [
-        {
-          "anyOf": [
-            { "required": ["outputPath"] },
-            { "required": ["outputPaths"] }
-          ]
-        }
-      ],
-      "required": ["source"]
+      "required": ["outputPaths", "source"]
     },
     "ArrayRule": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
         "inputPath": { "type": "string" },
-        "outputPath": { "type": "string" },
+        "outputPaths": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
         "itemMappings": {
           "type": "array",
           "items": { "$ref": "#/$defs/FieldRule" }
         },
         "coerceSingle": { "type": "boolean" }
       },
-      "required": ["inputPath", "outputPath", "itemMappings"]
+      "required": ["inputPath", "outputPaths", "itemMappings"]
     }
   }
 }

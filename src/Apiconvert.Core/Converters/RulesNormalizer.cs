@@ -65,6 +65,7 @@ internal static class RulesNormalizer
                 .Select(mapping => mapping with
                 {
                     CoerceSingle = mapping.CoerceSingle,
+                    OutputPaths = mapping.OutputPaths ?? new List<string>(),
                     ItemMappings = mapping.ItemMappings
                         .Select(rule => rule with
                         {

@@ -252,6 +252,12 @@ public sealed record ArrayRule
     public string OutputPath { get; init; } = string.Empty;
 
     /// <summary>
+    /// Output paths for mapped array values.
+    /// </summary>
+    [JsonPropertyName("outputPaths")]
+    public List<string> OutputPaths { get; init; } = new();
+
+    /// <summary>
     /// Field mappings applied to each array item.
     /// </summary>
     [JsonPropertyName("itemMappings")]

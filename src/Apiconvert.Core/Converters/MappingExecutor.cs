@@ -58,20 +58,17 @@ internal static class MappingExecutor
                 mappedItems.Add(itemOutput);
             }
 
-            if (string.IsNullOrWhiteSpace(arrayRule.OutputPath))
+            var arrayWritePaths = GetArrayWritePaths(arrayRule);
+            if (arrayWritePaths.Count == 0)
             {
                 errors.Add($"Array {index + 1}: output path is required.");
                 continue;
             }
 
-            var outputPath = NormalizeWritePath(arrayRule.OutputPath);
-            if (string.IsNullOrWhiteSpace(outputPath))
+            foreach (var outputPath in arrayWritePaths)
             {
-                errors.Add($"Array {index + 1}: output path is required.");
-                continue;
+                SetValueByPath(output, outputPath, mappedItems);
             }
-
-            SetValueByPath(output, outputPath, mappedItems);
         }
 
         return new ConversionResult { Output = output, Errors = errors, Warnings = warnings };
@@ -363,6 +360,33 @@ internal static class MappingExecutor
         if (rule.OutputPaths.Count > 0)
         {
             paths.AddRange(rule.OutputPaths.Where(path => !string.IsNullOrWhiteSpace(path)));
+        }
+
+        return paths
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+    }
+
+    private static List<string> GetArrayWritePaths(ArrayRule rule)
+    {
+        var paths = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(rule.OutputPath))
+        {
+            var normalized = NormalizeWritePath(rule.OutputPath);
+            if (!string.IsNullOrWhiteSpace(normalized))
+            {
+                paths.Add(normalized);
+            }
+        }
+
+        if (rule.OutputPaths.Count > 0)
+        {
+            paths.AddRange(
+                rule.OutputPaths
+                    .Where(path => !string.IsNullOrWhiteSpace(path))
+                    .Select(NormalizeWritePath)
+                    .Where(path => !string.IsNullOrWhiteSpace(path)));
         }
 
         return paths
