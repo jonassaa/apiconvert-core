@@ -108,3 +108,5 @@ export interface ConversionRulesGenerator {
 }
 
 export const rulesSchemaPath = "/schemas/rules/rules.schema.json";
+export const rulesSchemaVersion = "1.0.0";
+export const rulesSchemaVersionedPath = `/schemas/rules/v${rulesSchemaVersion}/schema.json`;

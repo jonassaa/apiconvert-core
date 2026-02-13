@@ -16,6 +16,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
@@ -26,6 +28,10 @@ jobs:
       run: dotnet build --no-restore
     - name: Test
       run: dotnet test --no-build --verbosity normal
+    - name: Check schema versioning policy
+      env:
+        SCHEMA_CHECK_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+      run: ./scripts/check-schema-versioning.sh
 
     - name: Setup Node
       uses: actions/setup-node@v4

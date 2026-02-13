@@ -20,6 +20,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -31,6 +33,11 @@ jobs:
           dotnet restore
           dotnet build --no-restore
           dotnet test --no-build --verbosity normal
+
+      - name: Check schema versioning policy
+        env:
+          SCHEMA_CHECK_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: ./scripts/check-schema-versioning.sh
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -96,6 +103,11 @@ jobs:
           echo "version=${VERSION}" >> "${GITHUB_OUTPUT}"
           echo "Resolved publish tag: ${selected_tag}"
           echo "Resolved package version: ${VERSION}"
+
+      - name: Check schema versioning policy for tag
+        env:
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+        run: ./scripts/check-schema-versioning.sh
 
       - name: Checkout selected tag
         shell: bash

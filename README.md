@@ -44,9 +44,26 @@ Branch/condition expressions support:
 Array rules also support:
 - `coerceSingle` to treat a single non-array input value as one array item
 
-The canonical schema is:
+## Schema Versioning Policy
 
-- `schemas/rules/rules.schema.json`
+Schema versioning is lockstep with repository/package SemVer:
+
+- Git tag: `vX.Y.Z`
+- NuGet package: `X.Y.Z`
+- npm package: `X.Y.Z`
+- Rules schema: `X.Y.Z`
+
+For strict pinning, use the versioned schema path:
+
+- `schemas/rules/vX.Y.Z/schema.json` (immutable after release)
+
+Convenience alias:
+
+- `schemas/rules/current/schema.json` (mutable, always latest released version)
+
+Transition alias (deprecated):
+
+- `schemas/rules/rules.schema.json` (legacy path, currently mirrors latest schema)
 
 ## Quickstart (.NET)
 

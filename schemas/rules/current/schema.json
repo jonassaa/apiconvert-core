@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/jonassaa/apiconvert-core/main/schemas/rules/rules.schema.json",
-  "$comment": "Deprecated compatibility alias to the latest versioned schema under schemas/rules/vX.Y.Z/schema.json.",
+  "$id": "https://raw.githubusercontent.com/jonassaa/apiconvert-core/main/schemas/rules/v1.0.0/schema.json",
+  "$comment": "Canonical immutable schema for Apiconvert conversion rules release v1.0.0.",
   "title": "Apiconvert Conversion Rules",
   "description": "Canonical schema for Apiconvert conversion rules.",
   "type": "object",
