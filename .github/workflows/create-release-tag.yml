@@ -1,11 +1,14 @@
 name: Create Release Tag
 
 on:
+  push:
+    branches:
+      - "main"
   workflow_dispatch:
     inputs:
       bump:
         description: Version bump type
-        required: true
+        required: false
         type: choice
         options:
           - patch
@@ -31,11 +34,41 @@ jobs:
         run: |
           set -euo pipefail
 
-          bump="${{ github.event.inputs.bump }}"
+          bump="${{ github.event.inputs.bump || '' }}"
           latest_tag="$(git tag --list 'v*' --sort=-v:refname | head -n 1)"
 
           if [[ -z "${latest_tag}" ]]; then
             latest_tag="v0.0.0"
+          fi
+
+          if git tag --points-at HEAD | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Current commit already has a semantic version tag. Skipping."
+            echo "skip=true" >> "${GITHUB_OUTPUT}"
+            echo "latest_tag=${latest_tag}" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          commit_range="${latest_tag}..HEAD"
+          if [[ "${latest_tag}" == "v0.0.0" ]]; then
+            commit_range="HEAD"
+          fi
+
+          if [[ "${latest_tag}" != "v0.0.0" ]] && ! git rev-list "${commit_range}" | grep -q .; then
+            echo "No commits found after ${latest_tag}. Skipping."
+            echo "skip=true" >> "${GITHUB_OUTPUT}"
+            echo "latest_tag=${latest_tag}" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          if [[ -z "${bump}" ]]; then
+            commit_subjects="$(git log --format=%s ${commit_range})"
+            if printf '%s\n' "${commit_subjects}" | grep -Eiq '^\[major\]'; then
+              bump="major"
+            elif printf '%s\n' "${commit_subjects}" | grep -Eiq '^\[minor\]'; then
+              bump="minor"
+            else
+              bump="patch"
+            fi
           fi
 
           version="${latest_tag#v}"
@@ -76,8 +109,10 @@ jobs:
           echo "latest_tag=${latest_tag}" >> "${GITHUB_OUTPUT}"
           echo "new_tag=${new_tag}" >> "${GITHUB_OUTPUT}"
           echo "bump=${bump}" >> "${GITHUB_OUTPUT}"
+          echo "skip=false" >> "${GITHUB_OUTPUT}"
 
       - name: Create and push tag
+        if: steps.next.outputs.skip != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -89,9 +124,14 @@ jobs:
       - name: Summary
         run: |
           {
-            echo "Created tag: \`${{ steps.next.outputs.new_tag }}\`"
-            echo "From: \`${{ steps.next.outputs.latest_tag }}\`"
-            echo "Bump: \`${{ steps.next.outputs.bump }}\`"
-            echo ""
-            echo "Pushing this tag triggers \`publish-packages.yml\`."
+            if [[ "${{ steps.next.outputs.skip }}" == "true" ]]; then
+              echo "No new tag created."
+              echo "Latest tag: \`${{ steps.next.outputs.latest_tag }}\`"
+            else
+              echo "Created tag: \`${{ steps.next.outputs.new_tag }}\`"
+              echo "From: \`${{ steps.next.outputs.latest_tag }}\`"
+              echo "Bump: \`${{ steps.next.outputs.bump }}\`"
+              echo ""
+              echo "Pushing this tag triggers \`publish-packages.yml\`."
+            fi
           } >> "${GITHUB_STEP_SUMMARY}"
