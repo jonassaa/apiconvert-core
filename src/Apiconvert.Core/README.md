@@ -296,12 +296,7 @@ var rules = new ConversionRules
             Source = new ValueSource
             {
                 Type = "condition",
-                Condition = new ConditionRule
-                {
-                    Path = "user.age",
-                    Operator = ConditionOperator.Gt,
-                    Value = "17"
-                },
+                Expression = "path(user.age) > 17",
                 TrueValue = "true",
                 FalseValue = "false"
             }
@@ -309,6 +304,13 @@ var rules = new ConversionRules
     }
 };
 ```
+
+Condition expressions support:
+- Value lookups with `path(...)` (including root lookups like `path($.meta.source)`).
+- `exists(...)`.
+- Logical operators: `&&`, `||`, `!`, `and`, `or`, `not`.
+- Comparison operators: `==`, `!=`, `>`, `>=`, `<`, `<=`, and aliases `eq`, `not eq`, `gt`, `gte`, `lt`, `lte`.
+- Membership with `in` against array literals, for example `path(user.name) in ['ada', 'john']`.
 
 For splitting a full name into parts, use `transform = Split`, `separator`, and `tokenIndex`.
 `tokenIndex` supports negative values (`-1` = last token):

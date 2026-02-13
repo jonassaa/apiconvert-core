@@ -1,0 +1,197 @@
+{
+  "version": 2,
+  "inputFormat": "json",
+  "outputFormat": "json",
+  "fieldMappings": [
+    {
+      "outputPath": "existsWord",
+      "source": {
+        "type": "condition",
+        "expression": "exists(path(name))",
+        "trueValue": "y",
+        "falseValue": "n"
+      }
+    },
+    {
+      "outputPath": "eqSymbol",
+      "source": {
+        "type": "condition",
+        "expression": "path(name) == 'Ada'",
+        "trueValue": "y",
+        "falseValue": "n"
+      }
+    },
+    {
+      "outputPath": "neqSymbol",
+      "source": {
+        "type": "condition",
+        "expression": "path(role) != 'admin'",
+        "trueValue": "y",
+        "falseValue": "n"
+      }
+    },
+    {
+      "outputPath": "eqAlias",
+      "source": {
+        "type": "condition",
+        "expression": "path(role) eq 'guest'",
+        "trueValue": "y",
+        "falseValue": "n"
+      }
+    },
+    {
+      "outputPath": "notEqAlias",
+      "source": {
+        "type": "condition",
+        "expression": "path(name) not eq 'Bob'",
+        "trueValue": "y",
+        "falseValue": "n"
+      }
+    },
+    {
+      "outputPath": "gtAlias",
+      "source": {
+        "type": "condition",
+        "expression": "path(count) gt 4",
+        "trueValue": "y",
+        "falseValue": "n"
+      }
+    },
+    {
+      "outputPath": "gteSymbol",
+      "source": {
+        "type": "condition",
+        "expression": "path(count) >= 5",
+        "trueValue": "y",
+        "falseValue": "n"
+      }
+    },
+    {
+      "outputPath": "ltAlias",
+      "source": {
+        "type": "condition",
+        "expression": "path(count) lt 6",
+        "trueValue": "y",
+        "falseValue": "n"
+      }
+    },
+    {
+      "outputPath": "lteAlias",
+      "source": {
+        "type": "condition",
+        "expression": "path(count) lte 5",
+        "trueValue": "y",
+        "falseValue": "n"
+      }
+    },
+    {
+      "outputPath": "andWord",
+      "source": {
+        "type": "condition",
+        "expression": "path(count) gt 4 and path(count) lt 10",
+        "trueValue": "y",
+        "falseValue": "n"
+      }
+    },
+    {
+      "outputPath": "orWord",
+      "source": {
+        "type": "condition",
+        "expression": "path(role) == 'admin' or path(role) == 'guest'",
+        "trueValue": "y",
+        "falseValue": "n"
+      }
+    },
+    {
+      "outputPath": "andSymbol",
+      "source": {
+        "type": "condition",
+        "expression": "path(count) > 4 && path(count) < 10",
+        "trueValue": "y",
+        "falseValue": "n"
+      }
+    },
+    {
+      "outputPath": "orSymbol",
+      "source": {
+        "type": "condition",
+        "expression": "path(role) == 'admin' || path(role) == 'guest'",
+        "trueValue": "y",
+        "falseValue": "n"
+      }
+    },
+    {
+      "outputPath": "notWord",
+      "source": {
+        "type": "condition",
+        "expression": "not (path(flag) == true)",
+        "trueValue": "y",
+        "falseValue": "n"
+      }
+    },
+    {
+      "outputPath": "notSymbol",
+      "source": {
+        "type": "condition",
+        "expression": "!(path(flag) == true)",
+        "trueValue": "y",
+        "falseValue": "n"
+      }
+    },
+    {
+      "outputPath": "inOperator",
+      "source": {
+        "type": "condition",
+        "expression": "path(name) in ['Ada', 'John']",
+        "trueValue": "y",
+        "falseValue": "n"
+      }
+    },
+    {
+      "outputPath": "booleanLiteral",
+      "source": {
+        "type": "condition",
+        "expression": "path(flag) == false",
+        "trueValue": "y",
+        "falseValue": "n"
+      }
+    },
+    {
+      "outputPath": "nullLiteral",
+      "source": {
+        "type": "condition",
+        "expression": "path(nullValue) == null",
+        "trueValue": "y",
+        "falseValue": "n"
+      }
+    },
+    {
+      "outputPath": "numberLiteral",
+      "source": {
+        "type": "condition",
+        "expression": "path(count) == 5",
+        "trueValue": "y",
+        "falseValue": "n"
+      }
+    },
+    {
+      "outputPath": "rootPath",
+      "source": {
+        "type": "condition",
+        "expression": "path($.name) == 'Ada'",
+        "trueValue": "y",
+        "falseValue": "n"
+      }
+    },
+    {
+      "outputPath": "missingPathNull",
+      "source": {
+        "type": "condition",
+        "expression": "path(missing) == null",
+        "trueValue": "y",
+        "falseValue": "n"
+      }
+    }
+  ],
+  "arrayMappings": []
+}

@@ -21,28 +21,13 @@ export enum MergeMode {
   Array = "array"
 }
 
-export enum ConditionOperator {
-  Exists = "exists",
-  Equals = "equals",
-  NotEquals = "notEquals",
-  Includes = "includes",
-  Gt = "gt",
-  Lt = "lt"
-}
-
-export interface ConditionRule {
-  path: string;
-  operator: ConditionOperator;
-  value?: string | null;
-}
-
 export interface ValueSource {
   type: string;
   path?: string | null;
   paths?: string[] | null;
   value?: string | null;
   transform?: TransformType | null;
-  condition?: ConditionRule | null;
+  expression?: string | null;
   trueValue?: string | null;
   falseValue?: string | null;
   mergeMode?: MergeMode | null;
@@ -263,7 +248,7 @@ function normalizeRules(rules: ConversionRules): ConversionRules {
     fieldMappings: (rules.fieldMappings ?? []).map((rule) => ({
       outputPath: rule.outputPath,
       outputPaths: rule.outputPaths ?? [],
-      source: rule.source ?? { type: "path" },
+      source: normalizeValueSource(rule.source),
       defaultValue: rule.defaultValue ?? ""
     })),
     arrayMappings: (rules.arrayMappings ?? []).map((mapping) => ({
@@ -274,7 +259,7 @@ function normalizeRules(rules: ConversionRules): ConversionRules {
       itemMappings: (mapping.itemMappings ?? []).map((rule) => ({
         outputPath: rule.outputPath,
         outputPaths: rule.outputPaths ?? [],
-        source: rule.source ?? { type: "path" },
+        source: normalizeValueSource(rule.source),
         defaultValue: rule.defaultValue ?? ""
       }))
     }))
@@ -323,6 +308,16 @@ function emptyRules(): ConversionRules {
   };
 }
 
+function normalizeValueSource(source: ValueSource | null | undefined): ValueSource {
+  const normalized = source ?? { type: "path" };
+  const expression = normalized.expression?.trim();
+  return {
+    ...normalized,
+    paths: normalized.paths ?? [],
+    expression: expression && expression.length > 0 ? expression : null
+  };
+}
+
 function isConversionRules(value: unknown): value is ConversionRules {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return false;
@@ -354,7 +349,7 @@ function applyFieldMappings(
       return;
     }
 
-    let value = resolveSourceValue(root, item, rule.source);
+    let value = resolveSourceValue(root, item, rule.source, errors, `${label} ${index + 1}`);
     if ((value == null || value === "") && rule.defaultValue) {
       value = parsePrimitive(rule.defaultValue);
     }
@@ -364,7 +359,13 @@ function applyFieldMappings(
   });
 }
 
-function resolveSourceValue(root: unknown, item: unknown, source: ValueSource): unknown {
+function resolveSourceValue(
+  root: unknown,
+  item: unknown,
+  source: ValueSource,
+  errors: string[],
+  errorContext: string
+): unknown {
   switch (source.type) {
     case "constant":
       return parsePrimitive(source.value ?? "");
@@ -420,10 +421,19 @@ function resolveSourceValue(root: unknown, item: unknown, source: ValueSource): 
       return resolveTransform(baseValue, source.transform ?? TransformType.ToLowerCase);
     }
     case "condition": {
-      if (!source.condition) {
-        return null;
+      if (!source.expression || source.expression.trim().length === 0) {
+        errors.push(`${errorContext}: condition expression is required.`);
+        return parsePrimitive(source.falseValue ?? "");
       }
-      const matched = evaluateCondition(root, item, source.condition);
+
+      const evaluation = tryEvaluateConditionExpression(root, item, source.expression);
+      const matched = evaluation.ok ? evaluation.value : false;
+      if (!evaluation.ok) {
+        errors.push(
+          `${errorContext}: invalid condition expression "${source.expression}": ${evaluation.error}`
+        );
+      }
+
       const resolved = matched ? source.trueValue : source.falseValue;
       return parsePrimitive(resolved ?? "");
     }
@@ -463,35 +473,446 @@ function resolvePathValue(root: unknown, item: unknown, path: string): unknown {
   return getValueByPath(root, path);
 }
 
-function evaluateCondition(root: unknown, item: unknown, condition: ConditionRule): boolean {
-  const value = resolvePathValue(root, item, condition.path);
-  const compareValue = condition.value != null ? parsePrimitive(condition.value) : null;
-  switch (condition.operator) {
-    case ConditionOperator.Exists:
-      return value != null;
-    case ConditionOperator.Equals:
-      return Object.is(value, compareValue);
-    case ConditionOperator.NotEquals:
-      return !Object.is(value, compareValue);
-    case ConditionOperator.Includes:
-      return includesValue(value, compareValue);
-    case ConditionOperator.Gt:
-      return toNumber(value) > toNumber(compareValue);
-    case ConditionOperator.Lt:
-      return toNumber(value) < toNumber(compareValue);
-    default:
-      return false;
+function tryEvaluateConditionExpression(
+  root: unknown,
+  item: unknown,
+  expression: string
+): { ok: true; value: boolean } | { ok: false; error: string } {
+  try {
+    const parser = new ConditionExpressionParser(expression);
+    const ast = parser.parse();
+    return { ok: true, value: toBoolean(evaluateConditionExpressionNode(ast, root, item)) };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : String(error) };
   }
 }
 
-function includesValue(value: unknown, compareValue: unknown): boolean {
-  if (typeof value === "string" && typeof compareValue === "string") {
-    return value.includes(compareValue);
+function evaluateConditionExpressionNode(
+  node: ConditionExpressionNode,
+  root: unknown,
+  item: unknown
+): unknown {
+  switch (node.kind) {
+    case "literal":
+      return node.value;
+    case "path":
+      return resolvePathValue(root, item, node.path);
+    case "array":
+      return node.items.map((entry) => evaluateConditionExpressionNode(entry, root, item));
+    case "exists":
+      return evaluateConditionExpressionNode(node.argument, root, item) != null;
+    case "unary":
+      return !toBoolean(evaluateConditionExpressionNode(node.operand, root, item));
+    case "binary":
+      return evaluateConditionBinaryNode(node, root, item);
+    default:
+      throw new Error("Unsupported condition expression node.");
   }
-  if (Array.isArray(value)) {
-    return value.some((item) => Object.is(item, compareValue));
+}
+
+function evaluateConditionBinaryNode(
+  node: Extract<ConditionExpressionNode, { kind: "binary" }>,
+  root: unknown,
+  item: unknown
+): unknown {
+  if (node.operator === "&&") {
+    return (
+      toBoolean(evaluateConditionExpressionNode(node.left, root, item)) &&
+      toBoolean(evaluateConditionExpressionNode(node.right, root, item))
+    );
   }
-  return false;
+
+  if (node.operator === "||") {
+    return (
+      toBoolean(evaluateConditionExpressionNode(node.left, root, item)) ||
+      toBoolean(evaluateConditionExpressionNode(node.right, root, item))
+    );
+  }
+
+  const left = evaluateConditionExpressionNode(node.left, root, item);
+  const right = evaluateConditionExpressionNode(node.right, root, item);
+
+  switch (node.operator) {
+    case "==":
+      return Object.is(left, right);
+    case "!=":
+      return !Object.is(left, right);
+    case ">":
+      return toNumber(left) > toNumber(right);
+    case ">=":
+      return toNumber(left) >= toNumber(right);
+    case "<":
+      return toNumber(left) < toNumber(right);
+    case "<=":
+      return toNumber(left) <= toNumber(right);
+    case "in":
+      return Array.isArray(right) ? right.some((entry) => Object.is(left, entry)) : false;
+    default:
+      throw new Error(`Unsupported condition operator '${node.operator}'.`);
+  }
+}
+
+function toBoolean(value: unknown): boolean {
+  if (value == null) return false;
+  if (typeof value === "boolean") return value;
+  if (typeof value === "string") return value.length > 0;
+  return true;
+}
+
+type ConditionExpressionNode =
+  | { kind: "literal"; value: unknown }
+  | { kind: "path"; path: string }
+  | { kind: "array"; items: ConditionExpressionNode[] }
+  | { kind: "exists"; argument: ConditionExpressionNode }
+  | { kind: "unary"; operand: ConditionExpressionNode }
+  | {
+      kind: "binary";
+      operator: "==" | "!=" | ">" | ">=" | "<" | "<=" | "in" | "&&" | "||";
+      left: ConditionExpressionNode;
+      right: ConditionExpressionNode;
+    };
+
+type ConditionTokenType =
+  | "identifier"
+  | "number"
+  | "string"
+  | "operator"
+  | "leftParen"
+  | "rightParen"
+  | "leftBracket"
+  | "rightBracket"
+  | "comma"
+  | "end";
+
+interface ConditionToken {
+  type: ConditionTokenType;
+  text: string;
+  position: number;
+}
+
+class ConditionExpressionParser {
+  private readonly tokens: ConditionToken[];
+  private index = 0;
+
+  constructor(private readonly expression: string) {
+    this.tokens = tokenizeConditionExpression(expression);
+  }
+
+  parse(): ConditionExpressionNode {
+    const node = this.parseOr();
+    this.expect("end");
+    return node;
+  }
+
+  private parseOr(): ConditionExpressionNode {
+    let left = this.parseAnd();
+    while (this.matchOperator("||") || this.matchIdentifier("or")) {
+      left = { kind: "binary", operator: "||", left, right: this.parseAnd() };
+    }
+    return left;
+  }
+
+  private parseAnd(): ConditionExpressionNode {
+    let left = this.parseComparison();
+    while (this.matchOperator("&&") || this.matchIdentifier("and")) {
+      left = { kind: "binary", operator: "&&", left, right: this.parseComparison() };
+    }
+    return left;
+  }
+
+  private parseComparison(): ConditionExpressionNode {
+    let left = this.parseUnary();
+
+    while (true) {
+      const operator = this.parseComparisonOperator();
+      if (!operator) {
+        return left;
+      }
+
+      const right = this.parseUnary();
+      if (operator === "in" && right.kind !== "array") {
+        throw this.error("Right-hand side of 'in' must be an array literal.");
+      }
+      left = { kind: "binary", operator, left, right };
+    }
+  }
+
+  private parseComparisonOperator():
+    | "=="
+    | "!="
+    | ">"
+    | ">="
+    | "<"
+    | "<="
+    | "in"
+    | null {
+    if (this.matchOperator("==")) return "==";
+    if (this.matchOperator("!=")) return "!=";
+    if (this.matchOperator(">=")) return ">=";
+    if (this.matchOperator("<=")) return "<=";
+    if (this.matchOperator(">")) return ">";
+    if (this.matchOperator("<")) return "<";
+    if (this.matchIdentifier("eq")) return "==";
+    if (this.matchNotEqAlias()) return "!=";
+    if (this.matchIdentifier("gt")) return ">";
+    if (this.matchIdentifier("gte")) return ">=";
+    if (this.matchIdentifier("lt")) return "<";
+    if (this.matchIdentifier("lte")) return "<=";
+    if (this.matchIdentifier("in")) return "in";
+    return null;
+  }
+
+  private matchNotEqAlias(): boolean {
+    if (!this.peekIdentifier("not")) return false;
+    const next = this.peek(1);
+    if (next.type !== "identifier" || next.text.toLowerCase() !== "eq") {
+      return false;
+    }
+    this.index += 2;
+    return true;
+  }
+
+  private parseUnary(): ConditionExpressionNode {
+    if (this.matchOperator("!") || this.matchIdentifier("not")) {
+      return { kind: "unary", operand: this.parseUnary() };
+    }
+    return this.parsePrimary();
+  }
+
+  private parsePrimary(): ConditionExpressionNode {
+    if (this.match("leftParen")) {
+      const node = this.parseOr();
+      this.expect("rightParen");
+      return node;
+    }
+
+    if (this.match("leftBracket")) {
+      const items: ConditionExpressionNode[] = [];
+      if (!this.match("rightBracket")) {
+        do {
+          items.push(this.parseOr());
+        } while (this.match("comma"));
+        this.expect("rightBracket");
+      }
+      return { kind: "array", items };
+    }
+
+    if (this.current.type === "number") {
+      const text = this.current.text;
+      this.index += 1;
+      const number = Number.parseFloat(text);
+      if (Number.isNaN(number) || !isFinite(number)) {
+        throw this.error(`Invalid number literal '${text}'.`);
+      }
+      return { kind: "literal", value: number };
+    }
+
+    if (this.current.type === "string") {
+      const text = this.current.text;
+      this.index += 1;
+      return { kind: "literal", value: text };
+    }
+
+    if (this.current.type === "identifier") {
+      const identifier = this.current.text;
+      this.index += 1;
+      const lowered = identifier.toLowerCase();
+
+      if (lowered === "true") return { kind: "literal", value: true };
+      if (lowered === "false") return { kind: "literal", value: false };
+      if (lowered === "null") return { kind: "literal", value: null };
+      if (lowered === "path") return this.parsePathCall();
+      if (lowered === "exists") return this.parseExistsCall();
+
+      throw this.error(`Unexpected identifier '${identifier}'. Use path(...) for value references.`);
+    }
+
+    throw this.error(`Unexpected token '${this.current.text}'.`);
+  }
+
+  private parsePathCall(): ConditionExpressionNode {
+    this.expect("leftParen");
+    if (this.current.type !== "identifier" && this.current.type !== "string") {
+      throw this.error("path(...) requires a path reference.");
+    }
+    const path = this.current.text;
+    this.index += 1;
+    this.expect("rightParen");
+    return { kind: "path", path };
+  }
+
+  private parseExistsCall(): ConditionExpressionNode {
+    this.expect("leftParen");
+    const argument = this.parseOr();
+    this.expect("rightParen");
+    return { kind: "exists", argument };
+  }
+
+  private get current(): ConditionToken {
+    return this.peek(0);
+  }
+
+  private peek(offset: number): ConditionToken {
+    const cursor = this.index + offset;
+    return cursor >= this.tokens.length ? this.tokens[this.tokens.length - 1] : this.tokens[cursor];
+  }
+
+  private match(type: ConditionTokenType): boolean {
+    if (this.current.type !== type) return false;
+    this.index += 1;
+    return true;
+  }
+
+  private expect(type: ConditionTokenType): void {
+    if (!this.match(type)) {
+      throw this.error(`Expected ${type} but found '${this.current.text}'.`);
+    }
+  }
+
+  private matchOperator(operator: string): boolean {
+    if (this.current.type !== "operator" || this.current.text !== operator) return false;
+    this.index += 1;
+    return true;
+  }
+
+  private matchIdentifier(identifier: string): boolean {
+    if (!this.peekIdentifier(identifier)) return false;
+    this.index += 1;
+    return true;
+  }
+
+  private peekIdentifier(identifier: string): boolean {
+    return (
+      this.current.type === "identifier" && this.current.text.toLowerCase() === identifier.toLowerCase()
+    );
+  }
+
+  private error(message: string): Error {
+    return new Error(`${message} (position ${this.current.position}).`);
+  }
+}
+
+function tokenizeConditionExpression(expression: string): ConditionToken[] {
+  const tokens: ConditionToken[] = [];
+  let index = 0;
+
+  while (index < expression.length) {
+    const current = expression[index];
+    if (/\s/.test(current)) {
+      index += 1;
+      continue;
+    }
+
+    if (current === "'") {
+      const parsed = readQuotedConditionString(expression, index);
+      tokens.push({ type: "string", text: parsed.value, position: index });
+      index = parsed.nextIndex;
+      continue;
+    }
+
+    if (/\d/.test(current) || (current === "." && index + 1 < expression.length && /\d/.test(expression[index + 1]))) {
+      const start = index;
+      index += 1;
+      while (index < expression.length && /[\d.]/.test(expression[index])) {
+        index += 1;
+      }
+      tokens.push({ type: "number", text: expression.slice(start, index), position: start });
+      continue;
+    }
+
+    const twoChar = expression.slice(index, index + 2);
+    if (["&&", "||", "==", "!=", ">=", "<="].includes(twoChar)) {
+      tokens.push({ type: "operator", text: twoChar, position: index });
+      index += 2;
+      continue;
+    }
+
+    if (["!", ">", "<"].includes(current)) {
+      tokens.push({ type: "operator", text: current, position: index });
+      index += 1;
+      continue;
+    }
+
+    if (current === "(") {
+      tokens.push({ type: "leftParen", text: current, position: index });
+      index += 1;
+      continue;
+    }
+
+    if (current === ")") {
+      tokens.push({ type: "rightParen", text: current, position: index });
+      index += 1;
+      continue;
+    }
+
+    if (current === "[") {
+      tokens.push({ type: "leftBracket", text: current, position: index });
+      index += 1;
+      continue;
+    }
+
+    if (current === "]") {
+      tokens.push({ type: "rightBracket", text: current, position: index });
+      index += 1;
+      continue;
+    }
+
+    if (current === ",") {
+      tokens.push({ type: "comma", text: current, position: index });
+      index += 1;
+      continue;
+    }
+
+    if (isConditionIdentifierStart(current)) {
+      const start = index;
+      index += 1;
+      while (index < expression.length && isConditionIdentifierPart(expression[index])) {
+        index += 1;
+      }
+      tokens.push({ type: "identifier", text: expression.slice(start, index), position: start });
+      continue;
+    }
+
+    throw new Error(`Unexpected character '${current}' at position ${index}.`);
+  }
+
+  tokens.push({ type: "end", text: "", position: expression.length });
+  return tokens;
+}
+
+function isConditionIdentifierStart(value: string): boolean {
+  return /[A-Za-z_$]/.test(value);
+}
+
+function isConditionIdentifierPart(value: string): boolean {
+  return /[A-Za-z0-9_.$[\]]/.test(value);
+}
+
+function readQuotedConditionString(
+  expression: string,
+  startIndex: number
+): { value: string; nextIndex: number } {
+  let output = "";
+  let cursor = startIndex + 1;
+
+  while (cursor < expression.length) {
+    const current = expression[cursor];
+    if (current === "'") {
+      return { value: output, nextIndex: cursor + 1 };
+    }
+
+    if (current === "\\" && cursor + 1 < expression.length) {
+      cursor += 1;
+      output += expression[cursor];
+      cursor += 1;
+      continue;
+    }
+
+    output += current;
+    cursor += 1;
+  }
+
+  throw new Error(`Unterminated string literal at position ${startIndex}.`);
 }
 
 function resolveTransform(value: unknown, transform: TransformType): unknown {

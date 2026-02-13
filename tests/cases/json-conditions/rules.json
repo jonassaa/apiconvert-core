@@ -7,7 +7,7 @@
       "outputPath": "exists",
       "source": {
         "type": "condition",
-        "condition": { "path": "flag", "operator": "exists" },
+        "expression": "exists(path(flag))",
         "trueValue": "yes",
         "falseValue": "no"
       }
@@ -16,7 +16,7 @@
       "outputPath": "equals",
       "source": {
         "type": "condition",
-        "condition": { "path": "flag", "operator": "equals", "value": "yes" },
+        "expression": "path(flag) == 'yes'",
         "trueValue": "match",
         "falseValue": "no"
       }
@@ -25,7 +25,7 @@
       "outputPath": "includes",
       "source": {
         "type": "condition",
-        "condition": { "path": "tags", "operator": "includes", "value": "b" },
+        "expression": "path(tags.1) == 'b'",
         "trueValue": "y",
         "falseValue": "n"
       }
@@ -34,7 +34,7 @@
       "outputPath": "gt",
       "source": {
         "type": "condition",
-        "condition": { "path": "count", "operator": "gt", "value": "3" },
+        "expression": "path(count) > 3",
         "trueValue": "y",
         "falseValue": "n"
       }
@@ -43,7 +43,7 @@
       "outputPath": "lt",
       "source": {
         "type": "condition",
-        "condition": { "path": "count", "operator": "lt", "value": "10" },
+        "expression": "path(count) < 10",
         "trueValue": "y",
         "falseValue": "n"
       }

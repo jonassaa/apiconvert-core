@@ -72,61 +72,6 @@ public enum MergeMode
 }
 
 /// <summary>
-/// Operators for conditional checks.
-/// </summary>
-public enum ConditionOperator
-{
-    /// <summary>
-    /// Value exists.
-    /// </summary>
-    Exists,
-    /// <summary>
-    /// Value equals.
-    /// </summary>
-    Equals,
-    /// <summary>
-    /// Value does not equal.
-    /// </summary>
-    NotEquals,
-    /// <summary>
-    /// Value includes the operand.
-    /// </summary>
-    Includes,
-    /// <summary>
-    /// Value is greater than the operand.
-    /// </summary>
-    Gt,
-    /// <summary>
-    /// Value is less than the operand.
-    /// </summary>
-    Lt
-}
-
-/// <summary>
-/// Represents a conditional rule applied to a value source.
-/// </summary>
-public sealed record ConditionRule
-{
-    /// <summary>
-    /// Input path used for the condition.
-    /// </summary>
-    [JsonPropertyName("path")]
-    public string Path { get; init; } = string.Empty;
-
-    /// <summary>
-    /// Operator used for the condition.
-    /// </summary>
-    [JsonPropertyName("operator")]
-    public ConditionOperator Operator { get; init; }
-
-    /// <summary>
-    /// Operand value for the condition.
-    /// </summary>
-    [JsonPropertyName("value")]
-    public string? Value { get; init; }
-}
-
-/// <summary>
 /// Describes where a field value is sourced from.
 /// </summary>
 public sealed record ValueSource
@@ -162,10 +107,10 @@ public sealed record ValueSource
     public TransformType? Transform { get; init; }
 
     /// <summary>
-    /// Optional condition that selects between true/false values.
+    /// Optional condition expression for source type "condition".
     /// </summary>
-    [JsonPropertyName("condition")]
-    public ConditionRule? Condition { get; init; }
+    [JsonPropertyName("expression")]
+    public string? Expression { get; init; }
 
     /// <summary>
     /// Value used when the condition is true.

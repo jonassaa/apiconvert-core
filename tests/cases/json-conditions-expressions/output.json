@@ -1,0 +1,23 @@
+{
+  "existsWord": "y",
+  "eqSymbol": "y",
+  "neqSymbol": "y",
+  "eqAlias": "y",
+  "notEqAlias": "y",
+  "gtAlias": "y",
+  "gteSymbol": "y",
+  "ltAlias": "y",
+  "lteAlias": "y",
+  "andWord": "y",
+  "orWord": "y",
+  "andSymbol": "y",
+  "orSymbol": "y",
+  "notWord": "y",
+  "notSymbol": "y",
+  "inOperator": "y",
+  "booleanLiteral": "y",
+  "nullLiteral": "y",
+  "numberLiteral": "y",
+  "rootPath": "y",
+  "missingPathNull": "y"
+}

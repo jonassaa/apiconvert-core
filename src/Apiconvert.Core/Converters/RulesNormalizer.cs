@@ -57,7 +57,8 @@ internal static class RulesNormalizer
                     OutputPaths = rule.OutputPaths ?? new List<string>(),
                     Source = rule.Source with
                     {
-                        Paths = rule.Source.Paths ?? new List<string>()
+                        Paths = rule.Source.Paths ?? new List<string>(),
+                        Expression = NormalizeExpression(rule.Source.Expression)
                     }
                 })
                 .ToList(),
@@ -73,7 +74,8 @@ internal static class RulesNormalizer
                             OutputPaths = rule.OutputPaths ?? new List<string>(),
                             Source = rule.Source with
                             {
-                                Paths = rule.Source.Paths ?? new List<string>()
+                                Paths = rule.Source.Paths ?? new List<string>(),
+                                Expression = NormalizeExpression(rule.Source.Expression)
                             }
                         })
                         .ToList()
@@ -129,5 +131,15 @@ internal static class RulesNormalizer
             value = default;
             return false;
         }
+    }
+
+    private static string? NormalizeExpression(string? expression)
+    {
+        if (string.IsNullOrWhiteSpace(expression))
+        {
+            return null;
+        }
+
+        return expression.Trim();
     }
 }

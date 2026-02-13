@@ -32,20 +32,6 @@
       "type": "string",
       "enum": ["concat", "firstNonEmpty", "array"]
     },
-    "ConditionOperator": {
-      "type": "string",
-      "enum": ["exists", "equals", "notEquals", "includes", "gt", "lt"]
-    },
-    "ConditionRule": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "path": { "type": "string" },
-        "operator": { "$ref": "#/$defs/ConditionOperator" },
-        "value": { "type": ["string", "null"] }
-      },
-      "required": ["path", "operator"]
-    },
     "ValueSource": {
       "type": "object",
       "additionalProperties": false,
@@ -61,7 +47,7 @@
         },
         "value": { "type": ["string", "null"] },
         "transform": { "$ref": "#/$defs/TransformType" },
-        "condition": { "$ref": "#/$defs/ConditionRule" },
+        "expression": { "type": ["string", "null"] },
         "trueValue": { "type": ["string", "null"] },
         "falseValue": { "type": ["string", "null"] },
         "mergeMode": { "$ref": "#/$defs/MergeMode" },
@@ -86,6 +72,17 @@
                 ]
               }
             }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": { "const": "condition" }
+            },
+            "required": ["type"]
+          },
+          "then": {
+            "required": ["expression"]
           }
         }
       ],

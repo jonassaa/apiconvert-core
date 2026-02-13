@@ -409,7 +409,7 @@ public sealed class ConversionEngineTests
                     Source = new ValueSource
                     {
                         Type = "condition",
-                        Condition = new ConditionRule { Path = "flag", Operator = ConditionOperator.Equals, Value = "true" },
+                        Expression = "path(flag) == true",
                         TrueValue = "enabled",
                         FalseValue = "disabled"
                     }
@@ -663,12 +663,7 @@ public sealed class ConversionEngineTests
                     Source = new ValueSource
                     {
                         Type = "condition",
-                        Condition = new ConditionRule
-                        {
-                            Path = "user.active",
-                            Operator = ConditionOperator.Equals,
-                            Value = "yes"
-                        },
+                        Expression = "path(user.active) == 'yes'",
                         TrueValue = "pro",
                         FalseValue = "free"
                     }
@@ -839,7 +834,7 @@ public sealed class ConversionEngineTests
     }
 
     [Fact]
-    public void ApplyConversion_EvaluatesAllConditionOperators()
+    public void ApplyConversion_EvaluatesConditionExpressionsAndAliases()
     {
         var input = new Dictionary<string, object?>
         {
@@ -858,7 +853,7 @@ public sealed class ConversionEngineTests
                     Source = new ValueSource
                     {
                         Type = "condition",
-                        Condition = new ConditionRule { Path = "name", Operator = ConditionOperator.Exists },
+                        Expression = "exists(path(name))",
                         TrueValue = "y",
                         FalseValue = "n"
                     }
@@ -869,7 +864,7 @@ public sealed class ConversionEngineTests
                     Source = new ValueSource
                     {
                         Type = "condition",
-                        Condition = new ConditionRule { Path = "name", Operator = ConditionOperator.Equals, Value = "Ada" },
+                        Expression = "path(name) eq 'Ada'",
                         TrueValue = "y",
                         FalseValue = "n"
                     }
@@ -880,7 +875,7 @@ public sealed class ConversionEngineTests
                     Source = new ValueSource
                     {
                         Type = "condition",
-                        Condition = new ConditionRule { Path = "name", Operator = ConditionOperator.NotEquals, Value = "Bob" },
+                        Expression = "path(name) not eq 'Bob'",
                         TrueValue = "y",
                         FalseValue = "n"
                     }
@@ -891,7 +886,7 @@ public sealed class ConversionEngineTests
                     Source = new ValueSource
                     {
                         Type = "condition",
-                        Condition = new ConditionRule { Path = "list", Operator = ConditionOperator.Includes, Value = "b" },
+                        Expression = "path(name) in ['Ada', 'Bob']",
                         TrueValue = "y",
                         FalseValue = "n"
                     }
@@ -902,7 +897,7 @@ public sealed class ConversionEngineTests
                     Source = new ValueSource
                     {
                         Type = "condition",
-                        Condition = new ConditionRule { Path = "count", Operator = ConditionOperator.Gt, Value = "3" },
+                        Expression = "path(count) gt 3 and path(count) lt 10",
                         TrueValue = "y",
                         FalseValue = "n"
                     }
@@ -913,7 +908,18 @@ public sealed class ConversionEngineTests
                     Source = new ValueSource
                     {
                         Type = "condition",
-                        Condition = new ConditionRule { Path = "count", Operator = ConditionOperator.Lt, Value = "10" },
+                        Expression = "path(count) >= 3 && path(count) < 10",
+                        TrueValue = "y",
+                        FalseValue = "n"
+                    }
+                },
+                new()
+                {
+                    OutputPath = "grouped",
+                    Source = new ValueSource
+                    {
+                        Type = "condition",
+                        Expression = "path(count) gte 3 and not (path(count) lt 5)",
                         TrueValue = "y",
                         FalseValue = "n"
                     }
@@ -930,6 +936,7 @@ public sealed class ConversionEngineTests
         Assert.Equal("y", output["includes"]);
         Assert.Equal("y", output["gt"]);
         Assert.Equal("y", output["lt"]);
+        Assert.Equal("y", output["grouped"]);
     }
 
     [Fact]
@@ -1149,7 +1156,7 @@ public sealed class ConversionEngineTests
     }
 
     [Fact]
-    public void ApplyConversion_ConditionSourceWithoutConditionReturnsNull()
+    public void ApplyConversion_ConditionSourceWithoutExpressionReturnsFalseBranchAndError()
     {
         var rules = new ConversionRules
         {
@@ -1166,7 +1173,9 @@ public sealed class ConversionEngineTests
         var result = ConversionEngine.ApplyConversion(new Dictionary<string, object?>(), rules);
         var output = Assert.IsType<Dictionary<string, object?>>(result.Output);
 
-        Assert.Null(output["status"]);
+        Assert.Equal(string.Empty, output["status"]);
+        Assert.Single(result.Errors);
+        Assert.Contains("condition expression is required", result.Errors[0]);
     }
 
     [Fact]
@@ -1204,7 +1213,7 @@ public sealed class ConversionEngineTests
                     Source = new ValueSource
                     {
                         Type = "condition",
-                        Condition = new ConditionRule { Path = "name", Operator = ConditionOperator.Includes, Value = "Ada" },
+                        Expression = "'Ada' in ['Ada', 'Grace']",
                         TrueValue = "yes",
                         FalseValue = "no"
                     }
@@ -1427,7 +1436,7 @@ public sealed class ConversionEngineTests
     }
 
     [Fact]
-    public void ApplyConversion_ConditionOperatorDefaultReturnsFalse()
+    public void ApplyConversion_InvalidConditionExpressionReturnsFalseAndAddsError()
     {
         var input = new Dictionary<string, object?> { ["name"] = "Ada" };
         var rules = new ConversionRules
@@ -1440,7 +1449,7 @@ public sealed class ConversionEngineTests
                     Source = new ValueSource
                     {
                         Type = "condition",
-                        Condition = new ConditionRule { Path = "name", Operator = (ConditionOperator)999 },
+                        Expression = "path(name) ==",
                         TrueValue = "yes",
                         FalseValue = "no"
                     }
@@ -1452,25 +1461,74 @@ public sealed class ConversionEngineTests
         var output = Assert.IsType<Dictionary<string, object?>>(result.Output);
 
         Assert.Equal("no", output["match"]);
+        Assert.Single(result.Errors);
+        Assert.Contains("invalid condition expression", result.Errors[0]);
     }
 
     [Fact]
-    public void ApplyConversion_IncludesConditionWithNonCollectionReturnsFalse()
+    public void ApplyConversion_LegacyConditionObjectFailsHardCut()
     {
-        var input = new Dictionary<string, object?> { ["value"] = 10 };
+        var input = new Dictionary<string, object?> { ["name"] = "Ada" };
+        var rulesJson = """
+        {
+          "version": 2,
+          "inputFormat": "json",
+          "outputFormat": "json",
+          "fieldMappings": [
+            {
+              "outputPath": "match",
+              "source": {
+                "type": "condition",
+                "condition": { "path": "name", "operator": "equals", "value": "Ada" },
+                "trueValue": "yes",
+                "falseValue": "no"
+              }
+            }
+          ],
+          "arrayMappings": []
+        }
+        """;
+
+        var result = ConversionEngine.ApplyConversion(input, rulesJson);
+        var output = Assert.IsType<Dictionary<string, object?>>(result.Output);
+
+        Assert.Equal("no", output["match"]);
+        Assert.Single(result.Errors);
+        Assert.Contains("condition expression is required", result.Errors[0]);
+    }
+
+    [Fact]
+    public void ApplyConversion_ConditionExpressionWithRootLookupInsideArrayItems()
+    {
+        var input = new Dictionary<string, object?>
+        {
+            ["meta"] = new Dictionary<string, object?> { ["source"] = "api" },
+            ["items"] = new List<object?>
+            {
+                new Dictionary<string, object?> { ["value"] = "x" }
+            }
+        };
         var rules = new ConversionRules
         {
-            FieldMappings = new List<FieldRule>
+            ArrayMappings = new List<ArrayRule>
             {
                 new()
                 {
-                    OutputPath = "match",
-                    Source = new ValueSource
+                    InputPath = "items",
+                    OutputPath = "items",
+                    ItemMappings = new List<FieldRule>
                     {
-                        Type = "condition",
-                        Condition = new ConditionRule { Path = "value", Operator = ConditionOperator.Includes, Value = "1" },
-                        TrueValue = "yes",
-                        FalseValue = "no"
+                        new()
+                        {
+                            OutputPath = "match",
+                            Source = new ValueSource
+                            {
+                                Type = "condition",
+                                Expression = "path($.meta.source) == 'api' && path(value) == 'x'",
+                                TrueValue = "yes",
+                                FalseValue = "no"
+                            }
+                        }
                     }
                 }
             }
@@ -1478,8 +1536,9 @@ public sealed class ConversionEngineTests
 
         var result = ConversionEngine.ApplyConversion(input, rules);
         var output = Assert.IsType<Dictionary<string, object?>>(result.Output);
-
-        Assert.Equal("no", output["match"]);
+        var items = Assert.IsType<List<object?>>(output["items"]);
+        var mapped = Assert.IsType<Dictionary<string, object?>>(items[0]);
+        Assert.Equal("yes", mapped["match"]);
     }
 
     [Fact]

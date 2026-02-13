@@ -215,7 +215,7 @@ const rules = normalizeConversionRules({
       outputPath: "profile.isAdult",
       source: {
         type: "condition",
-        condition: { path: "user.age", operator: "gt", value: "18" },
+        expression: "path(user.age) > 18",
         trueValue: "true",
         falseValue: "false"
       }
@@ -223,6 +223,13 @@ const rules = normalizeConversionRules({
   ]
 });
 ```
+
+Condition expressions support:
+- Value lookups with `path(...)` (including root lookups like `path($.meta.source)`).
+- `exists(...)`.
+- Logical operators: `&&`, `||`, `!`, `and`, `or`, `not`.
+- Comparison operators: `==`, `!=`, `>`, `>=`, `<`, `<=`, and aliases `eq`, `not eq`, `gt`, `gte`, `lt`, `lte`.
+- Membership with `in` against array literals, for example `path(user.name) in ['ada', 'john']`.
 
 For splitting a full name into parts, use `transform: "split"`, `separator`, and `tokenIndex`.
 `tokenIndex` supports negative values (`-1` = last token):
