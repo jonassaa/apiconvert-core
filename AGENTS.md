@@ -21,7 +21,6 @@ This repo hosts the shared core for Apiconvert, shipping both a .NET library (Nu
 ## Build, Test, and Development Commands
 - `dotnet build Apiconvert.Core.sln` — compile the solution.
 - `dotnet test Apiconvert.Core.sln` — run .NET (NuGet) tests.
-- `dotnet test Apiconvert.Core.sln --settings coverlet.runsettings --collect:"XPlat Code Coverage"` — run tests with coverage (Cobertura output under `TestResults/`).
 - `dotnet pack src/Apiconvert.Core/Apiconvert.Core.csproj -c Release` — produce the NuGet package.
 - `dotnet build src/Apiconvert.Core/Apiconvert.Core.csproj` — compile only the core library.
 - `npm --prefix tests/npm/apiconvert-core-tests test` — run npm package tests (runs build + node test runner).

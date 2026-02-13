@@ -10,6 +10,40 @@ Rules use one ordered `rules` array of recursive nodes:
 - `kind: "array"` with `inputPath`, `outputPaths`, and `itemRules`
 - `kind: "branch"` with `expression`, `then`, optional `elseIf`, optional `else`
 
+Supported payload formats:
+- `json`
+- `xml`
+- `query`
+
+Supported value sources (`field.source.type`):
+- `path` (`path`)
+- `constant` (`value`, parsed as primitive when possible)
+- `transform` (`path`, `transform`)
+- `merge` (`paths`, optional `mergeMode`, `separator`)
+- `condition` (`expression`, branch sources/values, optional `conditionOutput`)
+
+Supported transforms (`transform`):
+- `toLowerCase`
+- `toUpperCase`
+- `number`
+- `boolean`
+- `concat` (`path` supports comma-separated tokens and `const:` literals)
+- `split` (`separator`, `tokenIndex`, `trimAfterSplit`)
+
+Supported merge modes (`mergeMode`):
+- `concat`
+- `firstNonEmpty`
+- `array`
+
+Branch/condition expressions support:
+- `path(...)`
+- `exists(...)`
+- comparisons (`==`, `!=`, `>`, `>=`, `<`, `<=`)
+- boolean operators (`&&`, `||`, `!`)
+
+Array rules also support:
+- `coerceSingle` to treat a single non-array input value as one array item
+
 The canonical schema is:
 
 - `schemas/rules/rules.schema.json`

@@ -49,7 +49,7 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": ["path", "value", "transform", "condition", "constant", "merge"]
+          "enum": ["path", "transform", "condition", "constant", "merge"]
         },
         "path": { "type": ["string", "null"] },
         "paths": {

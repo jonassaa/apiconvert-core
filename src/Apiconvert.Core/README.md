@@ -9,6 +9,31 @@ Rules use a single ordered `rules` array with recursive nodes:
 - `kind: "array"` maps array items using recursive `itemRules`
 - `kind: "branch"` evaluates an expression and runs `then` / `elseIf` / `else`
 
+Supported field source types:
+- `path`
+- `constant`
+- `transform`
+- `merge`
+- `condition`
+
+Supported transforms:
+- `toLowerCase`
+- `toUpperCase`
+- `number`
+- `boolean`
+- `concat`
+- `split`
+
+Supported merge modes:
+- `concat`
+- `firstNonEmpty`
+- `array`
+
+Additional rule/source options:
+- field: optional `defaultValue`
+- array: optional `coerceSingle`
+- condition source: optional `trueSource` / `falseSource`, `trueValue` / `falseValue`, `elseIf`, and `conditionOutput` (`branch` or `match`)
+
 ## Example
 
 ```csharp
@@ -65,3 +90,9 @@ Condition sources and branch rules use expression syntax with `path(...)` and `e
 Examples:
 - `path(score) >= 70`
 - `path($.meta.source) == 'api' && exists(path(value))`
+
+## Parse and Format Helpers
+
+`ConversionEngine` also exposes payload helpers:
+- `ParsePayload(string, DataFormat)` and stream/`JsonNode` overloads
+- `FormatPayload(object?, DataFormat, bool)` and stream overload

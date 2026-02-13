@@ -9,6 +9,33 @@ Canonical rules are defined by one ordered `rules` array of recursive nodes:
 - `kind: "array"` with `inputPath`, `outputPaths`, and recursive `itemRules`
 - `kind: "branch"` with `expression`, `then`, optional `elseIf`, optional `else`
 
+Supported field source types:
+- `path`
+- `constant`
+- `transform`
+- `merge`
+- `condition`
+
+Supported transforms:
+- `toLowerCase`
+- `toUpperCase`
+- `number`
+- `boolean`
+- `concat`
+- `split`
+
+Supported merge modes:
+- `concat`
+- `firstNonEmpty`
+- `array`
+
+Additional options:
+- field: optional `defaultValue`
+- array: optional `coerceSingle`
+- condition source: optional `trueSource` / `falseSource`, `trueValue` / `falseValue`, `elseIf`, and `conditionOutput` (`branch` or `match`)
+
+Condition expressions support `path(...)`, `exists(...)`, comparison operators, and boolean operators (`&&`, `||`, `!`).
+
 ## Example
 
 ```ts
@@ -51,3 +78,9 @@ if (result.errors.length > 0) {
 
 console.log(result.output);
 ```
+
+## Parse and Format Helpers
+
+The package also exports:
+- `parsePayload(text, format)` for `json`, `xml`, and `query`
+- `formatPayload(value, format, pretty)`
