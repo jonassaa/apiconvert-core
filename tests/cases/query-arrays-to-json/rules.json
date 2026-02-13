@@ -2,15 +2,26 @@
   "version": 2,
   "inputFormat": "query",
   "outputFormat": "json",
-  "fieldMappings": [
+  "rules": [
     {
-      "outputPath": "items",
-      "source": { "type": "path", "path": "items" }
+      "kind": "field",
+      "outputPaths": [
+        "items"
+      ],
+      "source": {
+        "type": "path",
+        "path": "items"
+      }
     },
     {
-      "outputPath": "flag",
-      "source": { "type": "path", "path": "flag" }
+      "kind": "field",
+      "outputPaths": [
+        "flag"
+      ],
+      "source": {
+        "type": "path",
+        "path": "flag"
+      }
     }
-  ],
-  "arrayMappings": []
+  ]
 }

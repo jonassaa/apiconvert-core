@@ -2,15 +2,44 @@
   "version": 2,
   "inputFormat": "json",
   "outputFormat": "json",
-  "fieldMappings": [],
-  "arrayMappings": [
+  "rules": [
     {
+      "kind": "array",
       "inputPath": "$.items",
-      "outputPath": "$.lines",
-      "itemMappings": [
-        { "outputPath": "code", "source": { "type": "path", "path": "sku" } },
-        { "outputPath": "quantity", "source": { "type": "path", "path": "qty" } },
-        { "outputPath": "tenant", "source": { "type": "path", "path": "$.meta.tenant" } }
+      "outputPaths": [
+        "$.lines"
+      ],
+      "itemRules": [
+        {
+          "kind": "field",
+          "outputPaths": [
+            "code"
+          ],
+          "source": {
+            "type": "path",
+            "path": "sku"
+          }
+        },
+        {
+          "kind": "field",
+          "outputPaths": [
+            "quantity"
+          ],
+          "source": {
+            "type": "path",
+            "path": "qty"
+          }
+        },
+        {
+          "kind": "field",
+          "outputPaths": [
+            "tenant"
+          ],
+          "source": {
+            "type": "path",
+            "path": "$.meta.tenant"
+          }
+        }
       ]
     }
   ]

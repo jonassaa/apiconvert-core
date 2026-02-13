@@ -1,0 +1,12 @@
+{
+  "meta": { "source": "api" },
+  "orders": [
+    {
+      "id": "o1",
+      "items": [
+        { "sku": "A", "qty": 1 },
+        { "sku": "B", "qty": 2 }
+      ]
+    }
+  ]
+}

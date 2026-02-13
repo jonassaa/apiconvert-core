@@ -1,0 +1,8 @@
+{
+  "status": "active",
+  "name": "Ada",
+  "items": [
+    { "id": "A1", "qty": 2 },
+    { "id": "B2", "qty": 1 }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "orders": [
+    {
+      "id": "o1",
+      "lines": [
+        { "sku": "A", "priority": "normal" },
+        { "sku": "B", "priority": "high" }
+      ]
+    }
+  ]
+}

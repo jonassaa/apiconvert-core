@@ -2,16 +2,21 @@
   "version": 2,
   "inputFormat": "json",
   "outputFormat": "json",
-  "fieldMappings": [
+  "rules": [
     {
-      "outputPath": "profile.fullName",
+      "kind": "field",
+      "outputPaths": [
+        "profile.fullName"
+      ],
       "source": {
         "type": "merge",
-        "paths": ["user.firstName", "user.lastName"],
+        "paths": [
+          "user.firstName",
+          "user.lastName"
+        ],
         "mergeMode": "concat",
         "separator": " "
       }
     }
-  ],
-  "arrayMappings": []
+  ]
 }

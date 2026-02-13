@@ -2,20 +2,33 @@
   "version": 2,
   "inputFormat": "json",
   "outputFormat": "json",
-  "fieldMappings": [
+  "rules": [
     {
-      "outputPath": "user.name",
-      "source": { "type": "path", "path": "name" }
-    }
-  ],
-  "arrayMappings": [
+      "kind": "field",
+      "outputPaths": [
+        "user.name"
+      ],
+      "source": {
+        "type": "path",
+        "path": "name"
+      }
+    },
     {
+      "kind": "array",
       "inputPath": "items",
-      "outputPath": "lines",
-      "itemMappings": [
+      "outputPaths": [
+        "lines"
+      ],
+      "itemRules": [
         {
-          "outputPath": "id",
-          "source": { "type": "path", "path": "id" }
+          "kind": "field",
+          "outputPaths": [
+            "id"
+          ],
+          "source": {
+            "type": "path",
+            "path": "id"
+          }
         }
       ]
     }

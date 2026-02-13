@@ -1,0 +1,10 @@
+{
+  "meta": {
+    "enabled": true,
+    "name": "Ada"
+  },
+  "lines": [
+    { "code": "A1" },
+    { "code": "B2" }
+  ]
+}

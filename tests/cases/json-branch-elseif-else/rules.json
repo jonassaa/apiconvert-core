@@ -1,0 +1,47 @@
+{
+  "version": 2,
+  "inputFormat": "json",
+  "outputFormat": "json",
+  "rules": [
+    {
+      "kind": "branch",
+      "expression": "path(score) >= 90",
+      "then": [
+        {
+          "kind": "field",
+          "outputPaths": ["grade"],
+          "source": { "type": "constant", "value": "A" }
+        }
+      ],
+      "elseIf": [
+        {
+          "expression": "path(score) >= 80",
+          "then": [
+            {
+              "kind": "field",
+              "outputPaths": ["grade"],
+              "source": { "type": "constant", "value": "B" }
+            }
+          ]
+        },
+        {
+          "expression": "path(score) >= 70",
+          "then": [
+            {
+              "kind": "field",
+              "outputPaths": ["grade"],
+              "source": { "type": "constant", "value": "C" }
+            }
+          ]
+        }
+      ],
+      "else": [
+        {
+          "kind": "field",
+          "outputPaths": ["grade"],
+          "source": { "type": "constant", "value": "F" }
+        }
+      ]
+    }
+  ]
+}

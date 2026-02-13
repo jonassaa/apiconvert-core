@@ -2,15 +2,26 @@
   "version": 2,
   "inputFormat": "query",
   "outputFormat": "query",
-  "fieldMappings": [
+  "rules": [
     {
-      "outputPath": "person.name",
-      "source": { "type": "path", "path": "user.name" }
+      "kind": "field",
+      "outputPaths": [
+        "person.name"
+      ],
+      "source": {
+        "type": "path",
+        "path": "user.name"
+      }
     },
     {
-      "outputPath": "person.age",
-      "source": { "type": "path", "path": "user.age" }
+      "kind": "field",
+      "outputPaths": [
+        "person.age"
+      ],
+      "source": {
+        "type": "path",
+        "path": "user.age"
+      }
     }
-  ],
-  "arrayMappings": []
+  ]
 }

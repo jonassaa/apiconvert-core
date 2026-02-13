@@ -2,9 +2,18 @@
 
 `rules.schema.json` is the canonical JSON Schema for Apiconvert conversion rules. It is the single source of truth for the rule shape used by both the .NET and npm packages.
 
-## Versioning
+## Canonical Shape
 
-The schema describes the current rules format (`version: 2`). When the rules shape changes, publish a new schema file and update references to point at the new version.
+Rules now use a single ordered `rules` array with recursive nodes:
+- `kind: "field"` for scalar mappings (`outputPaths`, `source`, optional `defaultValue`)
+- `kind: "array"` for array mappings (`inputPath`, `outputPaths`, `itemRules`, optional `coerceSingle`)
+- `kind: "branch"` for conditional blocks (`expression`, `then`, optional `elseIf`, optional `else`)
+
+Legacy keys are intentionally unsupported and should be rejected:
+- `fieldMappings`
+- `arrayMappings`
+- `itemMappings`
+- `outputPath`
 
 ## Consistency Across C# and TypeScript
 

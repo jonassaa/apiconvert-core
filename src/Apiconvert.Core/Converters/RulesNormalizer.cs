@@ -5,6 +5,14 @@ namespace Apiconvert.Core.Converters;
 
 internal static class RulesNormalizer
 {
+    private static readonly HashSet<string> ForbiddenLegacyProperties = new(StringComparer.Ordinal)
+    {
+        "fieldMappings",
+        "arrayMappings",
+        "itemMappings",
+        "outputPath"
+    };
+
     internal static ConversionRules NormalizeConversionRules(object? raw)
     {
         if (raw is ConversionRules rules)
@@ -29,14 +37,17 @@ internal static class RulesNormalizer
         {
             if (element.ValueKind == JsonValueKind.Object)
             {
-                if (TryDeserialize<ConversionRules>(element, out var parsedRules) && parsedRules != null && parsedRules.Version == 2)
+                var validationErrors = new List<string>();
+                CollectLegacyPropertyErrors(element, "$", validationErrors);
+
+                if (TryDeserialize<ConversionRules>(element, out var parsedRules) && parsedRules != null)
                 {
-                    return NormalizeRules(parsedRules);
+                    return NormalizeRules(parsedRules, validationErrors);
                 }
 
-                if (TryDeserialize<LegacyMappingConfig>(element, out var legacy) && legacy != null)
+                if (validationErrors.Count > 0)
                 {
-                    return NormalizeLegacyRules(legacy);
+                    return new ConversionRules { ValidationErrors = validationErrors };
                 }
             }
         }
@@ -44,71 +55,147 @@ internal static class RulesNormalizer
         return new ConversionRules();
     }
 
-    private static ConversionRules NormalizeRules(ConversionRules rules)
+    private static ConversionRules NormalizeRules(ConversionRules rules, List<string>? seedErrors = null)
     {
+        var validationErrors = seedErrors ?? new List<string>();
+
         return rules with
         {
+            Version = rules.Version <= 0 ? 2 : rules.Version,
             InputFormat = rules.InputFormat,
             OutputFormat = rules.OutputFormat,
-            FieldMappings = rules.FieldMappings
-                .Select(rule => rule with
-                {
-                    DefaultValue = rule.DefaultValue ?? string.Empty,
-                    OutputPaths = rule.OutputPaths ?? new List<string>(),
-                    Source = NormalizeValueSource(rule.Source)
-                })
-                .ToList(),
-            ArrayMappings = rules.ArrayMappings
-                .Select(mapping => mapping with
-                {
-                    CoerceSingle = mapping.CoerceSingle,
-                    OutputPaths = mapping.OutputPaths ?? new List<string>(),
-                    ItemMappings = mapping.ItemMappings
-                        .Select(rule => rule with
-                        {
-                            DefaultValue = rule.DefaultValue ?? string.Empty,
-                            OutputPaths = rule.OutputPaths ?? new List<string>(),
-                            Source = NormalizeValueSource(rule.Source)
-                        })
-                        .ToList()
-                })
-                .ToList()
+            Rules = NormalizeRuleNodes(rules.Rules ?? new List<RuleNode>(), "rules", validationErrors),
+            ValidationErrors = validationErrors
         };
     }
 
-    private static ConversionRules NormalizeLegacyRules(LegacyMappingConfig legacy)
+    private static List<RuleNode> NormalizeRuleNodes(
+        List<RuleNode> nodes,
+        string path,
+        List<string> validationErrors)
     {
-        var fieldMappings = legacy.Rows.Select(row =>
+        var normalized = new List<RuleNode>();
+
+        for (var index = 0; index < nodes.Count; index++)
         {
-            var sourceType = row.SourceType ?? "path";
-            ValueSource source = sourceType switch
+            var node = nodes[index] ?? new RuleNode();
+            var nodePath = $"{path}[{index}]";
+            var kind = (node.Kind ?? string.Empty).Trim().ToLowerInvariant();
+
+            if (kind.Length == 0)
             {
-                "constant" => new ValueSource { Type = "constant", Value = row.SourceValue },
-                "transform" => new ValueSource
+                validationErrors.Add($"{nodePath}: kind is required.");
+                continue;
+            }
+
+            if (kind is not ("field" or "array" or "branch"))
+            {
+                validationErrors.Add($"{nodePath}: unsupported kind '{node.Kind}'.");
+                continue;
+            }
+
+            if (kind == "field")
+            {
+                var outputPaths = NormalizeOutputPaths(node.OutputPaths);
+                if (outputPaths.Count == 0)
                 {
-                    Type = "transform",
-                    Path = row.SourceValue,
-                    Transform = row.TransformType ?? TransformType.ToLowerCase
-                },
-                _ => new ValueSource { Type = "path", Path = row.SourceValue }
-            };
+                    validationErrors.Add($"{nodePath}: outputPaths is required.");
+                }
 
-            return new FieldRule
+                normalized.Add(node with
+                {
+                    Kind = kind,
+                    OutputPaths = outputPaths,
+                    Source = NormalizeValueSource(node.Source ?? new ValueSource()),
+                    DefaultValue = node.DefaultValue ?? string.Empty
+                });
+                continue;
+            }
+
+            if (kind == "array")
             {
-                OutputPath = row.OutputPath,
-                Source = source,
-                DefaultValue = row.DefaultValue ?? string.Empty
-            };
-        }).ToList();
+                var outputPaths = NormalizeOutputPaths(node.OutputPaths);
+                if (string.IsNullOrWhiteSpace(node.InputPath))
+                {
+                    validationErrors.Add($"{nodePath}: inputPath is required.");
+                }
 
-        return new ConversionRules
+                if (outputPaths.Count == 0)
+                {
+                    validationErrors.Add($"{nodePath}: outputPaths is required.");
+                }
+
+                normalized.Add(node with
+                {
+                    Kind = kind,
+                    InputPath = node.InputPath?.Trim() ?? string.Empty,
+                    OutputPaths = outputPaths,
+                    ItemRules = NormalizeRuleNodes(node.ItemRules ?? new List<RuleNode>(), $"{nodePath}.itemRules", validationErrors)
+                });
+                continue;
+            }
+
+            var expression = NormalizeExpression(node.Expression);
+            if (expression == null)
+            {
+                validationErrors.Add($"{nodePath}: expression is required.");
+            }
+
+            var elseIf = new List<BranchElseIfRule>();
+            var elseIfRules = node.ElseIf ?? new List<BranchElseIfRule>();
+            for (var elseIfIndex = 0; elseIfIndex < elseIfRules.Count; elseIfIndex++)
+            {
+                var branch = elseIfRules[elseIfIndex] ?? new BranchElseIfRule();
+                var branchPath = $"{nodePath}.elseIf[{elseIfIndex}]";
+                var branchExpression = NormalizeExpression(branch.Expression);
+                if (branchExpression == null)
+                {
+                    validationErrors.Add($"{branchPath}: expression is required.");
+                }
+
+                elseIf.Add(branch with
+                {
+                    Expression = branchExpression,
+                    Then = NormalizeRuleNodes(branch.Then ?? new List<RuleNode>(), $"{branchPath}.then", validationErrors)
+                });
+            }
+
+            normalized.Add(node with
+            {
+                Kind = kind,
+                Expression = expression,
+                Then = NormalizeRuleNodes(node.Then ?? new List<RuleNode>(), $"{nodePath}.then", validationErrors),
+                ElseIf = elseIf,
+                Else = NormalizeRuleNodes(node.Else ?? new List<RuleNode>(), $"{nodePath}.else", validationErrors)
+            });
+        }
+
+        return normalized;
+    }
+
+    private static List<string> NormalizeOutputPaths(IEnumerable<string>? paths)
+    {
+        return (paths ?? Array.Empty<string>())
+            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .Select(NormalizeWritePath)
+            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+    }
+
+    private static string NormalizeWritePath(string path)
+    {
+        if (path.StartsWith("$.", StringComparison.Ordinal))
         {
-            Version = 2,
-            InputFormat = DataFormat.Json,
-            OutputFormat = DataFormat.Json,
-            FieldMappings = fieldMappings,
-            ArrayMappings = new List<ArrayRule>()
-        };
+            return path[2..].Trim();
+        }
+
+        if (path == "$")
+        {
+            return string.Empty;
+        }
+
+        return path.Trim();
     }
 
     private static bool TryDeserialize<T>(JsonElement element, out T? value)
@@ -151,5 +238,32 @@ internal static class RulesNormalizer
                 })
                 .ToList()
         };
+    }
+
+    private static void CollectLegacyPropertyErrors(JsonElement element, string path, List<string> errors)
+    {
+        switch (element.ValueKind)
+        {
+            case JsonValueKind.Object:
+                foreach (var property in element.EnumerateObject())
+                {
+                    var propertyPath = $"{path}.{property.Name}";
+                    if (ForbiddenLegacyProperties.Contains(property.Name))
+                    {
+                        errors.Add($"{propertyPath}: legacy property '{property.Name}' is not supported; use rules[] with outputPaths/itemRules.");
+                    }
+
+                    CollectLegacyPropertyErrors(property.Value, propertyPath, errors);
+                }
+                break;
+            case JsonValueKind.Array:
+                var index = 0;
+                foreach (var item in element.EnumerateArray())
+                {
+                    CollectLegacyPropertyErrors(item, $"{path}[{index}]", errors);
+                    index++;
+                }
+                break;
+        }
     }
 }

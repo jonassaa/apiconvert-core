@@ -8,19 +8,20 @@ test("missing array input path yields warning and no errors", () => {
     version: 2,
     inputFormat: "json",
     outputFormat: "json",
-    fieldMappings: [
+    rules: [
       {
-        outputPath: "user.name",
+        kind: "field",
+        outputPaths: ["user.name"],
         source: { type: "path", path: "name" }
-      }
-    ],
-    arrayMappings: [
+      },
       {
+        kind: "array",
         inputPath: "items",
-        outputPath: "lines",
-        itemMappings: [
+        outputPaths: ["lines"],
+        itemRules: [
           {
-            outputPath: "id",
+            kind: "field",
+            outputPaths: ["id"],
             source: { type: "path", path: "id" }
           }
         ]
@@ -34,7 +35,7 @@ test("missing array input path yields warning and no errors", () => {
   assert.equal(result.warnings.length, 1);
   assert.equal(
     result.warnings[0],
-    'Array mapping skipped: inputPath "items" not found (arrayMappings[0]).'
+    'Array mapping skipped: inputPath "items" not found (rules[1]).'
   );
 
   const output = result.output as Record<string, unknown>;
@@ -48,12 +49,12 @@ test("non-array value at array input path remains an error", () => {
     version: 2,
     inputFormat: "json",
     outputFormat: "json",
-    fieldMappings: [],
-    arrayMappings: [
+    rules: [
       {
+        kind: "array",
         inputPath: "items",
-        outputPath: "lines",
-        itemMappings: []
+        outputPaths: ["lines"],
+        itemRules: []
       }
     ]
   });

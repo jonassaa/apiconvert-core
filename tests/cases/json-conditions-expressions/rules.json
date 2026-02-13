@@ -2,9 +2,12 @@
   "version": 2,
   "inputFormat": "json",
   "outputFormat": "json",
-  "fieldMappings": [
+  "rules": [
     {
-      "outputPath": "existsWord",
+      "kind": "field",
+      "outputPaths": [
+        "existsWord"
+      ],
       "source": {
         "type": "condition",
         "expression": "exists(path(name))",
@@ -13,7 +16,10 @@
       }
     },
     {
-      "outputPath": "eqSymbol",
+      "kind": "field",
+      "outputPaths": [
+        "eqSymbol"
+      ],
       "source": {
         "type": "condition",
         "expression": "path(name) == 'Ada'",
@@ -22,7 +28,10 @@
       }
     },
     {
-      "outputPath": "neqSymbol",
+      "kind": "field",
+      "outputPaths": [
+        "neqSymbol"
+      ],
       "source": {
         "type": "condition",
         "expression": "path(role) != 'admin'",
@@ -31,7 +40,10 @@
       }
     },
     {
-      "outputPath": "eqAlias",
+      "kind": "field",
+      "outputPaths": [
+        "eqAlias"
+      ],
       "source": {
         "type": "condition",
         "expression": "path(role) eq 'guest'",
@@ -40,7 +52,10 @@
       }
     },
     {
-      "outputPath": "notEqAlias",
+      "kind": "field",
+      "outputPaths": [
+        "notEqAlias"
+      ],
       "source": {
         "type": "condition",
         "expression": "path(name) not eq 'Bob'",
@@ -49,7 +64,10 @@
       }
     },
     {
-      "outputPath": "gtAlias",
+      "kind": "field",
+      "outputPaths": [
+        "gtAlias"
+      ],
       "source": {
         "type": "condition",
         "expression": "path(count) gt 4",
@@ -58,7 +76,10 @@
       }
     },
     {
-      "outputPath": "gteSymbol",
+      "kind": "field",
+      "outputPaths": [
+        "gteSymbol"
+      ],
       "source": {
         "type": "condition",
         "expression": "path(count) >= 5",
@@ -67,7 +88,10 @@
       }
     },
     {
-      "outputPath": "ltAlias",
+      "kind": "field",
+      "outputPaths": [
+        "ltAlias"
+      ],
       "source": {
         "type": "condition",
         "expression": "path(count) lt 6",
@@ -76,7 +100,10 @@
       }
     },
     {
-      "outputPath": "lteAlias",
+      "kind": "field",
+      "outputPaths": [
+        "lteAlias"
+      ],
       "source": {
         "type": "condition",
         "expression": "path(count) lte 5",
@@ -85,7 +112,10 @@
       }
     },
     {
-      "outputPath": "andWord",
+      "kind": "field",
+      "outputPaths": [
+        "andWord"
+      ],
       "source": {
         "type": "condition",
         "expression": "path(count) gt 4 and path(count) lt 10",
@@ -94,7 +124,10 @@
       }
     },
     {
-      "outputPath": "orWord",
+      "kind": "field",
+      "outputPaths": [
+        "orWord"
+      ],
       "source": {
         "type": "condition",
         "expression": "path(role) == 'admin' or path(role) == 'guest'",
@@ -103,7 +136,10 @@
       }
     },
     {
-      "outputPath": "andSymbol",
+      "kind": "field",
+      "outputPaths": [
+        "andSymbol"
+      ],
       "source": {
         "type": "condition",
         "expression": "path(count) > 4 && path(count) < 10",
@@ -112,7 +148,10 @@
       }
     },
     {
-      "outputPath": "orSymbol",
+      "kind": "field",
+      "outputPaths": [
+        "orSymbol"
+      ],
       "source": {
         "type": "condition",
         "expression": "path(role) == 'admin' || path(role) == 'guest'",
@@ -121,7 +160,10 @@
       }
     },
     {
-      "outputPath": "notWord",
+      "kind": "field",
+      "outputPaths": [
+        "notWord"
+      ],
       "source": {
         "type": "condition",
         "expression": "not (path(flag) == true)",
@@ -130,7 +172,10 @@
       }
     },
     {
-      "outputPath": "notSymbol",
+      "kind": "field",
+      "outputPaths": [
+        "notSymbol"
+      ],
       "source": {
         "type": "condition",
         "expression": "!(path(flag) == true)",
@@ -139,7 +184,10 @@
       }
     },
     {
-      "outputPath": "inOperator",
+      "kind": "field",
+      "outputPaths": [
+        "inOperator"
+      ],
       "source": {
         "type": "condition",
         "expression": "path(name) in ['Ada', 'John']",
@@ -148,7 +196,10 @@
       }
     },
     {
-      "outputPath": "booleanLiteral",
+      "kind": "field",
+      "outputPaths": [
+        "booleanLiteral"
+      ],
       "source": {
         "type": "condition",
         "expression": "path(flag) == false",
@@ -157,7 +208,10 @@
       }
     },
     {
-      "outputPath": "nullLiteral",
+      "kind": "field",
+      "outputPaths": [
+        "nullLiteral"
+      ],
       "source": {
         "type": "condition",
         "expression": "path(nullValue) == null",
@@ -166,7 +220,10 @@
       }
     },
     {
-      "outputPath": "numberLiteral",
+      "kind": "field",
+      "outputPaths": [
+        "numberLiteral"
+      ],
       "source": {
         "type": "condition",
         "expression": "path(count) == 5",
@@ -175,7 +232,10 @@
       }
     },
     {
-      "outputPath": "rootPath",
+      "kind": "field",
+      "outputPaths": [
+        "rootPath"
+      ],
       "source": {
         "type": "condition",
         "expression": "path($.name) == 'Ada'",
@@ -184,7 +244,10 @@
       }
     },
     {
-      "outputPath": "missingPathNull",
+      "kind": "field",
+      "outputPaths": [
+        "missingPathNull"
+      ],
       "source": {
         "type": "condition",
         "expression": "path(missing) == null",
@@ -192,6 +255,5 @@
         "falseValue": "n"
       }
     }
-  ],
-  "arrayMappings": []
+  ]
 }

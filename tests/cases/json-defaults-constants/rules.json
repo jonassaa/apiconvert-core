@@ -2,16 +2,27 @@
   "version": 2,
   "inputFormat": "json",
   "outputFormat": "json",
-  "fieldMappings": [
+  "rules": [
     {
-      "outputPath": "status",
-      "source": { "type": "constant", "value": "42" }
+      "kind": "field",
+      "outputPaths": [
+        "status"
+      ],
+      "source": {
+        "type": "constant",
+        "value": "42"
+      }
     },
     {
-      "outputPath": "name",
-      "source": { "type": "path", "path": "missing" },
+      "kind": "field",
+      "outputPaths": [
+        "name"
+      ],
+      "source": {
+        "type": "path",
+        "path": "missing"
+      },
       "defaultValue": "Unknown"
     }
-  ],
-  "arrayMappings": []
+  ]
 }

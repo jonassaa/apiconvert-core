@@ -2,9 +2,12 @@
   "version": 2,
   "inputFormat": "json",
   "outputFormat": "json",
-  "fieldMappings": [
+  "rules": [
     {
-      "outputPath": "firstName",
+      "kind": "field",
+      "outputPaths": [
+        "firstName"
+      ],
       "source": {
         "type": "transform",
         "transform": "split",
@@ -14,7 +17,10 @@
       }
     },
     {
-      "outputPath": "lastName",
+      "kind": "field",
+      "outputPaths": [
+        "lastName"
+      ],
       "source": {
         "type": "transform",
         "transform": "split",
@@ -23,6 +29,5 @@
         "tokenIndex": -1
       }
     }
-  ],
-  "arrayMappings": []
+  ]
 }

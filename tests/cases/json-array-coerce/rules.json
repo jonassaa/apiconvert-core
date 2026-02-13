@@ -2,18 +2,26 @@
   "version": 2,
   "inputFormat": "json",
   "outputFormat": "json",
-  "fieldMappings": [],
-  "arrayMappings": [
+  "rules": [
     {
+      "kind": "array",
       "inputPath": "items",
-      "outputPath": "users",
-      "coerceSingle": true,
-      "itemMappings": [
+      "outputPaths": [
+        "users"
+      ],
+      "itemRules": [
         {
-          "outputPath": "name",
-          "source": { "type": "path", "path": "name" }
+          "kind": "field",
+          "outputPaths": [
+            "name"
+          ],
+          "source": {
+            "type": "path",
+            "path": "name"
+          }
         }
-      ]
+      ],
+      "coerceSingle": true
     }
   ]
 }

@@ -8,17 +8,15 @@
   "additionalProperties": false,
   "unevaluatedProperties": false,
   "properties": {
+    "version": { "type": "integer", "minimum": 1 },
     "inputFormat": { "$ref": "#/$defs/DataFormat" },
     "outputFormat": { "$ref": "#/$defs/DataFormat" },
-    "fieldMappings": {
+    "rules": {
       "type": "array",
-      "items": { "$ref": "#/$defs/FieldRule" }
-    },
-    "arrayMappings": {
-      "type": "array",
-      "items": { "$ref": "#/$defs/ArrayRule" }
+      "items": { "$ref": "#/$defs/RuleNode" }
     }
   },
+  "required": ["rules"],
   "$defs": {
     "DataFormat": {
       "type": "string",
@@ -109,10 +107,11 @@
       ],
       "required": ["type"]
     },
-    "FieldRule": {
+    "FieldRuleNode": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "kind": { "const": "field" },
         "outputPaths": {
           "type": "array",
           "minItems": 1,
@@ -124,13 +123,14 @@
         "source": { "$ref": "#/$defs/ValueSource" },
         "defaultValue": { "type": ["string", "null"] }
       },
-      "required": ["outputPaths", "source"]
+      "required": ["kind", "outputPaths", "source"]
     },
-    "ArrayRule": {
+    "ArrayRuleNode": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "inputPath": { "type": "string" },
+        "kind": { "const": "array" },
+        "inputPath": { "type": "string", "minLength": 1 },
         "outputPaths": {
           "type": "array",
           "minItems": 1,
@@ -139,13 +139,53 @@
             "minLength": 1
           }
         },
-        "itemMappings": {
+        "itemRules": {
           "type": "array",
-          "items": { "$ref": "#/$defs/FieldRule" }
+          "items": { "$ref": "#/$defs/RuleNode" }
         },
         "coerceSingle": { "type": "boolean" }
       },
-      "required": ["inputPath", "outputPaths", "itemMappings"]
+      "required": ["kind", "inputPath", "outputPaths", "itemRules"]
+    },
+    "BranchElseIfRuleNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "expression": { "type": "string", "minLength": 1 },
+        "then": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/RuleNode" }
+        }
+      },
+      "required": ["expression", "then"]
+    },
+    "BranchRuleNode": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": { "const": "branch" },
+        "expression": { "type": "string", "minLength": 1 },
+        "then": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/RuleNode" }
+        },
+        "elseIf": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/BranchElseIfRuleNode" }
+        },
+        "else": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/RuleNode" }
+        }
+      },
+      "required": ["kind", "expression", "then"]
+    },
+    "RuleNode": {
+      "oneOf": [
+        { "$ref": "#/$defs/FieldRuleNode" },
+        { "$ref": "#/$defs/ArrayRuleNode" },
+        { "$ref": "#/$defs/BranchRuleNode" }
+      ]
     }
   }
 }

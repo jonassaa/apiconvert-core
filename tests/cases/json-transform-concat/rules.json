@@ -2,15 +2,17 @@
   "version": 2,
   "inputFormat": "json",
   "outputFormat": "json",
-  "fieldMappings": [
+  "rules": [
     {
-      "outputPath": "fullName",
+      "kind": "field",
+      "outputPaths": [
+        "fullName"
+      ],
       "source": {
         "type": "transform",
         "transform": "concat",
         "path": "user.first,const:-,user.last"
       }
     }
-  ],
-  "arrayMappings": []
+  ]
 }

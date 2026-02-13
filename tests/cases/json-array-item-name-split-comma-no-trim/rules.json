@@ -2,14 +2,19 @@
   "version": 2,
   "inputFormat": "json",
   "outputFormat": "json",
-  "fieldMappings": [],
-  "arrayMappings": [
+  "rules": [
     {
+      "kind": "array",
       "inputPath": "people",
-      "outputPath": "contacts",
-      "itemMappings": [
+      "outputPaths": [
+        "contacts"
+      ],
+      "itemRules": [
         {
-          "outputPath": "firstName",
+          "kind": "field",
+          "outputPaths": [
+            "firstName"
+          ],
           "source": {
             "type": "transform",
             "transform": "split",
@@ -20,7 +25,10 @@
           }
         },
         {
-          "outputPath": "lastName",
+          "kind": "field",
+          "outputPaths": [
+            "lastName"
+          ],
           "source": {
             "type": "transform",
             "transform": "split",

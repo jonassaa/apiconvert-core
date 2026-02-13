@@ -52,39 +52,41 @@ export interface ValueSource {
 }
 
 export interface FieldRule {
-  outputPath?: string;
+  kind: "field";
   outputPaths?: string[] | null;
   source: ValueSource;
   defaultValue?: string | null;
 }
 
 export interface ArrayRule {
+  kind: "array";
   inputPath: string;
-  outputPath?: string;
   outputPaths?: string[] | null;
-  itemMappings: FieldRule[];
+  itemRules?: RuleNode[] | null;
   coerceSingle?: boolean;
 }
+
+export interface BranchElseIfRule {
+  expression?: string | null;
+  then?: RuleNode[] | null;
+}
+
+export interface BranchRule {
+  kind: "branch";
+  expression?: string | null;
+  then?: RuleNode[] | null;
+  elseIf?: BranchElseIfRule[] | null;
+  else?: RuleNode[] | null;
+}
+
+export type RuleNode = FieldRule | ArrayRule | BranchRule;
 
 export interface ConversionRules {
   version?: number;
   inputFormat?: DataFormat;
   outputFormat?: DataFormat;
-  fieldMappings?: FieldRule[];
-  arrayMappings?: ArrayRule[];
-}
-
-export interface LegacyMappingRow {
-  outputPath: string;
-  sourceType?: string | null;
-  sourceValue?: string | null;
-  transformType?: TransformType | null;
-  defaultValue?: string | null;
-}
-
-export interface LegacyMappingConfig {
-  version?: number;
-  rows: LegacyMappingRow[];
+  rules?: RuleNode[] | null;
+  validationErrors?: string[];
 }
 
 export interface ConversionResult {
@@ -112,11 +114,13 @@ export const rulesSchemaPath = "/schemas/rules/rules.schema.json";
 
 export function normalizeConversionRules(raw: unknown): ConversionRules {
   if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+    const validationErrors: string[] = [];
+    collectLegacyPropertyErrors(raw as Record<string, unknown>, "$", validationErrors);
     if (isConversionRules(raw)) {
-      return normalizeRules(raw);
+      return normalizeRules(raw, validationErrors);
     }
-    if (isLegacyConfig(raw)) {
-      return normalizeLegacyRules(raw);
+    if (validationErrors.length > 0) {
+      return emptyRules(validationErrors);
     }
     return emptyRules();
   }
@@ -135,56 +139,17 @@ export function normalizeConversionRules(raw: unknown): ConversionRules {
 
 export function applyConversion(input: unknown, rawRules: unknown): ConversionResult {
   const rules = normalizeConversionRules(rawRules);
-  const fieldMappings = rules.fieldMappings ?? [];
-  const arrayMappings = rules.arrayMappings ?? [];
+  const nodes = rules.rules ?? [];
+  const errors = [...(rules.validationErrors ?? [])];
 
-  if (fieldMappings.length === 0 && arrayMappings.length === 0) {
-    return { output: input ?? {}, errors: [], warnings: [] };
+  if (nodes.length === 0) {
+    return { output: input ?? {}, errors, warnings: [] };
   }
 
   const output: Record<string, unknown> = {};
-  const errors: string[] = [];
   const warnings: string[] = [];
 
-  applyFieldMappings(input, null, fieldMappings, output, errors, "Field");
-
-  arrayMappings.forEach((arrayRule, index) => {
-    const value = resolvePathValue(input, null, arrayRule.inputPath ?? "");
-    let items = Array.isArray(value) ? value : null;
-    if (!items && arrayRule.coerceSingle && value != null) {
-      items = [value];
-    }
-
-    if (!items) {
-      if (value == null) {
-        warnings.push(
-          `Array mapping skipped: inputPath "${arrayRule.inputPath}" not found (arrayMappings[${index}]).`
-        );
-      } else {
-        errors.push(
-          `Array ${index + 1}: input path did not resolve to an array (${arrayRule.inputPath}).`
-        );
-      }
-      return;
-    }
-
-    const mappedItems: unknown[] = [];
-    items.forEach((item) => {
-      const itemOutput: Record<string, unknown> = {};
-      applyFieldMappings(input, item, arrayRule.itemMappings ?? [], itemOutput, errors, `Array ${index + 1} item`);
-      mappedItems.push(itemOutput);
-    });
-
-    const arrayWritePaths = getArrayWritePaths(arrayRule);
-    if (arrayWritePaths.length === 0) {
-      errors.push(`Array ${index + 1}: output path is required.`);
-      return;
-    }
-
-    arrayWritePaths.forEach((outputPath) => {
-      setValueByPath(output, outputPath, mappedItems);
-    });
-  });
+  executeRules(input, null, nodes, output, errors, warnings, "rules", 0);
 
   return { output, errors, warnings };
 }
@@ -255,71 +220,24 @@ function extensionToFormat(extension: string): DataFormat | null {
   return null;
 }
 
-function normalizeRules(rules: ConversionRules): ConversionRules {
+function normalizeRules(rules: ConversionRules, seedErrors: string[] = []): ConversionRules {
+  const validationErrors = [...seedErrors];
   return {
     version: rules.version ?? 2,
     inputFormat: rules.inputFormat ?? DataFormat.Json,
     outputFormat: rules.outputFormat ?? DataFormat.Json,
-    fieldMappings: (rules.fieldMappings ?? []).map((rule) => ({
-      outputPath: rule.outputPath,
-      outputPaths: rule.outputPaths ?? [],
-      source: normalizeValueSource(rule.source),
-      defaultValue: rule.defaultValue ?? ""
-    })),
-    arrayMappings: (rules.arrayMappings ?? []).map((mapping) => ({
-      inputPath: mapping.inputPath,
-      outputPath: mapping.outputPath,
-      outputPaths: mapping.outputPaths ?? [],
-      coerceSingle: mapping.coerceSingle ?? false,
-      itemMappings: (mapping.itemMappings ?? []).map((rule) => ({
-        outputPath: rule.outputPath,
-        outputPaths: rule.outputPaths ?? [],
-        source: normalizeValueSource(rule.source),
-        defaultValue: rule.defaultValue ?? ""
-      }))
-    }))
+    rules: normalizeRuleNodes(rules.rules ?? [], "rules", validationErrors),
+    validationErrors
   };
 }
 
-function normalizeLegacyRules(legacy: LegacyMappingConfig): ConversionRules {
-  const rows = legacy.rows ?? [];
-  const fieldMappings = rows.map((row) => {
-    const sourceType = row.sourceType ?? "path";
-    let source: ValueSource;
-    if (sourceType === "constant") {
-      source = { type: "constant", value: row.sourceValue ?? "" };
-    } else if (sourceType === "transform") {
-      source = {
-        type: "transform",
-        path: row.sourceValue ?? "",
-        transform: row.transformType ?? TransformType.ToLowerCase
-      };
-    } else {
-      source = { type: "path", path: row.sourceValue ?? "" };
-    }
-    return {
-      outputPath: row.outputPath,
-      source,
-      defaultValue: row.defaultValue ?? ""
-    };
-  });
-
+function emptyRules(validationErrors: string[] = []): ConversionRules {
   return {
     version: 2,
     inputFormat: DataFormat.Json,
     outputFormat: DataFormat.Json,
-    fieldMappings,
-    arrayMappings: []
-  };
-}
-
-function emptyRules(): ConversionRules {
-  return {
-    version: 2,
-    inputFormat: DataFormat.Json,
-    outputFormat: DataFormat.Json,
-    fieldMappings: [],
-    arrayMappings: []
+    rules: [],
+    validationErrors
   };
 }
 
@@ -348,40 +266,286 @@ function isConversionRules(value: unknown): value is ConversionRules {
     return false;
   }
   const record = value as Record<string, unknown>;
-  return record.version === 2 || "fieldMappings" in record || "arrayMappings" in record;
+  return record.version === 2 || "rules" in record;
 }
 
-function isLegacyConfig(value: unknown): value is LegacyMappingConfig {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return false;
-  }
-  const record = value as Record<string, unknown>;
-  return Array.isArray(record.rows);
-}
+function normalizeRuleNodes(
+  nodes: RuleNode[],
+  path: string,
+  validationErrors: string[]
+): RuleNode[] {
+  const normalized: RuleNode[] = [];
 
-function applyFieldMappings(
-  root: unknown,
-  item: unknown,
-  mappings: FieldRule[],
-  output: Record<string, unknown>,
-  errors: string[],
-  label: string
-): void {
-  mappings.forEach((rule, index) => {
-    const writePaths = getWritePaths(rule);
-    if (writePaths.length === 0) {
-      errors.push(`${label} ${index + 1}: output path is required.`);
+  nodes.forEach((node, index) => {
+    const nodePath = `${path}[${index}]`;
+    const kind = (node?.kind ?? "").trim().toLowerCase();
+    if (!kind) {
+      validationErrors.push(`${nodePath}: kind is required.`);
       return;
     }
 
-    let value = resolveSourceValue(root, item, rule.source, errors, `${label} ${index + 1}`);
-    if ((value == null || value === "") && rule.defaultValue) {
-      value = parsePrimitive(rule.defaultValue);
+    if (kind !== "field" && kind !== "array" && kind !== "branch") {
+      validationErrors.push(`${nodePath}: unsupported kind '${node?.kind ?? ""}'.`);
+      return;
     }
-    writePaths.forEach((writePath) => {
-      setValueByPath(output, writePath, value);
+
+    if (kind === "field") {
+      const field = node as FieldRule;
+      const outputPaths = normalizeOutputPaths(field.outputPaths ?? []);
+      if (outputPaths.length === 0) {
+        validationErrors.push(`${nodePath}: outputPaths is required.`);
+      }
+      normalized.push({
+        kind: "field",
+        outputPaths,
+        source: normalizeValueSource(field.source),
+        defaultValue: field.defaultValue ?? ""
+      });
+      return;
+    }
+
+    if (kind === "array") {
+      const array = node as ArrayRule;
+      const outputPaths = normalizeOutputPaths(array.outputPaths ?? []);
+      if (!array.inputPath || array.inputPath.trim().length === 0) {
+        validationErrors.push(`${nodePath}: inputPath is required.`);
+      }
+      if (outputPaths.length === 0) {
+        validationErrors.push(`${nodePath}: outputPaths is required.`);
+      }
+
+      normalized.push({
+        kind: "array",
+        inputPath: (array.inputPath ?? "").trim(),
+        outputPaths,
+        coerceSingle: array.coerceSingle ?? false,
+        itemRules: normalizeRuleNodes(array.itemRules ?? [], `${nodePath}.itemRules`, validationErrors)
+      });
+      return;
+    }
+
+    const branch = node as BranchRule;
+    const expression = branch.expression?.trim() || null;
+    if (!expression) {
+      validationErrors.push(`${nodePath}: expression is required.`);
+    }
+
+    const elseIf = (branch.elseIf ?? []).map((entry, elseIfIndex) => {
+      const elseIfPath = `${nodePath}.elseIf[${elseIfIndex}]`;
+      const elseIfExpression = entry.expression?.trim() || null;
+      if (!elseIfExpression) {
+        validationErrors.push(`${elseIfPath}: expression is required.`);
+      }
+      return {
+        expression: elseIfExpression,
+        then: normalizeRuleNodes(entry.then ?? [], `${elseIfPath}.then`, validationErrors)
+      };
+    });
+
+    normalized.push({
+      kind: "branch",
+      expression,
+      then: normalizeRuleNodes(branch.then ?? [], `${nodePath}.then`, validationErrors),
+      elseIf,
+      else: normalizeRuleNodes(branch.else ?? [], `${nodePath}.else`, validationErrors)
     });
   });
+
+  return normalized;
+}
+
+function normalizeOutputPaths(paths: string[]): string[] {
+  return [...new Set(paths
+    .filter((path) => !!path && path.trim().length > 0)
+    .map((path) => normalizeWritePath(path))
+    .filter((path) => path.length > 0)
+  )];
+}
+
+function collectLegacyPropertyErrors(
+  value: Record<string, unknown> | unknown[],
+  path: string,
+  errors: string[]
+): void {
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => {
+      if (item && typeof item === "object") {
+        collectLegacyPropertyErrors(item as Record<string, unknown> | unknown[], `${path}[${index}]`, errors);
+      }
+    });
+    return;
+  }
+
+  const forbidden = new Set(["fieldMappings", "arrayMappings", "itemMappings", "outputPath"]);
+  Object.entries(value).forEach(([key, child]) => {
+    const childPath = `${path}.${key}`;
+    if (forbidden.has(key)) {
+      errors.push(
+        `${childPath}: legacy property '${key}' is not supported; use rules[] with outputPaths/itemRules.`
+      );
+    }
+
+    if (child && typeof child === "object") {
+      collectLegacyPropertyErrors(child as Record<string, unknown> | unknown[], childPath, errors);
+    }
+  });
+}
+
+function executeRules(
+  root: unknown,
+  item: unknown,
+  rules: RuleNode[],
+  output: Record<string, unknown>,
+  errors: string[],
+  warnings: string[],
+  path: string,
+  depth: number
+): void {
+  if (depth > 64) {
+    errors.push(`${path}: rule recursion limit exceeded.`);
+    return;
+  }
+
+  rules.forEach((rule, index) => {
+    executeRule(root, item, rule, output, errors, warnings, `${path}[${index}]`, depth);
+  });
+}
+
+function executeRule(
+  root: unknown,
+  item: unknown,
+  rule: RuleNode,
+  output: Record<string, unknown>,
+  errors: string[],
+  warnings: string[],
+  path: string,
+  depth: number
+): void {
+  if (rule.kind === "field") {
+    executeFieldRule(root, item, rule, output, errors, path);
+    return;
+  }
+
+  if (rule.kind === "array") {
+    executeArrayRule(root, item, rule, output, errors, warnings, path, depth);
+    return;
+  }
+
+  if (rule.kind === "branch") {
+    executeBranchRule(root, item, rule, output, errors, warnings, path, depth);
+    return;
+  }
+
+  errors.push(`${path}: unsupported kind '${(rule as { kind?: string }).kind ?? ""}'.`);
+}
+
+function executeFieldRule(
+  root: unknown,
+  item: unknown,
+  rule: FieldRule,
+  output: Record<string, unknown>,
+  errors: string[],
+  path: string
+): void {
+  const writePaths = getWritePaths(rule);
+  if (writePaths.length === 0) {
+    errors.push(`${path}: outputPaths is required.`);
+    return;
+  }
+
+  let value = resolveSourceValue(root, item, rule.source, errors, `${path}.source`);
+  if ((value == null || value === "") && rule.defaultValue) {
+    value = parsePrimitive(rule.defaultValue);
+  }
+
+  writePaths.forEach((writePath) => {
+    setValueByPath(output, writePath, value);
+  });
+}
+
+function executeArrayRule(
+  root: unknown,
+  item: unknown,
+  rule: ArrayRule,
+  output: Record<string, unknown>,
+  errors: string[],
+  warnings: string[],
+  path: string,
+  depth: number
+): void {
+  const value = resolvePathValue(root, item, rule.inputPath ?? "");
+  let items = Array.isArray(value) ? value : null;
+  if (!items && rule.coerceSingle && value != null) {
+    items = [value];
+  }
+
+  if (!items) {
+    if (value == null) {
+      warnings.push(`Array mapping skipped: inputPath "${rule.inputPath}" not found (${path}).`);
+    } else {
+      errors.push(`${path}: input path did not resolve to an array (${rule.inputPath}).`);
+    }
+    return;
+  }
+
+  const writePaths = getWritePaths(rule);
+  if (writePaths.length === 0) {
+    errors.push(`${path}: outputPaths is required.`);
+    return;
+  }
+
+  const mappedItems: unknown[] = [];
+  items.forEach((arrayItem) => {
+    const itemOutput: Record<string, unknown> = {};
+    executeRules(root, arrayItem, rule.itemRules ?? [], itemOutput, errors, warnings, `${path}.itemRules`, depth + 1);
+    mappedItems.push(itemOutput);
+  });
+
+  writePaths.forEach((writePath) => {
+    setValueByPath(output, writePath, mappedItems);
+  });
+}
+
+function executeBranchRule(
+  root: unknown,
+  item: unknown,
+  rule: BranchRule,
+  output: Record<string, unknown>,
+  errors: string[],
+  warnings: string[],
+  path: string,
+  depth: number
+): void {
+  const matched = evaluateCondition(root, item, rule.expression, errors, path, "branch expression");
+  if (matched) {
+    executeRules(root, item, rule.then ?? [], output, errors, warnings, `${path}.then`, depth + 1);
+    return;
+  }
+
+  const elseIfBranches = rule.elseIf ?? [];
+  for (let index = 0; index < elseIfBranches.length; index += 1) {
+    const elseIf = elseIfBranches[index];
+    const branchPath = `${path}.elseIf[${index}]`;
+    const elseIfMatched = evaluateCondition(
+      root,
+      item,
+      elseIf.expression,
+      errors,
+      branchPath,
+      "branch expression"
+    );
+
+    if (!elseIfMatched) {
+      continue;
+    }
+
+    executeRules(root, item, elseIf.then ?? [], output, errors, warnings, `${branchPath}.then`, depth + 1);
+    return;
+  }
+
+  if ((rule.else ?? []).length > 0) {
+    executeRules(root, item, rule.else ?? [], output, errors, warnings, `${path}.else`, depth + 1);
+  }
 }
 
 function resolveSourceValue(
@@ -1124,42 +1288,12 @@ function normalizeWritePath(path: string): string {
   return path;
 }
 
-function getWritePaths(rule: FieldRule): string[] {
-  const paths: string[] = [];
-
-  if (rule.outputPath && rule.outputPath.trim().length > 0) {
-    paths.push(rule.outputPath);
-  }
-
-  (rule.outputPaths ?? []).forEach((path) => {
-    if (path && path.trim().length > 0) {
-      paths.push(path);
-    }
-  });
-
-  return Array.from(new Set(paths));
-}
-
-function getArrayWritePaths(rule: ArrayRule): string[] {
-  const paths: string[] = [];
-
-  if (rule.outputPath && rule.outputPath.trim().length > 0) {
-    const normalized = normalizeWritePath(rule.outputPath);
-    if (normalized && normalized.trim().length > 0) {
-      paths.push(normalized);
-    }
-  }
-
-  (rule.outputPaths ?? []).forEach((path) => {
-    if (path && path.trim().length > 0) {
-      const normalized = normalizeWritePath(path);
-      if (normalized && normalized.trim().length > 0) {
-        paths.push(normalized);
-      }
-    }
-  });
-
-  return Array.from(new Set(paths));
+function getWritePaths(rule: { outputPaths?: string[] | null }): string[] {
+  return Array.from(new Set((rule.outputPaths ?? [])
+    .filter((path) => !!path && path.trim().length > 0)
+    .map((path) => normalizeWritePath(path))
+    .filter((path) => !!path && path.trim().length > 0)
+  ));
 }
 
 function parsePrimitive(value: string): unknown {

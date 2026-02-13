@@ -2,15 +2,27 @@
   "version": 2,
   "inputFormat": "query",
   "outputFormat": "json",
-  "fieldMappings": [
+  "rules": [
     {
-      "outputPath": "name",
-      "source": { "type": "path", "path": "user.name" }
+      "kind": "field",
+      "outputPaths": [
+        "name"
+      ],
+      "source": {
+        "type": "path",
+        "path": "user.name"
+      }
     },
     {
-      "outputPath": "active",
-      "source": { "type": "transform", "path": "user.active", "transform": "boolean" }
+      "kind": "field",
+      "outputPaths": [
+        "active"
+      ],
+      "source": {
+        "type": "transform",
+        "path": "user.active",
+        "transform": "boolean"
+      }
     }
-  ],
-  "arrayMappings": []
+  ]
 }

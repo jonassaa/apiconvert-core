@@ -2,15 +2,26 @@
   "version": 2,
   "inputFormat": "query",
   "outputFormat": "xml",
-  "fieldMappings": [
+  "rules": [
     {
-      "outputPath": "profile.name",
-      "source": { "type": "path", "path": "user.name" }
+      "kind": "field",
+      "outputPaths": [
+        "profile.name"
+      ],
+      "source": {
+        "type": "path",
+        "path": "user.name"
+      }
     },
     {
-      "outputPath": "profile.age",
-      "source": { "type": "path", "path": "user.age" }
+      "kind": "field",
+      "outputPaths": [
+        "profile.age"
+      ],
+      "source": {
+        "type": "path",
+        "path": "user.age"
+      }
     }
-  ],
-  "arrayMappings": []
+  ]
 }

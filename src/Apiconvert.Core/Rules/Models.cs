@@ -213,69 +213,93 @@ public sealed record ValueSource
 }
 
 /// <summary>
-/// Defines a mapping from a value source to an output path.
+/// Else-if branch for top-level branch rules.
 /// </summary>
-public sealed record FieldRule
+public sealed record BranchElseIfRule
 {
     /// <summary>
-    /// Output path for the mapped value.
+    /// Condition expression for this else-if branch.
     /// </summary>
-    [JsonPropertyName("outputPath")]
-    public string OutputPath { get; init; } = string.Empty;
+    [JsonPropertyName("expression")]
+    public string? Expression { get; init; }
 
     /// <summary>
-    /// Output paths for split mapping.
+    /// Rules executed when the branch matches.
+    /// </summary>
+    [JsonPropertyName("then")]
+    public List<RuleNode> Then { get; init; } = new();
+}
+
+/// <summary>
+/// Recursive conversion rule node.
+/// </summary>
+public sealed record RuleNode
+{
+    /// <summary>
+    /// Rule discriminator. Supported values are "field", "array", and "branch".
+    /// </summary>
+    [JsonPropertyName("kind")]
+    public string Kind { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Output paths for this rule.
     /// </summary>
     [JsonPropertyName("outputPaths")]
     public List<string> OutputPaths { get; init; } = new();
 
     /// <summary>
-    /// Source definition for the mapped value.
+    /// Source definition for field rules.
     /// </summary>
     [JsonPropertyName("source")]
-    public ValueSource Source { get; init; } = new();
+    public ValueSource? Source { get; init; }
 
     /// <summary>
-    /// Default value when the source is missing.
+    /// Default value when the field source is missing.
     /// </summary>
     [JsonPropertyName("defaultValue")]
     public string DefaultValue { get; init; } = string.Empty;
-}
 
-/// <summary>
-/// Defines an array mapping from input to output.
-/// </summary>
-public sealed record ArrayRule
-{
     /// <summary>
-    /// Input array path.
+    /// Input array path for array rules.
     /// </summary>
     [JsonPropertyName("inputPath")]
     public string InputPath { get; init; } = string.Empty;
 
     /// <summary>
-    /// Output array path.
+    /// Item rules for array rules.
     /// </summary>
-    [JsonPropertyName("outputPath")]
-    public string OutputPath { get; init; } = string.Empty;
+    [JsonPropertyName("itemRules")]
+    public List<RuleNode> ItemRules { get; init; } = new();
 
     /// <summary>
-    /// Output paths for mapped array values.
-    /// </summary>
-    [JsonPropertyName("outputPaths")]
-    public List<string> OutputPaths { get; init; } = new();
-
-    /// <summary>
-    /// Field mappings applied to each array item.
-    /// </summary>
-    [JsonPropertyName("itemMappings")]
-    public List<FieldRule> ItemMappings { get; init; } = new();
-
-    /// <summary>
-    /// Whether a single item should be coerced into an array.
+    /// Whether a single value should be coerced into an array.
     /// </summary>
     [JsonPropertyName("coerceSingle")]
     public bool CoerceSingle { get; init; }
+
+    /// <summary>
+    /// Branch expression for branch rules.
+    /// </summary>
+    [JsonPropertyName("expression")]
+    public string? Expression { get; init; }
+
+    /// <summary>
+    /// Rules executed when the branch expression matches.
+    /// </summary>
+    [JsonPropertyName("then")]
+    public List<RuleNode> Then { get; init; } = new();
+
+    /// <summary>
+    /// Else-if branches evaluated in order.
+    /// </summary>
+    [JsonPropertyName("elseIf")]
+    public List<BranchElseIfRule> ElseIf { get; init; } = new();
+
+    /// <summary>
+    /// Rules executed when no branch condition matches.
+    /// </summary>
+    [JsonPropertyName("else")]
+    public List<RuleNode> Else { get; init; } = new();
 }
 
 /// <summary>
@@ -302,64 +326,16 @@ public sealed record ConversionRules
     public DataFormat OutputFormat { get; init; } = DataFormat.Json;
 
     /// <summary>
-    /// Field mappings for scalar values.
+    /// Ordered, recursive conversion rules.
     /// </summary>
-    [JsonPropertyName("fieldMappings")]
-    public List<FieldRule> FieldMappings { get; init; } = new();
+    [JsonPropertyName("rules")]
+    public List<RuleNode> Rules { get; init; } = new();
 
     /// <summary>
-    /// Array mappings.
+    /// Validation errors produced during normalization.
     /// </summary>
-    [JsonPropertyName("arrayMappings")]
-    public List<ArrayRule> ArrayMappings { get; init; } = new();
-}
-
-/// <summary>
-/// Legacy mapping row used for older rule formats.
-/// </summary>
-public sealed record LegacyMappingRow
-{
-    /// <summary>
-    /// Output path for the mapped value.
-    /// </summary>
-    [JsonPropertyName("outputPath")]
-    public string OutputPath { get; init; } = string.Empty;
-
-    /// <summary>
-    /// Source type for the legacy mapping.
-    /// </summary>
-    [JsonPropertyName("sourceType")]
-    public string SourceType { get; init; } = "path";
-
-    /// <summary>
-    /// Source value for the legacy mapping.
-    /// </summary>
-    [JsonPropertyName("sourceValue")]
-    public string SourceValue { get; init; } = string.Empty;
-
-    /// <summary>
-    /// Optional transform type for the legacy mapping.
-    /// </summary>
-    [JsonPropertyName("transformType")]
-    public TransformType? TransformType { get; init; }
-
-    /// <summary>
-    /// Default value when the source is missing.
-    /// </summary>
-    [JsonPropertyName("defaultValue")]
-    public string? DefaultValue { get; init; }
-}
-
-/// <summary>
-/// Legacy mapping configuration wrapper.
-/// </summary>
-public sealed record LegacyMappingConfig
-{
-    /// <summary>
-    /// Legacy mapping rows.
-    /// </summary>
-    [JsonPropertyName("rows")]
-    public List<LegacyMappingRow> Rows { get; init; } = new();
+    [JsonIgnore]
+    public List<string> ValidationErrors { get; init; } = new();
 }
 
 /// <summary>

@@ -2,24 +2,38 @@
   "version": 2,
   "inputFormat": "json",
   "outputFormat": "json",
-  "fieldMappings": [],
-  "arrayMappings": [
+  "rules": [
     {
+      "kind": "array",
       "inputPath": "people",
-      "outputPath": "contacts",
-      "itemMappings": [
+      "outputPaths": [
+        "contacts"
+      ],
+      "itemRules": [
         {
-          "outputPath": "fullName",
+          "kind": "field",
+          "outputPaths": [
+            "fullName"
+          ],
           "source": {
             "type": "merge",
-            "paths": ["first", "last"],
+            "paths": [
+              "first",
+              "last"
+            ],
             "mergeMode": "concat",
             "separator": " "
           }
         },
         {
-          "outputPath": "id",
-          "source": { "type": "path", "path": "id" }
+          "kind": "field",
+          "outputPaths": [
+            "id"
+          ],
+          "source": {
+            "type": "path",
+            "path": "id"
+          }
         }
       ]
     }

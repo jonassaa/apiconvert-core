@@ -2,15 +2,26 @@
   "version": 2,
   "inputFormat": "xml",
   "outputFormat": "xml",
-  "fieldMappings": [
+  "rules": [
     {
-      "outputPath": "profile.@_id",
-      "source": { "type": "path", "path": "root.@_id" }
+      "kind": "field",
+      "outputPaths": [
+        "profile.@_id"
+      ],
+      "source": {
+        "type": "path",
+        "path": "root.@_id"
+      }
     },
     {
-      "outputPath": "profile.name",
-      "source": { "type": "path", "path": "root.name" }
+      "kind": "field",
+      "outputPaths": [
+        "profile.name"
+      ],
+      "source": {
+        "type": "path",
+        "path": "root.name"
+      }
     }
-  ],
-  "arrayMappings": []
+  ]
 }

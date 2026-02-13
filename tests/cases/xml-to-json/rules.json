@@ -2,15 +2,26 @@
   "version": 2,
   "inputFormat": "xml",
   "outputFormat": "json",
-  "fieldMappings": [
+  "rules": [
     {
-      "outputPath": "customerName",
-      "source": { "type": "path", "path": "order.customer.name" }
+      "kind": "field",
+      "outputPaths": [
+        "customerName"
+      ],
+      "source": {
+        "type": "path",
+        "path": "order.customer.name"
+      }
     },
     {
-      "outputPath": "orderId",
-      "source": { "type": "path", "path": "order.@_id" }
+      "kind": "field",
+      "outputPaths": [
+        "orderId"
+      ],
+      "source": {
+        "type": "path",
+        "path": "order.@_id"
+      }
     }
-  ],
-  "arrayMappings": []
+  ]
 }

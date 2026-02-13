@@ -2,9 +2,12 @@
   "version": 2,
   "inputFormat": "json",
   "outputFormat": "json",
-  "fieldMappings": [
+  "rules": [
     {
-      "outputPath": "exists",
+      "kind": "field",
+      "outputPaths": [
+        "exists"
+      ],
       "source": {
         "type": "condition",
         "expression": "exists(path(flag))",
@@ -13,7 +16,10 @@
       }
     },
     {
-      "outputPath": "equals",
+      "kind": "field",
+      "outputPaths": [
+        "equals"
+      ],
       "source": {
         "type": "condition",
         "expression": "path(flag) == 'yes'",
@@ -22,7 +28,10 @@
       }
     },
     {
-      "outputPath": "includes",
+      "kind": "field",
+      "outputPaths": [
+        "includes"
+      ],
       "source": {
         "type": "condition",
         "expression": "path(tags.1) == 'b'",
@@ -31,7 +40,10 @@
       }
     },
     {
-      "outputPath": "gt",
+      "kind": "field",
+      "outputPaths": [
+        "gt"
+      ],
       "source": {
         "type": "condition",
         "expression": "path(count) > 3",
@@ -40,7 +52,10 @@
       }
     },
     {
-      "outputPath": "lt",
+      "kind": "field",
+      "outputPaths": [
+        "lt"
+      ],
       "source": {
         "type": "condition",
         "expression": "path(count) < 10",
@@ -48,6 +63,5 @@
         "falseValue": "n"
       }
     }
-  ],
-  "arrayMappings": []
+  ]
 }

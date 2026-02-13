@@ -2,15 +2,26 @@
   "version": 2,
   "inputFormat": "xml",
   "outputFormat": "query",
-  "fieldMappings": [
+  "rules": [
     {
-      "outputPath": "contact.name",
-      "source": { "type": "path", "path": "person.name" }
+      "kind": "field",
+      "outputPaths": [
+        "contact.name"
+      ],
+      "source": {
+        "type": "path",
+        "path": "person.name"
+      }
     },
     {
-      "outputPath": "contact.age",
-      "source": { "type": "path", "path": "person.age" }
+      "kind": "field",
+      "outputPaths": [
+        "contact.age"
+      ],
+      "source": {
+        "type": "path",
+        "path": "person.age"
+      }
     }
-  ],
-  "arrayMappings": []
+  ]
 }

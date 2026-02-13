@@ -2,15 +2,26 @@
   "version": 2,
   "inputFormat": "xml",
   "outputFormat": "xml",
-  "fieldMappings": [
+  "rules": [
     {
-      "outputPath": "receipt.id",
-      "source": { "type": "path", "path": "order.id" }
+      "kind": "field",
+      "outputPaths": [
+        "receipt.id"
+      ],
+      "source": {
+        "type": "path",
+        "path": "order.id"
+      }
     },
     {
-      "outputPath": "receipt.status",
-      "source": { "type": "path", "path": "order.status" }
+      "kind": "field",
+      "outputPaths": [
+        "receipt.status"
+      ],
+      "source": {
+        "type": "path",
+        "path": "order.status"
+      }
     }
-  ],
-  "arrayMappings": []
+  ]
 }

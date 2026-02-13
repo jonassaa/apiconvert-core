@@ -1,0 +1,49 @@
+{
+  "version": 2,
+  "inputFormat": "json",
+  "outputFormat": "json",
+  "rules": [
+    {
+      "kind": "array",
+      "inputPath": "orders",
+      "outputPaths": ["orders"],
+      "itemRules": [
+        {
+          "kind": "field",
+          "outputPaths": ["id"],
+          "source": { "type": "path", "path": "id" }
+        },
+        {
+          "kind": "array",
+          "inputPath": "items",
+          "outputPaths": ["lines"],
+          "itemRules": [
+            {
+              "kind": "field",
+              "outputPaths": ["sku"],
+              "source": { "type": "path", "path": "sku" }
+            },
+            {
+              "kind": "branch",
+              "expression": "path($.meta.source) == 'api' && path(qty) >= 2",
+              "then": [
+                {
+                  "kind": "field",
+                  "outputPaths": ["priority"],
+                  "source": { "type": "constant", "value": "high" }
+                }
+              ],
+              "else": [
+                {
+                  "kind": "field",
+                  "outputPaths": ["priority"],
+                  "source": { "type": "constant", "value": "normal" }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

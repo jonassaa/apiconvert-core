@@ -2,15 +2,28 @@
   "version": 2,
   "inputFormat": "query",
   "outputFormat": "json",
-  "fieldMappings": [
+  "rules": [
     {
-      "outputPath": "count",
-      "source": { "type": "transform", "path": "count", "transform": "number" }
+      "kind": "field",
+      "outputPaths": [
+        "count"
+      ],
+      "source": {
+        "type": "transform",
+        "path": "count",
+        "transform": "number"
+      }
     },
     {
-      "outputPath": "active",
-      "source": { "type": "transform", "path": "active", "transform": "boolean" }
+      "kind": "field",
+      "outputPaths": [
+        "active"
+      ],
+      "source": {
+        "type": "transform",
+        "path": "active",
+        "transform": "boolean"
+      }
     }
-  ],
-  "arrayMappings": []
+  ]
 }

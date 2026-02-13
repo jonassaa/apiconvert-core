@@ -2,9 +2,12 @@
   "version": 2,
   "inputFormat": "json",
   "outputFormat": "json",
-  "fieldMappings": [
+  "rules": [
     {
-      "outputPath": "po.number",
+      "kind": "field",
+      "outputPaths": [
+        "po.number"
+      ],
       "source": {
         "type": "path",
         "path": "purchaseOrderNumber",
@@ -17,7 +20,10 @@
       "defaultValue": ""
     },
     {
-      "outputPath": "po.dates.ordered",
+      "kind": "field",
+      "outputPaths": [
+        "po.dates.ordered"
+      ],
       "source": {
         "type": "path",
         "path": "orderDate",
@@ -30,7 +36,10 @@
       "defaultValue": ""
     },
     {
-      "outputPath": "po.status",
+      "kind": "field",
+      "outputPaths": [
+        "po.status"
+      ],
       "source": {
         "type": "path",
         "path": "status",
@@ -43,7 +52,10 @@
       "defaultValue": ""
     },
     {
-      "outputPath": "po.currency",
+      "kind": "field",
+      "outputPaths": [
+        "po.currency"
+      ],
       "source": {
         "type": "path",
         "path": "currency",
@@ -56,7 +68,10 @@
       "defaultValue": ""
     },
     {
-      "outputPath": "parties.buyer.buyerId",
+      "kind": "field",
+      "outputPaths": [
+        "parties.buyer.buyerId"
+      ],
       "source": {
         "type": "path",
         "path": "buyer.id",
@@ -69,7 +84,10 @@
       "defaultValue": ""
     },
     {
-      "outputPath": "parties.buyer.buyerName",
+      "kind": "field",
+      "outputPaths": [
+        "parties.buyer.buyerName"
+      ],
       "source": {
         "type": "path",
         "path": "buyer.name",
@@ -82,7 +100,10 @@
       "defaultValue": ""
     },
     {
-      "outputPath": "parties.supplier.supplierId",
+      "kind": "field",
+      "outputPaths": [
+        "parties.supplier.supplierId"
+      ],
       "source": {
         "type": "path",
         "path": "supplier.id",
@@ -95,7 +116,10 @@
       "defaultValue": ""
     },
     {
-      "outputPath": "parties.supplier.supplierName",
+      "kind": "field",
+      "outputPaths": [
+        "parties.supplier.supplierName"
+      ],
       "source": {
         "type": "path",
         "path": "supplier.name",
@@ -108,7 +132,10 @@
       "defaultValue": ""
     },
     {
-      "outputPath": "addresses.billing.street",
+      "kind": "field",
+      "outputPaths": [
+        "addresses.billing.street"
+      ],
       "source": {
         "type": "path",
         "path": "billingAddress.line1",
@@ -121,7 +148,10 @@
       "defaultValue": ""
     },
     {
-      "outputPath": "addresses.billing.city",
+      "kind": "field",
+      "outputPaths": [
+        "addresses.billing.city"
+      ],
       "source": {
         "type": "path",
         "path": "billingAddress.city",
@@ -134,7 +164,10 @@
       "defaultValue": ""
     },
     {
-      "outputPath": "addresses.billing.region",
+      "kind": "field",
+      "outputPaths": [
+        "addresses.billing.region"
+      ],
       "source": {
         "type": "path",
         "path": "billingAddress.state",
@@ -147,7 +180,10 @@
       "defaultValue": ""
     },
     {
-      "outputPath": "addresses.billing.postal",
+      "kind": "field",
+      "outputPaths": [
+        "addresses.billing.postal"
+      ],
       "source": {
         "type": "path",
         "path": "billingAddress.postalCode",
@@ -160,7 +196,10 @@
       "defaultValue": ""
     },
     {
-      "outputPath": "addresses.billing.country",
+      "kind": "field",
+      "outputPaths": [
+        "addresses.billing.country"
+      ],
       "source": {
         "type": "path",
         "path": "billingAddress.country",
@@ -173,7 +212,10 @@
       "defaultValue": ""
     },
     {
-      "outputPath": "addresses.shipping.street",
+      "kind": "field",
+      "outputPaths": [
+        "addresses.shipping.street"
+      ],
       "source": {
         "type": "path",
         "path": "shippingAddress.line1",
@@ -186,7 +228,10 @@
       "defaultValue": ""
     },
     {
-      "outputPath": "addresses.shipping.city",
+      "kind": "field",
+      "outputPaths": [
+        "addresses.shipping.city"
+      ],
       "source": {
         "type": "path",
         "path": "shippingAddress.city",
@@ -199,7 +244,10 @@
       "defaultValue": ""
     },
     {
-      "outputPath": "addresses.shipping.region",
+      "kind": "field",
+      "outputPaths": [
+        "addresses.shipping.region"
+      ],
       "source": {
         "type": "path",
         "path": "shippingAddress.state",
@@ -212,7 +260,10 @@
       "defaultValue": ""
     },
     {
-      "outputPath": "addresses.shipping.postal",
+      "kind": "field",
+      "outputPaths": [
+        "addresses.shipping.postal"
+      ],
       "source": {
         "type": "path",
         "path": "shippingAddress.postalCode",
@@ -225,7 +276,10 @@
       "defaultValue": ""
     },
     {
-      "outputPath": "addresses.shipping.country",
+      "kind": "field",
+      "outputPaths": [
+        "addresses.shipping.country"
+      ],
       "source": {
         "type": "path",
         "path": "shippingAddress.country",
@@ -238,7 +292,10 @@
       "defaultValue": ""
     },
     {
-      "outputPath": "summary.subTotal",
+      "kind": "field",
+      "outputPaths": [
+        "summary.subTotal"
+      ],
       "source": {
         "type": "path",
         "path": "subTotal",
@@ -251,7 +308,10 @@
       "defaultValue": ""
     },
     {
-      "outputPath": "summary.tax.rate",
+      "kind": "field",
+      "outputPaths": [
+        "summary.tax.rate"
+      ],
       "source": {
         "type": "path",
         "path": "tax.rate",
@@ -264,7 +324,10 @@
       "defaultValue": ""
     },
     {
-      "outputPath": "summary.tax.amount",
+      "kind": "field",
+      "outputPaths": [
+        "summary.tax.amount"
+      ],
       "source": {
         "type": "path",
         "path": "tax.amount",
@@ -277,7 +340,10 @@
       "defaultValue": ""
     },
     {
-      "outputPath": "summary.grandTotal",
+      "kind": "field",
+      "outputPaths": [
+        "summary.grandTotal"
+      ],
       "source": {
         "type": "path",
         "path": "totalAmount",
@@ -288,16 +354,19 @@
         "falseValue": null
       },
       "defaultValue": ""
-    }
-  ],
-  "arrayMappings": [
+    },
     {
+      "kind": "array",
       "inputPath": "lineItems",
-      "outputPath": "items",
-      "coerceSingle": false,
-      "itemMappings": [
+      "outputPaths": [
+        "items"
+      ],
+      "itemRules": [
         {
-          "outputPath": "id",
+          "kind": "field",
+          "outputPaths": [
+            "id"
+          ],
           "source": {
             "type": "path",
             "path": "lineNumber",
@@ -310,7 +379,10 @@
           "defaultValue": ""
         },
         {
-          "outputPath": "product.code",
+          "kind": "field",
+          "outputPaths": [
+            "product.code"
+          ],
           "source": {
             "type": "path",
             "path": "sku",
@@ -323,7 +395,10 @@
           "defaultValue": ""
         },
         {
-          "outputPath": "product.name",
+          "kind": "field",
+          "outputPaths": [
+            "product.name"
+          ],
           "source": {
             "type": "path",
             "path": "description",
@@ -336,7 +411,10 @@
           "defaultValue": ""
         },
         {
-          "outputPath": "qty.amount",
+          "kind": "field",
+          "outputPaths": [
+            "qty.amount"
+          ],
           "source": {
             "type": "path",
             "path": "quantity",
@@ -349,7 +427,10 @@
           "defaultValue": ""
         },
         {
-          "outputPath": "qty.uom",
+          "kind": "field",
+          "outputPaths": [
+            "qty.uom"
+          ],
           "source": {
             "type": "path",
             "path": "unitOfMeasure",
@@ -362,7 +443,10 @@
           "defaultValue": ""
         },
         {
-          "outputPath": "pricing.unit",
+          "kind": "field",
+          "outputPaths": [
+            "pricing.unit"
+          ],
           "source": {
             "type": "path",
             "path": "unitPrice",
@@ -375,7 +459,10 @@
           "defaultValue": ""
         },
         {
-          "outputPath": "pricing.total",
+          "kind": "field",
+          "outputPaths": [
+            "pricing.total"
+          ],
           "source": {
             "type": "path",
             "path": "lineTotal",

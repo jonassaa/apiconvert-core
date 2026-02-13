@@ -7,104 +7,203 @@ namespace Apiconvert.Core.Converters;
 
 internal static class MappingExecutor
 {
-    private const int MaxConditionBranchDepth = 32;
+    private const int MaxConditionBranchDepth = 64;
+    private const int MaxRuleNestingDepth = 64;
 
     internal static ConversionResult ApplyConversion(object? input, object? rawRules)
     {
         var rules = RulesNormalizer.NormalizeConversionRules(rawRules);
-        if (!rules.FieldMappings.Any() && !rules.ArrayMappings.Any())
+        var errors = new List<string>();
+        errors.AddRange(rules.ValidationErrors);
+
+        if (!rules.Rules.Any())
         {
             return new ConversionResult
             {
                 Output = input ?? new Dictionary<string, object?>(),
-                Errors = new List<string>(),
+                Errors = errors,
                 Warnings = new List<string>()
             };
         }
 
         var output = new Dictionary<string, object?>();
-        var errors = new List<string>();
         var warnings = new List<string>();
-
-        ApplyFieldMappings(input, null, rules.FieldMappings, output, errors, "Field");
-
-        for (var index = 0; index < rules.ArrayMappings.Count; index++)
-        {
-            var arrayRule = rules.ArrayMappings[index];
-            var value = ResolvePathValue(input, null, arrayRule.InputPath);
-            var items = value as List<object?>;
-            if (items == null && arrayRule.CoerceSingle && value != null)
-            {
-                items = new List<object?> { value };
-            }
-
-            if (items == null)
-            {
-                if (value == null)
-                {
-                    warnings.Add(
-                        $"Array mapping skipped: inputPath \"{arrayRule.InputPath}\" not found (arrayMappings[{index}]).");
-                }
-                else
-                {
-                    errors.Add($"Array {index + 1}: input path did not resolve to an array ({arrayRule.InputPath}).");
-                }
-                continue;
-            }
-
-            var mappedItems = new List<object?>();
-            foreach (var item in items)
-            {
-                var itemOutput = new Dictionary<string, object?>();
-                ApplyFieldMappings(input, item, arrayRule.ItemMappings, itemOutput, errors, $"Array {index + 1} item");
-                mappedItems.Add(itemOutput);
-            }
-
-            var arrayWritePaths = GetArrayWritePaths(arrayRule);
-            if (arrayWritePaths.Count == 0)
-            {
-                errors.Add($"Array {index + 1}: output path is required.");
-                continue;
-            }
-
-            foreach (var outputPath in arrayWritePaths)
-            {
-                SetValueByPath(output, outputPath, mappedItems);
-            }
-        }
+        ExecuteRules(input, null, rules.Rules, output, errors, warnings, "rules", 0);
 
         return new ConversionResult { Output = output, Errors = errors, Warnings = warnings };
     }
 
-    private static void ApplyFieldMappings(
+    private static void ExecuteRules(
         object? root,
         object? item,
-        IEnumerable<FieldRule> mappings,
+        IReadOnlyList<RuleNode> rules,
         Dictionary<string, object?> output,
         List<string> errors,
-        string label)
+        List<string> warnings,
+        string path,
+        int depth)
     {
-        var index = 0;
-        foreach (var rule in mappings)
+        if (depth > MaxRuleNestingDepth)
         {
-            index++;
-            var writePaths = GetWritePaths(rule);
-            if (writePaths.Count == 0)
+            errors.Add($"{path}: rule recursion limit exceeded.");
+            return;
+        }
+
+        for (var index = 0; index < rules.Count; index++)
+        {
+            var rule = rules[index];
+            ExecuteRule(root, item, rule, output, errors, warnings, $"{path}[{index}]", depth);
+        }
+    }
+
+    private static void ExecuteRule(
+        object? root,
+        object? item,
+        RuleNode rule,
+        Dictionary<string, object?> output,
+        List<string> errors,
+        List<string> warnings,
+        string path,
+        int depth)
+    {
+        switch (rule.Kind)
+        {
+            case "field":
+                ExecuteFieldRule(root, item, rule, output, errors, path);
+                return;
+            case "array":
+                ExecuteArrayRule(root, item, rule, output, errors, warnings, path, depth);
+                return;
+            case "branch":
+                ExecuteBranchRule(root, item, rule, output, errors, warnings, path, depth);
+                return;
+            default:
+                errors.Add($"{path}: unsupported kind '{rule.Kind}'.");
+                return;
+        }
+    }
+
+    private static void ExecuteFieldRule(
+        object? root,
+        object? item,
+        RuleNode rule,
+        Dictionary<string, object?> output,
+        List<string> errors,
+        string path)
+    {
+        var writePaths = GetWritePaths(rule);
+        if (writePaths.Count == 0)
+        {
+            errors.Add($"{path}: outputPaths is required.");
+            return;
+        }
+
+        var source = rule.Source ?? new ValueSource();
+        var value = ResolveSourceValue(root, item, source, errors, $"{path}.source");
+        if ((value == null || (value is string str && string.IsNullOrEmpty(str))) && !string.IsNullOrEmpty(rule.DefaultValue))
+        {
+            value = ParsePrimitive(rule.DefaultValue);
+        }
+
+        foreach (var writePath in writePaths)
+        {
+            SetValueByPath(output, writePath, value);
+        }
+    }
+
+    private static void ExecuteArrayRule(
+        object? root,
+        object? item,
+        RuleNode rule,
+        Dictionary<string, object?> output,
+        List<string> errors,
+        List<string> warnings,
+        string path,
+        int depth)
+    {
+        var value = ResolvePathValue(root, item, rule.InputPath);
+        var items = value as List<object?>;
+        if (items == null && rule.CoerceSingle && value != null)
+        {
+            items = new List<object?> { value };
+        }
+
+        if (items == null)
+        {
+            if (value == null)
             {
-                errors.Add($"{label} {index}: output path is required.");
+                warnings.Add($"Array mapping skipped: inputPath \"{rule.InputPath}\" not found ({path}).");
+            }
+            else
+            {
+                errors.Add($"{path}: input path did not resolve to an array ({rule.InputPath}).");
+            }
+            return;
+        }
+
+        var arrayWritePaths = GetWritePaths(rule);
+        if (arrayWritePaths.Count == 0)
+        {
+            errors.Add($"{path}: outputPaths is required.");
+            return;
+        }
+
+        var mappedItems = new List<object?>();
+        foreach (var listItem in items)
+        {
+            var itemOutput = new Dictionary<string, object?>();
+            ExecuteRules(
+                root,
+                listItem,
+                rule.ItemRules,
+                itemOutput,
+                errors,
+                warnings,
+                $"{path}.itemRules",
+                depth + 1);
+            mappedItems.Add(itemOutput);
+        }
+
+        foreach (var outputPath in arrayWritePaths)
+        {
+            SetValueByPath(output, outputPath, mappedItems);
+        }
+    }
+
+    private static void ExecuteBranchRule(
+        object? root,
+        object? item,
+        RuleNode rule,
+        Dictionary<string, object?> output,
+        List<string> errors,
+        List<string> warnings,
+        string path,
+        int depth)
+    {
+        var matched = EvaluateCondition(root, item, rule.Expression, errors, path, "branch expression");
+        if (matched)
+        {
+            ExecuteRules(root, item, rule.Then, output, errors, warnings, $"{path}.then", depth + 1);
+            return;
+        }
+
+        for (var index = 0; index < rule.ElseIf.Count; index++)
+        {
+            var elseIf = rule.ElseIf[index];
+            var branchPath = $"{path}.elseIf[{index}]";
+            var elseIfMatched = EvaluateCondition(root, item, elseIf.Expression, errors, branchPath, "branch expression");
+            if (!elseIfMatched)
+            {
                 continue;
             }
 
-            var value = ResolveSourceValue(root, item, rule.Source, errors, $"{label} {index}");
-            if ((value == null || (value is string str && string.IsNullOrEmpty(str))) && !string.IsNullOrEmpty(rule.DefaultValue))
-            {
-                value = ParsePrimitive(rule.DefaultValue);
-            }
+            ExecuteRules(root, item, elseIf.Then, output, errors, warnings, $"{branchPath}.then", depth + 1);
+            return;
+        }
 
-            foreach (var writePath in writePaths)
-            {
-                SetValueByPath(output, writePath, value);
-            }
+        if (rule.Else.Count > 0)
+        {
+            ExecuteRules(root, item, rule.Else, output, errors, warnings, $"{path}.else", depth + 1);
         }
     }
 
@@ -429,48 +528,12 @@ internal static class MappingExecutor
         return path;
     }
 
-    private static List<string> GetWritePaths(FieldRule rule)
+    private static List<string> GetWritePaths(RuleNode rule)
     {
-        var paths = new List<string>();
-
-        if (!string.IsNullOrWhiteSpace(rule.OutputPath))
-        {
-            paths.Add(rule.OutputPath);
-        }
-
-        if (rule.OutputPaths.Count > 0)
-        {
-            paths.AddRange(rule.OutputPaths.Where(path => !string.IsNullOrWhiteSpace(path)));
-        }
-
-        return paths
-            .Distinct(StringComparer.Ordinal)
-            .ToList();
-    }
-
-    private static List<string> GetArrayWritePaths(ArrayRule rule)
-    {
-        var paths = new List<string>();
-
-        if (!string.IsNullOrWhiteSpace(rule.OutputPath))
-        {
-            var normalized = NormalizeWritePath(rule.OutputPath);
-            if (!string.IsNullOrWhiteSpace(normalized))
-            {
-                paths.Add(normalized);
-            }
-        }
-
-        if (rule.OutputPaths.Count > 0)
-        {
-            paths.AddRange(
-                rule.OutputPaths
-                    .Where(path => !string.IsNullOrWhiteSpace(path))
-                    .Select(NormalizeWritePath)
-                    .Where(path => !string.IsNullOrWhiteSpace(path)));
-        }
-
-        return paths
+        return rule.OutputPaths
+            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .Select(NormalizeWritePath)
+            .Where(path => !string.IsNullOrWhiteSpace(path))
             .Distinct(StringComparer.Ordinal)
             .ToList();
     }

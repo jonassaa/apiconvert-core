@@ -1,0 +1,42 @@
+{
+  "version": 2,
+  "inputFormat": "json",
+  "outputFormat": "json",
+  "rules": [
+    {
+      "kind": "branch",
+      "expression": "path(status) == 'active'",
+      "then": [
+        {
+          "kind": "field",
+          "outputPaths": ["meta.enabled"],
+          "source": { "type": "constant", "value": "true" }
+        },
+        {
+          "kind": "array",
+          "inputPath": "items",
+          "outputPaths": ["lines"],
+          "itemRules": [
+            {
+              "kind": "field",
+              "outputPaths": ["code"],
+              "source": { "type": "path", "path": "id" }
+            }
+          ]
+        }
+      ],
+      "else": [
+        {
+          "kind": "field",
+          "outputPaths": ["meta.enabled"],
+          "source": { "type": "constant", "value": "false" }
+        }
+      ]
+    },
+    {
+      "kind": "field",
+      "outputPaths": ["meta.name"],
+      "source": { "type": "path", "path": "name" }
+    }
+  ]
+}
