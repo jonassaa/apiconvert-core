@@ -219,6 +219,57 @@ public sealed class ConversionEngineTests
     }
 
     [Fact]
+    public void ApplyConversion_BranchExpressionUnknownOperator_ErrorIsActionable()
+    {
+        var error = GetBranchExpressionError("path(name) is 'nora'");
+
+        Assert.Contains("invalid branch expression", error, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("position 11", error, StringComparison.Ordinal);
+        Assert.Contains("Expected comparison operator", error, StringComparison.Ordinal);
+        Assert.Contains("found 'is'", error, StringComparison.Ordinal);
+        Assert.Contains("Did you mean 'eq' or '=='?", error, StringComparison.Ordinal);
+        Assert.Contains("^^", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ApplyConversion_BranchExpressionMissingOperand_ErrorIsActionable()
+    {
+        var error = GetBranchExpressionError("path(name) ==");
+
+        Assert.Contains("position 13", error, StringComparison.Ordinal);
+        Assert.Contains("Expected right-hand operand", error, StringComparison.Ordinal);
+        Assert.Contains("end of expression", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ApplyConversion_BranchExpressionUnclosedGrouping_ErrorIsActionable()
+    {
+        var error = GetBranchExpressionError("not (path(x) == 1");
+
+        Assert.Contains("position 17", error, StringComparison.Ordinal);
+        Assert.Contains("Expected ')'", error, StringComparison.Ordinal);
+        Assert.Contains("end of expression", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ApplyConversion_BranchExpressionInvalidInRightHand_ErrorIsActionable()
+    {
+        var error = GetBranchExpressionError("path(x) in path(y)");
+
+        Assert.Contains("position 18", error, StringComparison.Ordinal);
+        Assert.Contains("Right-hand side of 'in' must be an array literal", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ApplyConversion_BranchExpressionTrailingToken_ErrorIsActionable()
+    {
+        var error = GetBranchExpressionError("path(name) == 'nora')");
+
+        Assert.Contains("Unexpected trailing token ')'", error, StringComparison.Ordinal);
+        Assert.Contains("position 20", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void ParseAndFormatQueryString_AreConsistent()
     {
         var (value, error) = ConversionEngine.ParsePayload("user.name=Ada&user.age=37", DataFormat.Query);
@@ -334,5 +385,44 @@ public sealed class ConversionEngineTests
 
         using var doc = JsonDocument.Parse(normalized.Length == 0 ? "{}" : normalized);
         return JsonSerializer.Serialize(doc.RootElement, new JsonSerializerOptions { WriteIndented = false });
+    }
+
+    private static string GetBranchExpressionError(string expression)
+    {
+        var rules = new ConversionRules
+        {
+            Rules =
+            [
+                new RuleNode
+                {
+                    Kind = "branch",
+                    Expression = expression,
+                    Then =
+                    [
+                        new RuleNode
+                        {
+                            Kind = "field",
+                            OutputPaths = ["match"],
+                            Source = new ValueSource { Type = "constant", Value = "yes" }
+                        }
+                    ],
+                    Else =
+                    [
+                        new RuleNode
+                        {
+                            Kind = "field",
+                            OutputPaths = ["match"],
+                            Source = new ValueSource { Type = "constant", Value = "no" }
+                        }
+                    ]
+                }
+            ]
+        };
+
+        var result = ConversionEngine.ApplyConversion(
+            new Dictionary<string, object?> { ["name"] = "nora", ["x"] = 1d },
+            rules);
+        Assert.NotEmpty(result.Errors);
+        return result.Errors[0];
     }
 }

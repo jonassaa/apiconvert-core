@@ -163,3 +163,62 @@ test("rule recursion overflow is deterministic", () => {
   const result = applyConversion({}, { inputFormat: "json", outputFormat: "json", rules: [root] });
   assert.ok(result.errors.some((entry) => entry.includes("rule recursion limit exceeded")));
 });
+
+test("branch expression diagnostics are actionable", () => {
+  const unknownOperator = getBranchExpressionError("path(name) is 'nora'");
+  assert.match(unknownOperator, /invalid branch expression/);
+  assert.match(unknownOperator, /position 11/);
+  assert.match(unknownOperator, /Expected comparison operator/);
+  assert.match(unknownOperator, /found 'is'/);
+  assert.match(unknownOperator, /Did you mean 'eq' or '=='\?/);
+  assert.match(unknownOperator, /\^{2}/);
+
+  const missingOperand = getBranchExpressionError("path(name) ==");
+  assert.match(missingOperand, /position 13/);
+  assert.match(missingOperand, /Expected right-hand operand/);
+  assert.match(missingOperand, /end of expression/);
+
+  const unclosedGrouping = getBranchExpressionError("not (path(x) == 1");
+  assert.match(unclosedGrouping, /position 17/);
+  assert.match(unclosedGrouping, /Expected '\)'/);
+  assert.match(unclosedGrouping, /end of expression/);
+
+  const invalidInRightHand = getBranchExpressionError("path(x) in path(y)");
+  assert.match(invalidInRightHand, /position 18/);
+  assert.match(invalidInRightHand, /Right-hand side of 'in' must be an array literal/);
+
+  const trailingToken = getBranchExpressionError("path(name) == 'nora')");
+  assert.match(trailingToken, /Unexpected trailing token '\)'/);
+  assert.match(trailingToken, /position 20/);
+});
+
+function getBranchExpressionError(expression: string): string {
+  const rules = normalizeConversionRules({
+    inputFormat: "json",
+    outputFormat: "json",
+    rules: [
+      {
+        kind: "branch",
+        expression,
+        then: [
+          {
+            kind: "field",
+            outputPaths: ["match"],
+            source: { type: "constant", value: "yes" }
+          }
+        ],
+        else: [
+          {
+            kind: "field",
+            outputPaths: ["match"],
+            source: { type: "constant", value: "no" }
+          }
+        ]
+      }
+    ]
+  });
+
+  const result = applyConversion({ name: "nora", x: 1 }, rules);
+  assert.ok(result.errors.length > 0);
+  return result.errors[0];
+}

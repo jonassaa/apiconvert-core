@@ -81,7 +81,7 @@ export function tokenizeConditionExpression(expression: string): ConditionToken[
       continue;
     }
 
-    throw new Error(`Unexpected character '${current}' at position ${index}.`);
+    throw createTokenizerError(expression, `Unexpected character '${current}'.`, index, 1);
   }
 
   tokens.push({ type: "end", text: "", position: expression.length });
@@ -120,5 +120,17 @@ function readQuotedConditionString(
     cursor += 1;
   }
 
-  throw new Error(`Unterminated string literal at position ${startIndex}.`);
+  throw createTokenizerError(expression, "Unterminated string literal.", startIndex, 1);
+}
+
+function createTokenizerError(
+  expression: string,
+  message: string,
+  position: number,
+  pointerWidth: number
+): Error {
+  const safePosition = Math.max(0, Math.min(position, expression.length));
+  const safeWidth = Math.max(2, pointerWidth > 0 ? pointerWidth : 1);
+  const pointer = `${" ".repeat(safePosition)}${"^".repeat(safeWidth)}`;
+  return new Error(`Invalid expression at position ${safePosition}: ${message}\n${expression}\n${pointer}`);
 }

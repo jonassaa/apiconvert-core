@@ -136,7 +136,11 @@ internal static partial class MappingExecutor
         internal ConditionExpressionNode Parse()
         {
             var node = ParseOr();
-            Expect(ConditionTokenType.End);
+            if (Current.Type != ConditionTokenType.End)
+            {
+                throw CreateParseException(
+                    $"Unexpected trailing token {FormatToken(Current)} after complete expression.");
+            }
             return node;
         }
 
@@ -168,12 +172,31 @@ internal static partial class MappingExecutor
 
             while (TryParseComparisonOperator(out var op))
             {
+                if (Current.Type is ConditionTokenType.End or ConditionTokenType.RightParen or ConditionTokenType.RightBracket or ConditionTokenType.Comma)
+                {
+                    throw CreateParseException(
+                        $"Expected right-hand operand after operator '{op}', found {FormatToken(Current)}.");
+                }
+
                 var right = ParseUnary();
                 if (op == "in" && right is not ConditionArrayNode)
                 {
                     throw CreateParseException("Right-hand side of 'in' must be an array literal.");
                 }
                 left = new ConditionBinaryNode(op, left, right);
+            }
+
+            if (IsUnexpectedComparisonToken(Current))
+            {
+                var message =
+                    $"Expected comparison operator (==, !=, eq, not eq, gt, gte, lt, lte, in) after {DescribeNode(left)}, found {FormatToken(Current)}.";
+                var suggestion = GetOperatorSuggestion(Current.Text);
+                if (suggestion != null)
+                {
+                    message = $"{message} {suggestion}";
+                }
+
+                throw CreateParseException(message);
             }
 
             return left;
@@ -301,7 +324,7 @@ internal static partial class MappingExecutor
                     $"Unexpected identifier '{identifier}'. Use path(...) for value references.");
             }
 
-            throw CreateParseException($"Unexpected token '{Current.Text}'.");
+            throw CreateParseException($"Unexpected token {FormatToken(Current)}.");
         }
 
         private ConditionExpressionNode ParsePathCall()
@@ -356,7 +379,7 @@ internal static partial class MappingExecutor
         {
             if (!Match(type))
             {
-                throw CreateParseException($"Expected {type} but found '{Current.Text}'.");
+                throw CreateParseException($"Expected {DescribeTokenType(type)} but found {FormatToken(Current)}.");
             }
         }
 
@@ -387,9 +410,144 @@ internal static partial class MappingExecutor
                 && string.Equals(Current.Text, identifier, StringComparison.OrdinalIgnoreCase);
         }
 
+        private bool IsUnexpectedComparisonToken(ConditionToken token)
+        {
+            if (token.Type is ConditionTokenType.End or ConditionTokenType.RightParen or ConditionTokenType.RightBracket or ConditionTokenType.Comma)
+            {
+                return false;
+            }
+
+            if (token.Type == ConditionTokenType.Operator &&
+                (string.Equals(token.Text, "&&", StringComparison.Ordinal) ||
+                string.Equals(token.Text, "||", StringComparison.Ordinal)))
+            {
+                return false;
+            }
+
+            if (token.Type == ConditionTokenType.Identifier &&
+                (string.Equals(token.Text, "and", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(token.Text, "or", StringComparison.OrdinalIgnoreCase)))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private string? GetOperatorSuggestion(string tokenText)
+        {
+            var normalized = tokenText.Trim().ToLowerInvariant();
+            if (normalized.Length == 0)
+            {
+                return null;
+            }
+
+            return normalized switch
+            {
+                "is" or "equals" => "Did you mean 'eq' or '=='?",
+                "neq" => "Did you mean 'not eq' or '!='?",
+                _ => GetClosestOperatorSuggestion(normalized)
+            };
+        }
+
+        private string? GetClosestOperatorSuggestion(string tokenText)
+        {
+            var candidates = new[] { "eq", "gt", "gte", "lt", "lte", "in" };
+            string? best = null;
+            var bestDistance = int.MaxValue;
+
+            foreach (var candidate in candidates)
+            {
+                var distance = ComputeDistance(tokenText, candidate);
+                if (distance < bestDistance)
+                {
+                    bestDistance = distance;
+                    best = candidate;
+                }
+            }
+
+            if (best == null || bestDistance > 2)
+            {
+                return null;
+            }
+
+            if (best == "eq")
+            {
+                return "Did you mean 'eq' or '=='?";
+            }
+
+            return $"Did you mean '{best}'?";
+        }
+
+        private static int ComputeDistance(string source, string target)
+        {
+            var costs = new int[target.Length + 1];
+            for (var index = 0; index < costs.Length; index++)
+            {
+                costs[index] = index;
+            }
+
+            for (var sourceIndex = 1; sourceIndex <= source.Length; sourceIndex++)
+            {
+                costs[0] = sourceIndex;
+                var previousDiagonal = sourceIndex - 1;
+                for (var targetIndex = 1; targetIndex <= target.Length; targetIndex++)
+                {
+                    var previousTop = costs[targetIndex];
+                    var substitutionCost = source[sourceIndex - 1] == target[targetIndex - 1] ? 0 : 1;
+                    costs[targetIndex] = Math.Min(
+                        Math.Min(costs[targetIndex] + 1, costs[targetIndex - 1] + 1),
+                        previousDiagonal + substitutionCost);
+                    previousDiagonal = previousTop;
+                }
+            }
+
+            return costs[target.Length];
+        }
+
+        private string DescribeNode(ConditionExpressionNode node)
+        {
+            return node switch
+            {
+                ConditionPathNode path => $"path({path.Path})",
+                ConditionLiteralNode literal => literal.Value switch
+                {
+                    null => "null",
+                    string text => $"'{text}'",
+                    bool b => b ? "true" : "false",
+                    _ => Convert.ToString(literal.Value, CultureInfo.InvariantCulture) ?? "value"
+                },
+                _ => "expression"
+            };
+        }
+
+        private static string DescribeTokenType(ConditionTokenType type)
+        {
+            return type switch
+            {
+                ConditionTokenType.LeftParen => "'('",
+                ConditionTokenType.RightParen => "')'",
+                ConditionTokenType.LeftBracket => "'['",
+                ConditionTokenType.RightBracket => "']'",
+                ConditionTokenType.Comma => "','",
+                ConditionTokenType.End => "end of expression",
+                _ => type.ToString()
+            };
+        }
+
+        private static string FormatToken(ConditionToken token)
+        {
+            return token.Type == ConditionTokenType.End ? "end of expression" : $"'{token.Text}'";
+        }
+
         private FormatException CreateParseException(string message)
         {
-            return new FormatException($"{message} (position {Current.Position}).");
+            return CreateParseException(message, Current.Position, Current.Text.Length);
+        }
+
+        private FormatException CreateParseException(string message, int position, int pointerWidth)
+        {
+            return new FormatException(FormatParseMessage(_expression, message, position, pointerWidth));
         }
 
         private static List<ConditionToken> Tokenize(string input)
@@ -490,7 +648,7 @@ internal static partial class MappingExecutor
                     continue;
                 }
 
-                throw new FormatException($"Unexpected character '{current}' at position {index}.");
+                throw CreateTokenizeException(input, $"Unexpected character '{current}'.", index, 1);
             }
 
             tokens.Add(new ConditionToken(ConditionTokenType.End, string.Empty, input.Length));
@@ -531,7 +689,20 @@ internal static partial class MappingExecutor
                 cursor++;
             }
 
-            throw new FormatException($"Unterminated string literal at position {startIndex}.");
+            throw CreateTokenizeException(input, "Unterminated string literal.", startIndex, 1);
+        }
+
+        private static FormatException CreateTokenizeException(string expression, string message, int position, int pointerWidth)
+        {
+            return new FormatException(FormatParseMessage(expression, message, position, pointerWidth));
+        }
+
+        private static string FormatParseMessage(string expression, string message, int position, int pointerWidth)
+        {
+            var safePosition = Math.Clamp(position, 0, expression.Length);
+            var safeWidth = Math.Max(2, pointerWidth <= 0 ? 1 : pointerWidth);
+            var pointer = new string(' ', safePosition) + new string('^', safeWidth);
+            return $"Invalid expression at position {safePosition}: {message}\n{expression}\n{pointer}";
         }
     }
 }

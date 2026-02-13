@@ -67,6 +67,19 @@ Implement features with parity across runtimes, deterministic tests, and explici
 - Check API/docs impact: if public surface changed, update `src/Apiconvert.Core/README.md`.
 - Summarize changes by behavior, then by files touched.
 
+### 8. Evaluate version bump and release tagging
+
+- Always assess SemVer impact of the change:
+  - `patch`: fixes and non-breaking internal changes.
+  - `minor`: backward-compatible feature additions.
+  - `major`: breaking behavior or contract changes.
+- For this repository, release versioning is tag-driven (`vX.Y.Z`) and package/schema versions are lockstep with the tag.
+- When preparing commits intended for auto-tagging, use commit subject prefixes:
+  - `[major]` for major bump intent.
+  - `[minor]` for minor bump intent.
+  - No prefix defaults to patch bump.
+- If schema behavior changes, ensure versioned schema artifacts and docs align with the intended release version.
+
 ## Completion criteria
 
 Treat work as complete only when all are true:
@@ -75,4 +88,5 @@ Treat work as complete only when all are true:
 - Relevant shared/runtime tests are added or updated.
 - Local verification commands pass, or skips are explicitly documented.
 - Any public API change is reflected in docs.
+- Version bump intent is explicitly stated (patch/minor/major) and release-tag readiness is confirmed.
 - Residual risks and follow-ups are stated explicitly.
