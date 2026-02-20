@@ -17,6 +17,7 @@ test("CLI validate/lint/convert smoke", () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "apiconvert-cli-"));
   const outputPath = path.join(tempDir, "out.json");
   const bundledPath = path.join(tempDir, "bundled.rules.json");
+  const formattedPath = path.join(tempDir, "formatted.rules.json");
   const benchInputPath = path.join(tempDir, "bench.ndjson");
   fs.writeFileSync(benchInputPath, `${JSON.stringify({ name: "Ada" })}\n${JSON.stringify({ name: "Lin" })}\n`);
 
@@ -35,6 +36,11 @@ test("CLI validate/lint/convert smoke", () => {
   execFileSync(
     process.execPath,
     [cliPath, "rules", "bundle", "--rules", rulesPath, "--out", bundledPath],
+    { encoding: "utf8" }
+  );
+  execFileSync(
+    process.execPath,
+    [cliPath, "rules", "format", "--rules", rulesPath, "--out", formattedPath],
     { encoding: "utf8" }
   );
   execFileSync(
@@ -59,8 +65,16 @@ test("CLI validate/lint/convert smoke", () => {
 
   const expected = JSON.stringify(JSON.parse(fs.readFileSync(expectedOutputPath, "utf8")));
   const actual = JSON.stringify(JSON.parse(fs.readFileSync(outputPath, "utf8")));
+  const formatted = JSON.parse(fs.readFileSync(formattedPath, "utf8")) as {
+    inputFormat?: string;
+    outputFormat?: string;
+    rules: unknown[];
+  };
   const benchmark = JSON.parse(benchmarkOutput) as { totalRuns: number };
   assert.equal(actual, expected);
+  assert.equal(formatted.inputFormat, undefined);
+  assert.equal(formatted.outputFormat, undefined);
+  assert.ok(Array.isArray(formatted.rules));
   assert.ok(fs.existsSync(bundledPath));
   assert.equal(benchmark.totalRuns, 4);
 });

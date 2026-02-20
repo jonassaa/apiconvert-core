@@ -47,6 +47,17 @@ public static class ConversionEngine
     }
 
     /// <summary>
+    /// Formats rules into deterministic canonical JSON for clean diffs and stable tooling output.
+    /// </summary>
+    /// <param name="rawRules">Rules input (object or JSON-like model).</param>
+    /// <param name="pretty">Whether to pretty-print with stable indentation.</param>
+    /// <returns>Canonical JSON string.</returns>
+    public static string FormatConversionRules(object? rawRules, bool pretty = true)
+    {
+        return RulesFormatter.FormatCanonical(rawRules, pretty);
+    }
+
+    /// <summary>
     /// Compiles raw rules into a reusable conversion plan.
     /// </summary>
     /// <param name="rawRules">Rules input (object or JSON-like model).</param>

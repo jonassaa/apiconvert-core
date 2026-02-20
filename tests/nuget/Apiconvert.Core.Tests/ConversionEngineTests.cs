@@ -142,6 +142,49 @@ public sealed class ConversionEngineTests
     }
 
     [Fact]
+    public void FormatConversionRules_OutputsDeterministicCanonicalJson()
+    {
+        var rawRules = """
+        {
+          "rules": [
+            { "kind": "field", "from": "name", "to": ["user.name"] },
+            { "kind": "field", "to": ["meta.source"], "const": "crm" }
+          ]
+        }
+        """;
+
+        var formatted = ConversionEngine.FormatConversionRules(rawRules, pretty: true);
+        var expected = """
+        {
+          "rules": [
+            {
+              "kind": "field",
+              "outputPaths": [
+                "user.name"
+              ],
+              "source": {
+                "type": "path",
+                "path": "name"
+              }
+            },
+            {
+              "kind": "field",
+              "outputPaths": [
+                "meta.source"
+              ],
+              "source": {
+                "type": "constant",
+                "value": "crm"
+              }
+            }
+          ]
+        }
+        """;
+
+        Assert.Equal(expected, formatted);
+    }
+
+    [Fact]
     public void ApplyConversion_ExecutesBranchThenElseIfElse()
     {
         var input = new Dictionary<string, object?>

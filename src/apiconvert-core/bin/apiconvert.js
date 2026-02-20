@@ -39,6 +39,11 @@ async function main() {
     return;
   }
 
+  if (command === "rules" && subcommand === "format") {
+    await handleFormat(rest);
+    return;
+  }
+
   if (command === "convert") {
     await handleConvert([subcommand, ...rest].filter(Boolean));
     return;
@@ -168,6 +173,23 @@ async function handleBundle(args) {
   console.log(JSON.stringify({ outputPath, validationErrors: bundled.validationErrors ?? [] }, null, 2));
 }
 
+async function handleFormat(args) {
+  const options = parseFlags(args);
+  const rulesPath = requireFlag(options, "rules");
+  const outputPath = options.out;
+
+  const rawRules = fs.readFileSync(rulesPath, "utf8");
+  const formatted = core.formatConversionRules(rawRules, { pretty: true });
+
+  if (outputPath) {
+    fs.writeFileSync(outputPath, `${formatted}\n`);
+    console.log(JSON.stringify({ outputPath }, null, 2));
+    return;
+  }
+
+  console.log(formatted);
+}
+
 async function handleBenchmark(args) {
   const options = parseFlags(args);
   const rulesPath = requireFlag(options, "rules");
@@ -220,6 +242,7 @@ function printUsage() {
     "  apiconvert rules doctor --rules <rules.json> [--input <sample.ext>] [--format json|xml|query]",
     "  apiconvert rules compatibility --rules <rules.json> --target <version>",
     "  apiconvert rules bundle --rules <entry.rules.json> --out <bundled.rules.json>",
+    "  apiconvert rules format --rules <rules.json> [--out <formatted.rules.json>]",
     "  apiconvert convert --rules <rules.json> --input <input.ext> --output <output.ext>",
     "  apiconvert benchmark --rules <rules.json> --input <samples.ndjson> [--iterations <n>]"
   ].join("\n"));

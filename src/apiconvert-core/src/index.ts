@@ -3,6 +3,7 @@ import { compileConversionPlan, computeRulesCacheKey } from "./conversion-plan";
 import { checkRulesCompatibility } from "./compatibility";
 import { formatPayload, parsePayload } from "./payload-converter";
 import { bundleConversionRules } from "./rules-bundler";
+import { formatConversionRules } from "./rules-formatter";
 import { lintConversionRules } from "./rules-linter";
 import { profileConversionPlan } from "./profile-conversion-plan";
 import { runRuleDoctor } from "./rule-doctor";
@@ -20,6 +21,7 @@ export {
   compileConversionPlan,
   computeRulesCacheKey,
   bundleConversionRules,
+  formatConversionRules,
   formatPayload,
   lintConversionRules,
   profileConversionPlan,
