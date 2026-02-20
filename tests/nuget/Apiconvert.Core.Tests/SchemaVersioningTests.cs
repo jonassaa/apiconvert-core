@@ -51,7 +51,9 @@ public sealed class SchemaVersioningTests
         var current = new DirectoryInfo(AppContext.BaseDirectory);
         while (current is not null)
         {
-            if (Directory.Exists(Path.Combine(current.FullName, ".git")))
+            var gitPath = Path.Combine(current.FullName, ".git");
+            var solutionPath = Path.Combine(current.FullName, "Apiconvert.Core.sln");
+            if (Directory.Exists(gitPath) || File.Exists(gitPath) || File.Exists(solutionPath))
             {
                 return current.FullName;
             }
