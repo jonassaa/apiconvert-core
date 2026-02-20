@@ -4,6 +4,40 @@
 This repo hosts the shared core for Apiconvert, shipping both a .NET library (NuGet) and a TypeScript package (npm) that implement the same conversion contracts and test cases.
 - Features should be implemented in both .NET and JS so all shared conversion cases pass across languages.
 
+## Architectural Intent
+Apiconvert.Core is a rule-driven API transformation engine.
+- Keep conversion behavior declarative via rules, not hardcoded integration logic.
+- Keep the conversion engine deterministic, side-effect free, and testable in isolation.
+- Keep runtime behavior aligned across .NET and npm implementations.
+
+## Architectural Boundaries
+- Conversion logic only: no HTTP, auth, database, UI, or infrastructure concerns.
+- Rule-driven over code-driven: prefer extending rule schema/evaluation/primitives over adding custom conditionals.
+- No I/O or external service calls in conversion paths.
+- Avoid runtime-specific constructs leaking into rule definitions.
+
+## Non-Goals
+Apiconvert.Core is not:
+- An API gateway
+- Middleware server
+- HTTP proxy
+- Auth provider
+- Persistence layer
+- UI rule builder
+- Orchestration, message bus, or workflow engine
+
+## Schema Contract
+- Treat the rules schema as a compatibility contract across runtimes.
+- Changes to rule structure, validation behavior, or rule/source types must preserve backward compatibility or be explicitly versioned.
+- New schema capabilities should include matching support in both .NET and npm runtimes.
+
+## Implementation Decision Checks
+When adding or changing behavior, validate:
+1. Does this belong in the conversion engine rather than application/integration layers?
+2. Can this be expressed declaratively via rules?
+3. Does this preserve determinism and avoid side effects?
+4. Does this maintain cross-platform parity and shared case compatibility?
+
 ## Project Structure & Module Organization
 - `Apiconvert.Core.sln` is the solution entry point.
 - `.github/` contains CI workflows and GitHub metadata.
@@ -38,6 +72,7 @@ This repo hosts the shared core for Apiconvert, shipping both a .NET library (Nu
 - Place .NET tests under `tests/nuget/Apiconvert.Core.Tests/` mirroring `src/` namespaces.
 - Place npm/TS tests under `tests/npm/apiconvert-core-tests/`.
 - Keep unit tests deterministic; avoid network and filesystem dependencies.
+- Prefer shared `tests/cases/` coverage for rule behavior so .NET and npm stay behaviorally aligned.
 
 ## Commit & Pull Request Guidelines
 - Existing history is minimal and does not show a convention. Use short, imperative commit messages (e.g., `Add conversion rule validation`).

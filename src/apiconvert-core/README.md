@@ -2,6 +2,14 @@
 
 Shared TypeScript conversion runtime for Apiconvert.
 
+## Design Constraints
+
+This runtime is intentionally rule-driven and deterministic:
+- prefer declarative rule behavior over hardcoded integration logic
+- keep conversion paths side-effect free and isolated from infrastructure concerns
+- avoid transport/auth/database/UI behavior in this package
+- preserve behavioral parity with `Apiconvert.Core` (.NET)
+
 ## Rules Model
 
 Canonical rules are defined by one ordered `rules` array of recursive nodes:

@@ -2,6 +2,24 @@
 
 Apiconvert.Core is the shared conversion engine for Apiconvert, with matching behavior across the .NET package (`Apiconvert.Core`) and TypeScript package (`@apiconvert/core`).
 
+## Architectural Intent
+
+Apiconvert.Core is a rule-driven API transformation engine. It converts payloads between incompatible schemas using declarative rules, not integration-specific mapping code.
+
+Core expectations:
+- deterministic conversions
+- side-effect-free execution
+- no input mutation
+- consistent behavior across .NET and TypeScript runtimes
+
+## Scope and Non-Goals
+
+This package is conversion logic only. It does not provide:
+- API gateway or middleware behavior
+- HTTP proxying or authentication
+- persistence or message-bus/workflow orchestration
+- UI tooling for rule authoring
+
 ## Canonical Rules Model
 
 Rules use one ordered `rules` array of recursive nodes:
@@ -64,6 +82,8 @@ Convenience alias:
 Transition alias (deprecated):
 
 - `schemas/rules/rules.schema.json` (legacy path, currently mirrors latest schema)
+
+Schema changes are contract changes. Updates to rule structure, validation behavior, or rule/source types must preserve backward compatibility or be explicitly versioned.
 
 ## Quickstart (.NET)
 
@@ -134,6 +154,8 @@ dotnet build Apiconvert.Core.sln
 dotnet test Apiconvert.Core.sln
 npm --prefix tests/npm/apiconvert-core-tests test
 ```
+
+Shared conversion behavior should be validated through `tests/cases` in both runtimes.
 
 ## Release
 

@@ -2,6 +2,14 @@
 
 `Apiconvert.Core` is the .NET conversion engine for JSON, XML, and query payloads.
 
+## Design Constraints
+
+The engine is intentionally rule-driven and deterministic:
+- prefer declarative rule behavior over hardcoded integration logic
+- keep conversion paths side-effect free and isolated from infrastructure concerns
+- avoid transport/auth/database/UI behavior in this package
+- preserve behavioral parity with `@apiconvert/core`
+
 ## Rules Model
 
 Rules use a single ordered `rules` array with recursive nodes:
