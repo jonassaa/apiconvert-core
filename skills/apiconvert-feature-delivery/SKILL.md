@@ -31,13 +31,16 @@ Implement features with parity across runtimes, deterministic tests, and explici
 
 - Read Notion target from env var: `APICONVERT_NOTION_DATA_SOURCE_ID`.
 - Optional display/reference URL from: `APICONVERT_NOTION_DATABASE_URL`.
-- If `APICONVERT_NOTION_DATA_SOURCE_ID` is missing, ask user before writing tasks.
+- Read Codex instance id from env var: `APICONVERT_CODEX_INSTANCE_ID`.
+- If `APICONVERT_NOTION_DATA_SOURCE_ID` or `APICONVERT_CODEX_INSTANCE_ID` is missing, ask user before writing tasks.
 - Create one Notion page per planned task (usually 3-6 items).
 - Set properties at minimum:
   - `Name`: concise action statement.
-  - `Status`: `Backlog` (or `In Progress` for the currently active step).
+  - `Status`: `Backlog` for queued tasks and `In Progress` for the currently active step.
   - `Priority`: choose `P0`-`P3`.
   - `Area`: best-fit area for the task.
+  - `Codex Instance ID`: value from `APICONVERT_CODEX_INSTANCE_ID`.
+  - `Codex Task ID`: stable id in format `<APICONVERT_CODEX_INSTANCE_ID>:<short-task-slug>`.
 - Add helpful metadata when available: `Tags`, `Estimate (pts)`, `Target Version`, `Spec/PR Link`.
 - For parity work spanning both runtimes, add `parity` to `Tags`.
 - Keep chat output and Notion entries aligned; if plan changes, update the corresponding Notion tasks.

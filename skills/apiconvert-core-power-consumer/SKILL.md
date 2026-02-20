@@ -55,15 +55,18 @@ After generating the backlog, persist items to Notion:
 
 - Data source from env var: `APICONVERT_NOTION_DATA_SOURCE_ID`
 - Optional database URL from env var: `APICONVERT_NOTION_DATABASE_URL`
-- If `APICONVERT_NOTION_DATA_SOURCE_ID` is missing, ask the user before writing tasks.
+- Codex instance id from env var: `APICONVERT_CODEX_INSTANCE_ID`
+- If `APICONVERT_NOTION_DATA_SOURCE_ID` or `APICONVERT_CODEX_INSTANCE_ID` is missing, ask the user before writing tasks.
 - Create a task page for each prioritized/top request and any immediate quick-win item.
 - Use properties:
   - `Name`: clear feature/request title
-  - `Status`: `Backlog`
+  - `Status`: `Backlog` for queued requests, `In Progress` for the item actively being worked
   - `Priority`: mapped from impact/confidence/effort judgment
   - `Area`: best-fit domain (`Rules Engine`, `Schema Contract`, `Dotnet Runtime`, `Npm Runtime`, `Shared Test Cases`, `Docs`, `Release`)
   - `Tags`: include `parity` when request requires .NET/JS alignment
   - `Spec/PR Link`: include issue/spec URL when available
+  - `Codex Instance ID`: value from `APICONVERT_CODEX_INSTANCE_ID`
+  - `Codex Task ID`: stable id in format `<APICONVERT_CODEX_INSTANCE_ID>:<short-task-slug>`
 
 ### 3. Prioritize Like a Customer
 

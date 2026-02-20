@@ -87,16 +87,21 @@ When adding or changing behavior, validate:
 - Load Notion task tracker settings from local env vars (do not hardcode private workspace ids in tracked files):
   - `APICONVERT_NOTION_DATABASE_URL` (e.g., `https://www.notion.so/...`)
   - `APICONVERT_NOTION_DATA_SOURCE_ID` (e.g., `collection://...`)
+  - `APICONVERT_CODEX_INSTANCE_ID` (stable local identifier for this Codex instance, e.g., `jonas-mbp`)
 - Local private config location: `.codex/local.env` (git-ignored).
 - When work produces tasks, plans, proposals, or follow-up actions, write them as pages in the data source from `APICONVERT_NOTION_DATA_SOURCE_ID` (not only in chat output).
-- If either env var is missing, ask the user for values before creating/updating Notion pages.
+- If any required env var is missing, ask the user for values before creating/updating Notion pages.
 - Use these properties when creating/updating tasks:
   - `Name` (required title)
   - `Status` (`Backlog`, `Ready`, `In Progress`, `Blocked`, `In Review`, `Done`)
   - `Priority` (`P0`, `P1`, `P2`, `P3`)
-  - `Owner`, `Due Date`, `Area`, `Tags`, `Estimate (pts)`, `Blocked`, `Target Version`, `Spec/PR Link`
+  - `Owner`, `Due Date`, `Area`, `Tags`, `Estimate (pts)`, `Blocked`, `Target Version`, `Spec/PR Link`, `Codex Instance ID`, `Codex Task ID`
+- Tracking rules:
+  - Set the actively worked task to `Status = In Progress`.
+  - Set `Codex Instance ID` from `APICONVERT_CODEX_INSTANCE_ID`.
+  - Set `Codex Task ID` as `<APICONVERT_CODEX_INSTANCE_ID>:<short-task-slug>` and keep it stable across updates.
 - Default conventions for generated items unless user specifies otherwise:
-  - `Status`: `Backlog`
+  - `Status`: `Backlog` for queued tasks, `In Progress` for the current active task
   - `Priority`: `P2`
   - `Area`: best-fit from the schema (`Rules Engine`, `Schema Contract`, `Dotnet Runtime`, `Npm Runtime`, `Shared Test Cases`, `Docs`, `Release`)
   - `Tags`: include `parity` when work affects both runtimes.
