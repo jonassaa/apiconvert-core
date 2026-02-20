@@ -1,5 +1,7 @@
 using Apiconvert.Core.Rules;
+using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 
 namespace Apiconvert.Core.Converters;
@@ -152,6 +154,34 @@ public static class ConversionEngine
     public static (object? Value, string? Error) ParsePayload(JsonNode? jsonNode, DataFormat format = DataFormat.Json)
     {
         return PayloadConverter.ParsePayload(jsonNode, format);
+    }
+
+    /// <summary>
+    /// Streams conversion over a JSON array payload, yielding one conversion result per array item.
+    /// </summary>
+    /// <param name="stream">Input JSON stream containing a top-level array.</param>
+    /// <param name="rawRules">Rules input (object or JSON-like model).</param>
+    /// <param name="options">Optional execution options.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Async stream of per-item conversion results.</returns>
+    public static async IAsyncEnumerable<ConversionResult> StreamJsonArrayConversionAsync(
+        Stream stream,
+        object? rawRules,
+        ConversionOptions? options = null,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        if (stream is null)
+        {
+            throw new ArgumentNullException(nameof(stream));
+        }
+
+        var rules = NormalizeConversionRules(rawRules);
+        var elements = JsonSerializer.DeserializeAsyncEnumerable<JsonElement>(stream, cancellationToken: cancellationToken);
+        await foreach (var element in elements.WithCancellation(cancellationToken))
+        {
+            var input = JsonConverter.ToObject(element);
+            yield return MappingExecutor.ApplyConversion(input, rules, options);
+        }
     }
 
     /// <summary>

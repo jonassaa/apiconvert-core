@@ -51,3 +51,30 @@ export function applyConversionWithRules(
 
   return { output, errors, warnings, trace: trace ?? [] };
 }
+
+export async function* streamJsonArrayConversion(
+  items: Iterable<unknown> | AsyncIterable<unknown>,
+  rawRules: unknown,
+  options: ApplyConversionOptions = {}
+): AsyncGenerator<ConversionResult> {
+  const rules = normalizeConversionRules(rawRules);
+
+  for await (const item of toAsyncIterable(items)) {
+    yield applyConversionWithRules(item, rules, options);
+  }
+}
+
+async function* toAsyncIterable(
+  values: Iterable<unknown> | AsyncIterable<unknown>
+): AsyncGenerator<unknown> {
+  if (Symbol.asyncIterator in Object(values)) {
+    for await (const value of values as AsyncIterable<unknown>) {
+      yield value;
+    }
+    return;
+  }
+
+  for (const value of values as Iterable<unknown>) {
+    yield value;
+  }
+}

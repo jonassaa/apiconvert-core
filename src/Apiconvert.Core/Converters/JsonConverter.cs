@@ -22,7 +22,7 @@ internal static class JsonConverter
         return ToObject(document.RootElement);
     }
 
-    private static object? ToObject(JsonElement element)
+    internal static object? ToObject(JsonElement element)
     {
         return element.ValueKind switch
         {

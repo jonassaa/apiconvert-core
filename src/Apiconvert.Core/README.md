@@ -125,6 +125,7 @@ Examples:
 `ConversionEngine` also exposes payload helpers:
 - `ParsePayload(string, DataFormat)` and stream/`JsonNode` overloads
 - `FormatPayload(object?, DataFormat, bool)` and stream overload
+- `StreamJsonArrayConversionAsync(Stream, rawRules, ...)` for top-level JSON array item streaming
 
 ## Output Collision Policy
 
@@ -215,3 +216,8 @@ Use the shared catalog for deterministic diagnostic mapping and remediation guid
 
 - Conversion execution is deterministic and side-effect free.
 - Treat rule objects as immutable after configuration. Public rule lists are mutable; avoid mutating shared rules while converting on multiple threads.
+
+## Streaming Notes
+
+- Streaming API currently supports top-level JSON arrays only.
+- Unsupported/non-JSON stream scenarios should continue to use `ParsePayload(...)` + `ApplyConversion(...)`.

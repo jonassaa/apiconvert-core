@@ -120,6 +120,7 @@ console.log(plan.cacheKey);
 The package also exports:
 - `parsePayload(text, format)` for `json`, `xml`, and `query`
 - `formatPayload(value, format, pretty)`
+- `streamJsonArrayConversion(items, rawRules, options)` for async iterator item-by-item conversion
 
 ## Output Collision Policy
 
@@ -193,3 +194,8 @@ apiconvert convert --rules rules.json --input input.json --output out.json
 
 Use the shared catalog for deterministic diagnostic mapping and remediation guidance:
 - [`docs/error-code-catalog.md`](../../docs/error-code-catalog.md)
+
+## Streaming Notes
+
+- Streaming API currently processes top-level JSON array items from an `AsyncIterable`/`Iterable`.
+- For XML/query payloads, continue to use `parsePayload(...)` + `applyConversion(...)`.
