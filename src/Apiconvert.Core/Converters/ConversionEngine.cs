@@ -66,6 +66,17 @@ public static class ConversionEngine
     }
 
     /// <summary>
+    /// Computes a stable cache key for normalized rules.
+    /// </summary>
+    /// <param name="rawRules">Rules input (object or JSON-like model).</param>
+    /// <returns>Stable cache key string for compiled plan reuse.</returns>
+    public static string ComputeRulesCacheKey(object? rawRules)
+    {
+        var rules = NormalizeConversionRules(rawRules);
+        return RulesCacheKey.Compute(rules);
+    }
+
+    /// <summary>
     /// Runs lint diagnostics over raw rules without mutating or executing conversion.
     /// </summary>
     /// <param name="rawRules">Rules input (object or JSON-like model).</param>

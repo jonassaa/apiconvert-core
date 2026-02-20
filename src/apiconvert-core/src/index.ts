@@ -1,4 +1,5 @@
 import { applyConversion } from "./mapping-engine";
+import { compileConversionPlan, computeRulesCacheKey } from "./conversion-plan";
 import { formatPayload, parsePayload } from "./payload-converter";
 import { lintConversionRules } from "./rules-linter";
 import {
@@ -11,6 +12,8 @@ import { DataFormat } from "./types";
 export * from "./types";
 export {
   applyConversion,
+  compileConversionPlan,
+  computeRulesCacheKey,
   formatPayload,
   lintConversionRules,
   normalizeConversionRules,

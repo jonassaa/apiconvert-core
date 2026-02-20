@@ -3,7 +3,8 @@ import { executeRules } from "./rule-executor";
 import {
   OutputCollisionPolicy,
   type ApplyConversionOptions,
-  type ConversionResult
+  type ConversionResult,
+  type ConversionRules
 } from "./types";
 
 export function applyConversion(
@@ -12,6 +13,14 @@ export function applyConversion(
   options: ApplyConversionOptions = {}
 ): ConversionResult {
   const rules = normalizeConversionRules(rawRules);
+  return applyConversionWithRules(input, rules, options);
+}
+
+export function applyConversionWithRules(
+  input: unknown,
+  rules: ConversionRules,
+  options: ApplyConversionOptions = {}
+): ConversionResult {
   const nodes = rules.rules ?? [];
   const errors = [...(rules.validationErrors ?? [])];
   const collisionPolicy = options.collisionPolicy ?? OutputCollisionPolicy.LastWriteWins;

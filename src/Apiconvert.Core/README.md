@@ -193,6 +193,7 @@ var result = ConversionEngine.ApplyConversion(
 - `LintRules(...)` returns non-mutating diagnostics with severity, code, rule path, and suggested fixes.
 - `CompileConversionPlan(...)` reuses normalized rules for repeated conversions.
 - `CompileConversionPlanStrict(...)` combines strict validation with plan compilation.
+- `ComputeRulesCacheKey(...)` returns a stable cache key for normalized rules.
 
 ```csharp
 var diagnostics = ConversionEngine.LintRules(File.ReadAllText("rules.json"));
@@ -200,6 +201,9 @@ foreach (var diagnostic in diagnostics)
 {
     Console.WriteLine($"{diagnostic.Severity} {diagnostic.Code} {diagnostic.RulePath}: {diagnostic.Message}");
 }
+
+var plan = ConversionEngine.CompileConversionPlan(rulesJson);
+Console.WriteLine(plan.CacheKey);
 ```
 
 ## Error Codes and Troubleshooting

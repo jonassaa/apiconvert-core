@@ -94,6 +94,8 @@ console.log(result.output);
 - `normalizeConversionRulesStrict(raw)` throws when validation errors exist.
 - `validateConversionRules(raw)` returns `{ isValid, errors, rules }` for explicit validation workflows.
 - `lintConversionRules(raw)` returns deterministic diagnostics with severity, code, path, and fix hints.
+- `compileConversionPlan(raw)` returns a reusable plan with `cacheKey` and `apply(...)`.
+- `computeRulesCacheKey(raw)` returns a stable cache key for normalized rules.
 
 ```ts
 import { normalizeConversionRulesStrict } from "@apiconvert/core";
@@ -108,6 +110,9 @@ const lint = lintConversionRules(rulesText);
 for (const diagnostic of lint.diagnostics) {
   console.log(`${diagnostic.severity} ${diagnostic.code} ${diagnostic.rulePath}: ${diagnostic.message}`);
 }
+
+const plan = compileConversionPlan(rulesText);
+console.log(plan.cacheKey);
 ```
 
 ## Parse and Format Helpers

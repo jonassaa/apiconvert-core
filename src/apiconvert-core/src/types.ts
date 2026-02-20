@@ -157,6 +157,12 @@ export interface ConversionResult {
   trace?: ConversionTraceEntry[];
 }
 
+export interface CompiledConversionPlan {
+  rules: ConversionRules;
+  cacheKey: string;
+  apply(input: unknown, options?: ApplyConversionOptions): ConversionResult;
+}
+
 export interface ConversionRulesValidationResult {
   rules: ConversionRules;
   isValid: boolean;
