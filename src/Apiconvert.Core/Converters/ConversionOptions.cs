@@ -16,4 +16,10 @@ public sealed record ConversionOptions
     /// Enables per-rule execution tracing in <see cref="ConversionResult.Trace"/>.
     /// </summary>
     public bool Explain { get; init; }
+
+    /// <summary>
+    /// Optional custom transform registry used by <c>source.type=transform</c> rules with <c>customTransform</c>.
+    /// </summary>
+    public IReadOnlyDictionary<string, Func<object?, object?>> TransformRegistry { get; init; }
+        = new Dictionary<string, Func<object?, object?>>(StringComparer.Ordinal);
 }

@@ -15,6 +15,7 @@ export function applyConversion(
   const nodes = rules.rules ?? [];
   const errors = [...(rules.validationErrors ?? [])];
   const collisionPolicy = options.collisionPolicy ?? OutputCollisionPolicy.LastWriteWins;
+  const transforms = options.transforms ?? {};
   const trace = options.explain ? [] : null;
 
   if (nodes.length === 0) {
@@ -33,6 +34,7 @@ export function applyConversion(
     warnings,
     new Map<string, string>(),
     collisionPolicy,
+    transforms,
     trace,
     "rules",
     0

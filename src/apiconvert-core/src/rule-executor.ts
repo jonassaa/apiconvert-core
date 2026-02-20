@@ -23,6 +23,7 @@ export function executeRules(
   warnings: string[],
   writeOwners: Map<string, string>,
   collisionPolicy: OutputCollisionPolicy,
+  transforms: Record<string, (value: unknown) => unknown>,
   trace: ConversionTraceEntry[] | null,
   path: string,
   depth: number
@@ -33,7 +34,7 @@ export function executeRules(
   }
 
   rules.forEach((rule, index) => {
-    executeRule(root, item, rule, output, errors, warnings, writeOwners, collisionPolicy, trace, `${path}[${index}]`, depth);
+    executeRule(root, item, rule, output, errors, warnings, writeOwners, collisionPolicy, transforms, trace, `${path}[${index}]`, depth);
   });
 }
 
@@ -46,22 +47,23 @@ function executeRule(
   warnings: string[],
   writeOwners: Map<string, string>,
   collisionPolicy: OutputCollisionPolicy,
+  transforms: Record<string, (value: unknown) => unknown>,
   trace: ConversionTraceEntry[] | null,
   path: string,
   depth: number
 ): void {
   if (rule.kind === "field") {
-    executeFieldRule(root, item, rule, output, errors, writeOwners, collisionPolicy, trace, path);
+    executeFieldRule(root, item, rule, output, errors, writeOwners, collisionPolicy, transforms, trace, path);
     return;
   }
 
   if (rule.kind === "array") {
-    executeArrayRule(root, item, rule, output, errors, warnings, writeOwners, collisionPolicy, trace, path, depth);
+    executeArrayRule(root, item, rule, output, errors, warnings, writeOwners, collisionPolicy, transforms, trace, path, depth);
     return;
   }
 
   if (rule.kind === "branch") {
-    executeBranchRule(root, item, rule, output, errors, warnings, writeOwners, collisionPolicy, trace, path, depth);
+    executeBranchRule(root, item, rule, output, errors, warnings, writeOwners, collisionPolicy, transforms, trace, path, depth);
     return;
   }
 
@@ -78,6 +80,7 @@ function executeFieldRule(
   errors: string[],
   writeOwners: Map<string, string>,
   collisionPolicy: OutputCollisionPolicy,
+  transforms: Record<string, (value: unknown) => unknown>,
   trace: ConversionTraceEntry[] | null,
   path: string
 ): void {
@@ -89,7 +92,7 @@ function executeFieldRule(
     return;
   }
 
-  let value = resolveSourceValue(root, item, rule.source, errors, `${path}.source`);
+  let value = resolveSourceValue(root, item, rule.source, errors, transforms, `${path}.source`);
   if ((value == null || value === "") && rule.defaultValue) {
     value = parsePrimitive(rule.defaultValue);
   }
@@ -110,11 +113,12 @@ function executeArrayRule(
   warnings: string[],
   writeOwners: Map<string, string>,
   collisionPolicy: OutputCollisionPolicy,
+  transforms: Record<string, (value: unknown) => unknown>,
   trace: ConversionTraceEntry[] | null,
   path: string,
   depth: number
 ): void {
-  const value = resolveSourceValue(root, item, { type: "path", path: rule.inputPath ?? "" }, errors, path);
+  const value = resolveSourceValue(root, item, { type: "path", path: rule.inputPath ?? "" }, errors, transforms, path);
   let items = Array.isArray(value) ? value : null;
   if (!items && rule.coerceSingle && value != null) {
     items = [value];
@@ -153,6 +157,7 @@ function executeArrayRule(
       warnings,
       new Map<string, string>(),
       collisionPolicy,
+      transforms,
       trace,
       `${path}.itemRules`,
       depth + 1
@@ -176,6 +181,7 @@ function executeBranchRule(
   warnings: string[],
   writeOwners: Map<string, string>,
   collisionPolicy: OutputCollisionPolicy,
+  transforms: Record<string, (value: unknown) => unknown>,
   trace: ConversionTraceEntry[] | null,
   path: string,
   depth: number
@@ -183,7 +189,7 @@ function executeBranchRule(
   const matched = evaluateRuleCondition(root, item, rule.expression, errors, path, "branch expression");
   if (matched) {
     addTrace(trace, path, "branch", "then", { sourceValue: true, expression: rule.expression ?? undefined });
-    executeRules(root, item, rule.then ?? [], output, errors, warnings, writeOwners, collisionPolicy, trace, `${path}.then`, depth + 1);
+    executeRules(root, item, rule.then ?? [], output, errors, warnings, writeOwners, collisionPolicy, transforms, trace, `${path}.then`, depth + 1);
     return;
   }
 
@@ -214,6 +220,7 @@ function executeBranchRule(
       warnings,
       writeOwners,
       collisionPolicy,
+      transforms,
       trace,
       `${branchPath}.then`,
       depth + 1
@@ -223,7 +230,7 @@ function executeBranchRule(
 
   if ((rule.else ?? []).length > 0) {
     addTrace(trace, path, "branch", "else", { sourceValue: false, expression: rule.expression ?? undefined });
-    executeRules(root, item, rule.else ?? [], output, errors, warnings, writeOwners, collisionPolicy, trace, `${path}.else`, depth + 1);
+    executeRules(root, item, rule.else ?? [], output, errors, warnings, writeOwners, collisionPolicy, transforms, trace, `${path}.else`, depth + 1);
     return;
   }
 

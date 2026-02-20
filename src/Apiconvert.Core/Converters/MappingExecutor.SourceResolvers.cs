@@ -11,6 +11,7 @@ internal static partial class MappingExecutor
         object? item,
         ValueSource source,
         List<string> errors,
+        IReadOnlyDictionary<string, Func<object?, object?>> transformRegistry,
         string errorContext,
         int depth = 0)
     {
@@ -85,11 +86,35 @@ internal static partial class MappingExecutor
                 }
 
                 var baseValue = ResolvePathValue(root, item, source.Path ?? string.Empty);
-                return ResolveTransform(baseValue, source.Transform ?? TransformType.ToLowerCase);
+                if (source.Transform.HasValue)
+                {
+                    return ResolveTransform(baseValue, source.Transform.Value);
+                }
+
+                if (!string.IsNullOrWhiteSpace(source.CustomTransform))
+                {
+                    if (!transformRegistry.TryGetValue(source.CustomTransform, out var transform))
+                    {
+                        errors.Add($"{errorContext}: custom transform '{source.CustomTransform}' is not registered.");
+                        return null;
+                    }
+
+                    try
+                    {
+                        return transform(baseValue);
+                    }
+                    catch (Exception ex)
+                    {
+                        errors.Add($"{errorContext}: custom transform '{source.CustomTransform}' failed: {ex.Message}");
+                        return null;
+                    }
+                }
+
+                return ResolveTransform(baseValue, TransformType.ToLowerCase);
             }
             case "condition":
             {
-                return ResolveConditionSourceValue(root, item, source, errors, errorContext, depth);
+                return ResolveConditionSourceValue(root, item, source, errors, transformRegistry, errorContext, depth);
             }
             default:
                 return null;
@@ -101,6 +126,7 @@ internal static partial class MappingExecutor
         object? item,
         ValueSource source,
         List<string> errors,
+        IReadOnlyDictionary<string, Func<object?, object?>> transformRegistry,
         string errorContext,
         int depth)
     {
@@ -119,6 +145,7 @@ internal static partial class MappingExecutor
                 source.TrueSource,
                 source.TrueValue,
                 errors,
+                transformRegistry,
                 $"{errorContext} true branch",
                 depth);
         }
@@ -144,6 +171,7 @@ internal static partial class MappingExecutor
                 branch.Source,
                 branch.Value,
                 errors,
+                transformRegistry,
                 $"{errorContext} elseIf[{index}] branch",
                 depth);
         }
@@ -154,6 +182,7 @@ internal static partial class MappingExecutor
             source.FalseSource,
             source.FalseValue,
             errors,
+            transformRegistry,
             $"{errorContext} false branch",
             depth);
     }
@@ -188,12 +217,13 @@ internal static partial class MappingExecutor
         ValueSource? branchSource,
         string? branchValue,
         List<string> errors,
+        IReadOnlyDictionary<string, Func<object?, object?>> transformRegistry,
         string errorContext,
         int depth)
     {
         if (branchSource != null)
         {
-            return ResolveSourceValue(root, item, branchSource, errors, errorContext, depth + 1);
+            return ResolveSourceValue(root, item, branchSource, errors, transformRegistry, errorContext, depth + 1);
         }
 
         return ParsePrimitive(branchValue ?? string.Empty);

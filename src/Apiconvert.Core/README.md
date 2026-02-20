@@ -50,6 +50,7 @@ Supported transforms:
 - `boolean`
 - `concat`
 - `split`
+- custom transforms via `source.customTransform` + `ConversionOptions.TransformRegistry`
 
 Supported merge modes:
 - `concat`
@@ -154,6 +155,35 @@ foreach (var entry in result.Trace)
 {
     Console.WriteLine($"{entry.RulePath} [{entry.RuleKind}] => {entry.Decision}");
 }
+```
+
+## Custom Transform Plugins
+
+Register deterministic custom transform functions in `ConversionOptions.TransformRegistry` and reference them from rules using `source.customTransform`.
+
+```csharp
+var rules = ConversionEngine.NormalizeConversionRulesStrict("""
+{
+  "rules": [
+    {
+      "kind": "field",
+      "outputPaths": ["user.code"],
+      "source": { "type": "transform", "path": "name", "customTransform": "reverse" }
+    }
+  ]
+}
+""");
+
+var result = ConversionEngine.ApplyConversion(
+    new Dictionary<string, object?> { ["name"] = "Ada" },
+    rules,
+    new ConversionOptions
+    {
+        TransformRegistry = new Dictionary<string, Func<object?, object?>>
+        {
+            ["reverse"] = value => new string((value?.ToString() ?? string.Empty).Reverse().ToArray())
+        }
+    });
 ```
 
 ## Strict vs Lenient Rules Handling

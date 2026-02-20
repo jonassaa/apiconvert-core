@@ -33,6 +33,7 @@ export enum OutputCollisionPolicy {
 export interface ApplyConversionOptions {
   collisionPolicy?: OutputCollisionPolicy | null;
   explain?: boolean | null;
+  transforms?: Record<string, (value: unknown) => unknown> | null;
 }
 
 export enum RuleLintSeverity {
@@ -81,6 +82,7 @@ interface ValueSourceBase {
   tokenIndex?: number | null;
   trimAfterSplit?: boolean | null;
   transform?: TransformType | null;
+  customTransform?: string | null;
 }
 
 export interface PathValueSource extends ValueSourceBase {

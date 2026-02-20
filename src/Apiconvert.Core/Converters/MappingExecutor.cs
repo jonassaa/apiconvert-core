@@ -18,6 +18,7 @@ internal static partial class MappingExecutor
         var errors = new List<string>();
         errors.AddRange(rules.ValidationErrors);
         var collisionPolicy = options?.CollisionPolicy ?? OutputCollisionPolicy.LastWriteWins;
+        var transformRegistry = options?.TransformRegistry ?? new Dictionary<string, Func<object?, object?>>(StringComparer.Ordinal);
         var trace = options?.Explain == true ? new List<ConversionTraceEntry>() : null;
 
         if (!rules.Rules.Any())
@@ -42,6 +43,7 @@ internal static partial class MappingExecutor
             warnings,
             new Dictionary<string, string>(StringComparer.Ordinal),
             collisionPolicy,
+            transformRegistry,
             trace,
             "rules",
             0);
@@ -64,6 +66,7 @@ internal static partial class MappingExecutor
         List<string> warnings,
         Dictionary<string, string> writeOwners,
         OutputCollisionPolicy collisionPolicy,
+        IReadOnlyDictionary<string, Func<object?, object?>> transformRegistry,
         List<ConversionTraceEntry>? trace,
         string path,
         int depth)
@@ -86,6 +89,7 @@ internal static partial class MappingExecutor
                 warnings,
                 writeOwners,
                 collisionPolicy,
+                transformRegistry,
                 trace,
                 $"{path}[{index}]",
                 depth);
@@ -101,6 +105,7 @@ internal static partial class MappingExecutor
         List<string> warnings,
         Dictionary<string, string> writeOwners,
         OutputCollisionPolicy collisionPolicy,
+        IReadOnlyDictionary<string, Func<object?, object?>> transformRegistry,
         List<ConversionTraceEntry>? trace,
         string path,
         int depth)
@@ -108,13 +113,13 @@ internal static partial class MappingExecutor
         switch (rule.Kind)
         {
             case "field":
-                ExecuteFieldRule(root, item, rule, output, errors, writeOwners, collisionPolicy, trace, path);
+                ExecuteFieldRule(root, item, rule, output, errors, writeOwners, collisionPolicy, transformRegistry, trace, path);
                 return;
             case "array":
-                ExecuteArrayRule(root, item, rule, output, errors, warnings, writeOwners, collisionPolicy, trace, path, depth);
+                ExecuteArrayRule(root, item, rule, output, errors, warnings, writeOwners, collisionPolicy, transformRegistry, trace, path, depth);
                 return;
             case "branch":
-                ExecuteBranchRule(root, item, rule, output, errors, warnings, writeOwners, collisionPolicy, trace, path, depth);
+                ExecuteBranchRule(root, item, rule, output, errors, warnings, writeOwners, collisionPolicy, transformRegistry, trace, path, depth);
                 return;
             default:
                 errors.Add($"{path}: unsupported kind '{rule.Kind}'.");

@@ -266,6 +266,7 @@ internal static class RulesNormalizer
             Path = source.Path?.Trim(),
             Paths = source.Paths ?? new List<string>(),
             Expression = NormalizeExpression(source.Expression),
+            CustomTransform = source.CustomTransform?.Trim(),
             Separator = source.Separator,
             TrueSource = source.TrueSource is null ? null : NormalizeValueSource(source.TrueSource),
             FalseSource = source.FalseSource is null ? null : NormalizeValueSource(source.FalseSource),

@@ -146,6 +146,7 @@ function normalizeValueSource(
       validationErrors
     ),
     mergeMode: normalizeMergeMode(sourceRecord?.mergeMode, `${path}.mergeMode`, validationErrors),
+    customTransform: normalizeNullableString(sourceRecord?.customTransform),
     separator,
     tokenIndex: typeof sourceRecord?.tokenIndex === "number" ? sourceRecord.tokenIndex : null,
     trimAfterSplit:

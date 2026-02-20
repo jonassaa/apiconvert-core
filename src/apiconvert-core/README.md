@@ -31,6 +31,7 @@ Supported transforms:
 - `boolean`
 - `concat`
 - `split`
+- custom transforms via `source.customTransform` + `applyConversion(..., { transforms })`
 
 Supported merge modes:
 - `concat`
@@ -141,6 +142,30 @@ const result = applyConversion(input, rules, { explain: true });
 for (const entry of result.trace) {
   console.log(`${entry.rulePath} [${entry.ruleKind}] => ${entry.decision}`);
 }
+```
+
+## Custom Transform Plugins
+
+Register deterministic custom transform functions at runtime and reference them from rules using `source.customTransform`.
+
+```ts
+const rules = normalizeConversionRules({
+  inputFormat: "json",
+  outputFormat: "json",
+  rules: [
+    {
+      kind: "field",
+      outputPaths: ["user.code"],
+      source: { type: "transform", path: "name", customTransform: "reverse" }
+    }
+  ]
+});
+
+const result = applyConversion({ name: "Ada" }, rules, {
+  transforms: {
+    reverse: (value) => String(value ?? "").split("").reverse().join("")
+  }
+});
 ```
 
 ## Schema Paths

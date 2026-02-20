@@ -12,6 +12,7 @@ internal static partial class MappingExecutor
         List<string> errors,
         Dictionary<string, string> writeOwners,
         OutputCollisionPolicy collisionPolicy,
+        IReadOnlyDictionary<string, Func<object?, object?>> transformRegistry,
         List<ConversionTraceEntry>? trace,
         string path)
     {
@@ -25,7 +26,7 @@ internal static partial class MappingExecutor
         }
 
         var source = rule.Source ?? new ValueSource();
-        var value = ResolveSourceValue(root, item, source, errors, $"{path}.source");
+        var value = ResolveSourceValue(root, item, source, errors, transformRegistry, $"{path}.source");
         if ((value == null || (value is string str && string.IsNullOrEmpty(str))) && !string.IsNullOrEmpty(rule.DefaultValue))
         {
             value = ParsePrimitive(rule.DefaultValue);
@@ -55,6 +56,7 @@ internal static partial class MappingExecutor
         List<string> warnings,
         Dictionary<string, string> writeOwners,
         OutputCollisionPolicy collisionPolicy,
+        IReadOnlyDictionary<string, Func<object?, object?>> transformRegistry,
         List<ConversionTraceEntry>? trace,
         string path,
         int depth)
@@ -105,6 +107,7 @@ internal static partial class MappingExecutor
                 warnings,
                 new Dictionary<string, string>(StringComparer.Ordinal),
                 collisionPolicy,
+                transformRegistry,
                 trace,
                 $"{path}.itemRules",
                 depth + 1);
@@ -135,6 +138,7 @@ internal static partial class MappingExecutor
         List<string> warnings,
         Dictionary<string, string> writeOwners,
         OutputCollisionPolicy collisionPolicy,
+        IReadOnlyDictionary<string, Func<object?, object?>> transformRegistry,
         List<ConversionTraceEntry>? trace,
         string path,
         int depth)
@@ -152,6 +156,7 @@ internal static partial class MappingExecutor
                 warnings,
                 writeOwners,
                 collisionPolicy,
+                transformRegistry,
                 trace,
                 $"{path}.then",
                 depth + 1);
@@ -178,6 +183,7 @@ internal static partial class MappingExecutor
                 warnings,
                 writeOwners,
                 collisionPolicy,
+                transformRegistry,
                 trace,
                 $"{branchPath}.then",
                 depth + 1);
@@ -196,6 +202,7 @@ internal static partial class MappingExecutor
                 warnings,
                 writeOwners,
                 collisionPolicy,
+                transformRegistry,
                 trace,
                 $"{path}.else",
                 depth + 1);

@@ -165,6 +165,12 @@ public sealed record ValueSource
     public TransformType? Transform { get; init; }
 
     /// <summary>
+    /// Optional custom transform key resolved from the runtime transform registry.
+    /// </summary>
+    [JsonPropertyName("customTransform")]
+    public string? CustomTransform { get; init; }
+
+    /// <summary>
     /// Optional condition expression for source type "condition".
     /// </summary>
     [JsonPropertyName("expression")]

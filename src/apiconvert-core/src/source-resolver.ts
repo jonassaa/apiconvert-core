@@ -12,6 +12,7 @@ export function resolveSourceValue(
   item: unknown,
   source: ValueSource,
   errors: string[],
+  transforms: Record<string, (value: unknown) => unknown>,
   errorContext: string,
   depth = 0
 ): unknown {
@@ -72,10 +73,31 @@ export function resolveSourceValue(
       }
 
       const baseValue = resolvePathValue(root, item, source.path ?? "");
-      return resolveTransform(baseValue, source.transform ?? TransformType.ToLowerCase);
+      if (source.transform) {
+        return resolveTransform(baseValue, source.transform);
+      }
+
+      if (source.customTransform) {
+        const transform = transforms[source.customTransform];
+        if (!transform) {
+          errors.push(`${errorContext}: custom transform '${source.customTransform}' is not registered.`);
+          return null;
+        }
+
+        try {
+          return transform(baseValue);
+        } catch (error) {
+          errors.push(
+            `${errorContext}: custom transform '${source.customTransform}' failed: ${error instanceof Error ? error.message : String(error)}.`
+          );
+          return null;
+        }
+      }
+
+      return resolveTransform(baseValue, TransformType.ToLowerCase);
     }
     case "condition":
-      return resolveConditionSourceValue(root, item, source, errors, errorContext, depth);
+      return resolveConditionSourceValue(root, item, source, errors, transforms, errorContext, depth);
     default:
       errors.push(`${errorContext}: unsupported source type '${String((source as { type?: unknown }).type ?? "")}'.`);
       return null;
@@ -87,6 +109,7 @@ function resolveConditionSourceValue(
   item: unknown,
   source: ValueSource,
   errors: string[],
+  transforms: Record<string, (value: unknown) => unknown>,
   errorContext: string,
   depth: number
 ): unknown {
@@ -110,6 +133,7 @@ function resolveConditionSourceValue(
       source.trueSource ?? null,
       source.trueValue ?? null,
       errors,
+      transforms,
       `${errorContext} true branch`,
       depth
     );
@@ -136,6 +160,7 @@ function resolveConditionSourceValue(
       branch.source ?? null,
       branch.value ?? null,
       errors,
+      transforms,
       `${errorContext} elseIf[${index}] branch`,
       depth
     );
@@ -147,6 +172,7 @@ function resolveConditionSourceValue(
     source.falseSource ?? null,
     source.falseValue ?? null,
     errors,
+    transforms,
     `${errorContext} false branch`,
     depth
   );
@@ -180,11 +206,12 @@ function resolveConditionBranchValue(
   source: ValueSource | null,
   value: string | null,
   errors: string[],
+  transforms: Record<string, (value: unknown) => unknown>,
   errorContext: string,
   depth: number
 ): unknown {
   if (source) {
-    return resolveSourceValue(root, item, source, errors, errorContext, depth + 1);
+    return resolveSourceValue(root, item, source, errors, transforms, errorContext, depth + 1);
   }
 
   return parsePrimitive(value ?? "");
@@ -221,7 +248,7 @@ export function resolvePathValue(root: unknown, item: unknown, path: string): un
   return getValueByPath(root, path);
 }
 
-function resolveTransform(value: unknown, transform: TransformType): unknown {
+function resolveTransform(value: unknown, transform: TransformType | string): unknown {
   switch (transform) {
     case TransformType.ToLowerCase:
       return typeof value === "string" ? value.toLowerCase() : value;
