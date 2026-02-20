@@ -95,6 +95,7 @@ console.log(result.output);
 - `validateConversionRules(raw)` returns `{ isValid, errors, rules }` for explicit validation workflows.
 - `lintConversionRules(raw)` returns deterministic diagnostics with severity, code, path, and fix hints.
 - `checkRulesCompatibility(raw, { targetVersion })` reports schema/runtime compatibility diagnostics.
+- `bundleConversionRules(entryRulesPath)` resolves `include` modules into one deterministic rules object.
 - `compileConversionPlan(raw)` returns a reusable plan with `cacheKey` and `apply(...)`.
 - `computeRulesCacheKey(raw)` returns a stable cache key for normalized rules.
 
@@ -190,6 +191,7 @@ apiconvert rules validate rules.json
 apiconvert rules lint rules.json
 apiconvert rules doctor --rules rules.json --input sample.json --format json
 apiconvert rules compatibility --rules rules.json --target 1.0.0
+apiconvert rules bundle --rules entry.rules.json --out bundled.rules.json
 apiconvert convert --rules rules.json --input input.json --output out.json
 ```
 

@@ -2,6 +2,7 @@ import { applyConversion, streamJsonArrayConversion } from "./mapping-engine";
 import { compileConversionPlan, computeRulesCacheKey } from "./conversion-plan";
 import { checkRulesCompatibility } from "./compatibility";
 import { formatPayload, parsePayload } from "./payload-converter";
+import { bundleConversionRules } from "./rules-bundler";
 import { lintConversionRules } from "./rules-linter";
 import { runRuleDoctor } from "./rule-doctor";
 import {
@@ -17,6 +18,7 @@ export {
   checkRulesCompatibility,
   compileConversionPlan,
   computeRulesCacheKey,
+  bundleConversionRules,
   formatPayload,
   lintConversionRules,
   runRuleDoctor,

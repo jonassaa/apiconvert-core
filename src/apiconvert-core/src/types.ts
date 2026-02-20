@@ -222,6 +222,10 @@ export interface RulesCompatibilityReport {
   diagnostics: RulesCompatibilityDiagnostic[];
 }
 
+export interface RuleBundleOptions {
+  baseDirectory?: string | null;
+}
+
 export interface ConversionRulesGenerationRequest {
   inputFormat: DataFormat;
   outputFormat: DataFormat;

@@ -617,3 +617,15 @@ public sealed record RulesCompatibilityReport
     /// </summary>
     public List<RulesCompatibilityDiagnostic> Diagnostics { get; init; } = new();
 }
+
+/// <summary>
+/// Options for bundling modular rule files.
+/// </summary>
+public sealed record RuleBundleOptions
+{
+    /// <summary>
+    /// Optional base directory for resolving relative include paths.
+    /// Defaults to the entry file's directory.
+    /// </summary>
+    public string? BaseDirectory { get; init; }
+}

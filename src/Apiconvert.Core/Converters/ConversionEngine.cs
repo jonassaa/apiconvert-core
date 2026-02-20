@@ -304,6 +304,17 @@ public static class ConversionEngine
         };
     }
 
+    /// <summary>
+    /// Bundles modular rules files with include directives into a single normalized rules object.
+    /// </summary>
+    /// <param name="entryRulesPath">Path to the entry rules JSON file.</param>
+    /// <param name="options">Optional bundling options.</param>
+    /// <returns>Bundled and normalized conversion rules.</returns>
+    public static ConversionRules BundleRules(string entryRulesPath, RuleBundleOptions? options = null)
+    {
+        return RulesBundler.BundleRules(entryRulesPath, options);
+    }
+
     private static string? ExtractSchemaVersion(object? rawRules)
     {
         if (rawRules is null)

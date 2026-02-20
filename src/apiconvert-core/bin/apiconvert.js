@@ -34,6 +34,11 @@ async function main() {
     return;
   }
 
+  if (command === "rules" && subcommand === "bundle") {
+    await handleBundle(rest);
+    return;
+  }
+
   if (command === "convert") {
     await handleConvert([subcommand, ...rest].filter(Boolean));
     return;
@@ -148,6 +153,16 @@ async function handleCompatibility(args) {
   }
 }
 
+async function handleBundle(args) {
+  const options = parseFlags(args);
+  const rulesPath = requireFlag(options, "rules");
+  const outputPath = requireFlag(options, "out");
+
+  const bundled = core.bundleConversionRules(rulesPath);
+  fs.writeFileSync(outputPath, JSON.stringify(bundled, null, 2));
+  console.log(JSON.stringify({ outputPath, validationErrors: bundled.validationErrors ?? [] }, null, 2));
+}
+
 function parseFlags(args) {
   const options = {};
   for (let i = 0; i < args.length; i += 1) {
@@ -184,6 +199,7 @@ function printUsage() {
     "  apiconvert rules lint <rules.json>",
     "  apiconvert rules doctor --rules <rules.json> [--input <sample.ext>] [--format json|xml|query]",
     "  apiconvert rules compatibility --rules <rules.json> --target <version>",
+    "  apiconvert rules bundle --rules <entry.rules.json> --out <bundled.rules.json>",
     "  apiconvert convert --rules <rules.json> --input <input.ext> --output <output.ext>"
   ].join("\n"));
 }
