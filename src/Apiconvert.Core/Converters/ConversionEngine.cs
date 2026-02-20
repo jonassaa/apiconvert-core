@@ -207,6 +207,152 @@ public static class ConversionEngine
     }
 
     /// <summary>
+    /// Checks whether a rules pack is compatible with the requested runtime version.
+    /// </summary>
+    /// <param name="rawRules">Rules input (object or JSON-like model).</param>
+    /// <param name="targetVersion">Target runtime semantic version (for example, 1.0.0).</param>
+    /// <returns>Compatibility report with machine-readable diagnostics.</returns>
+    public static RulesCompatibilityReport CheckCompatibility(object? rawRules, string targetVersion)
+    {
+        const string supportedVersionMin = "1.0.0";
+        const string supportedVersionMax = "1.0.0";
+
+        var diagnostics = new List<RulesCompatibilityDiagnostic>();
+        var normalizedRules = NormalizeConversionRules(rawRules);
+
+        var trimmedTargetVersion = (targetVersion ?? string.Empty).Trim();
+        if (!Version.TryParse(trimmedTargetVersion, out var parsedTargetVersion))
+        {
+            diagnostics.Add(new RulesCompatibilityDiagnostic
+            {
+                Code = "ACV-COMP-001",
+                Severity = RuleDoctorFindingSeverity.Error,
+                Message = $"Invalid target version '{trimmedTargetVersion}'. Expected <major>.<minor>.<patch>.",
+                Suggestion = "Pass a semantic version like 1.0.0."
+            });
+        }
+
+        var schemaVersion = ExtractSchemaVersion(rawRules);
+        Version? parsedSchemaVersion = null;
+        if (string.IsNullOrWhiteSpace(schemaVersion))
+        {
+            diagnostics.Add(new RulesCompatibilityDiagnostic
+            {
+                Code = "ACV-COMP-002",
+                Severity = RuleDoctorFindingSeverity.Warning,
+                Message = "Rules do not declare schemaVersion. Compatibility is conservative.",
+                Suggestion = "Add schemaVersion to your rules pack for strict compatibility checks."
+            });
+        }
+        else if (!Version.TryParse(schemaVersion, out parsedSchemaVersion))
+        {
+            diagnostics.Add(new RulesCompatibilityDiagnostic
+            {
+                Code = "ACV-COMP-005",
+                Severity = RuleDoctorFindingSeverity.Error,
+                Message = $"Invalid schemaVersion '{schemaVersion}' in rules.",
+                Suggestion = "Set schemaVersion using semantic version format (for example, 1.0.0)."
+            });
+        }
+
+        var minVersion = Version.Parse(supportedVersionMin);
+        var maxVersion = Version.Parse(supportedVersionMax);
+        if (parsedTargetVersion is not null)
+        {
+            if (parsedTargetVersion < minVersion || parsedTargetVersion > maxVersion)
+            {
+                diagnostics.Add(new RulesCompatibilityDiagnostic
+                {
+                    Code = "ACV-COMP-003",
+                    Severity = RuleDoctorFindingSeverity.Error,
+                    Message = $"Target runtime version {trimmedTargetVersion} is outside supported range {supportedVersionMin} - {supportedVersionMax}.",
+                    Suggestion = $"Use a target version within {supportedVersionMin} - {supportedVersionMax}."
+                });
+            }
+
+            if (parsedSchemaVersion is not null && parsedSchemaVersion > parsedTargetVersion)
+            {
+                diagnostics.Add(new RulesCompatibilityDiagnostic
+                {
+                    Code = "ACV-COMP-004",
+                    Severity = RuleDoctorFindingSeverity.Error,
+                    Message = $"Rules schemaVersion {schemaVersion} requires runtime >= {schemaVersion}, but target is {trimmedTargetVersion}.",
+                    Suggestion = "Upgrade target runtime or use rules compatible with the target version."
+                });
+            }
+        }
+
+        foreach (var validationError in normalizedRules.ValidationErrors)
+        {
+            diagnostics.Add(new RulesCompatibilityDiagnostic
+            {
+                Code = "ACV-COMP-006",
+                Severity = RuleDoctorFindingSeverity.Warning,
+                Message = $"Rules normalization warning: {validationError}",
+                Suggestion = "Resolve rules validation issues before relying on compatibility checks."
+            });
+        }
+
+        return new RulesCompatibilityReport
+        {
+            TargetVersion = trimmedTargetVersion,
+            SchemaVersion = schemaVersion,
+            SupportedRangeMin = supportedVersionMin,
+            SupportedRangeMax = supportedVersionMax,
+            IsCompatible = diagnostics.All(entry => entry.Severity != RuleDoctorFindingSeverity.Error),
+            Diagnostics = diagnostics
+        };
+    }
+
+    private static string? ExtractSchemaVersion(object? rawRules)
+    {
+        if (rawRules is null)
+        {
+            return null;
+        }
+
+        if (rawRules is string rawText)
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(rawText);
+                return ExtractSchemaVersion(doc.RootElement);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        if (rawRules is JsonElement jsonElement)
+        {
+            if (jsonElement.ValueKind != JsonValueKind.Object)
+            {
+                return null;
+            }
+
+            if (!jsonElement.TryGetProperty("schemaVersion", out var schemaVersionElement))
+            {
+                return null;
+            }
+
+            return schemaVersionElement.ValueKind == JsonValueKind.String
+                ? schemaVersionElement.GetString()
+                : null;
+        }
+
+        try
+        {
+            var element = JsonSerializer.SerializeToElement(rawRules, JsonDefaults.Options);
+            return ExtractSchemaVersion(element);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Applies conversion rules to the given input payload.
     /// </summary>
     /// <param name="input">Input payload (already parsed).</param>

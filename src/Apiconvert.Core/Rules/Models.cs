@@ -555,3 +555,65 @@ public sealed record RuleDoctorReport
     /// </summary>
     public List<string> SafeFixPreview { get; init; } = new();
 }
+
+/// <summary>
+/// Single schema/runtime compatibility diagnostic.
+/// </summary>
+public sealed record RulesCompatibilityDiagnostic
+{
+    /// <summary>
+    /// Stable machine-readable compatibility code.
+    /// </summary>
+    public string Code { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Compatibility severity.
+    /// </summary>
+    public RuleDoctorFindingSeverity Severity { get; init; }
+
+    /// <summary>
+    /// Human-readable compatibility message.
+    /// </summary>
+    public string Message { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Suggested remediation.
+    /// </summary>
+    public string Suggestion { get; init; } = string.Empty;
+}
+
+/// <summary>
+/// Compatibility report for a rules pack and target runtime version.
+/// </summary>
+public sealed record RulesCompatibilityReport
+{
+    /// <summary>
+    /// Target runtime version being checked.
+    /// </summary>
+    public string TargetVersion { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Schema version declared by the rules pack when present.
+    /// </summary>
+    public string? SchemaVersion { get; init; }
+
+    /// <summary>
+    /// Minimum supported runtime version for this checker.
+    /// </summary>
+    public string SupportedRangeMin { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Maximum supported runtime version for this checker.
+    /// </summary>
+    public string SupportedRangeMax { get; init; } = string.Empty;
+
+    /// <summary>
+    /// True when no compatibility error diagnostics were emitted.
+    /// </summary>
+    public bool IsCompatible { get; init; }
+
+    /// <summary>
+    /// Ordered compatibility diagnostics.
+    /// </summary>
+    public List<RulesCompatibilityDiagnostic> Diagnostics { get; init; } = new();
+}

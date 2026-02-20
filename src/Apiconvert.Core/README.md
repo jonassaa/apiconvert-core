@@ -193,6 +193,7 @@ var result = ConversionEngine.ApplyConversion(
 - `NormalizeConversionRulesStrict(...)` throws when rules input is invalid.
 - `LintRules(...)` returns non-mutating diagnostics with severity, code, rule path, and suggested fixes.
 - `RunRuleDoctor(...)` combines validation, lint, and optional runtime diagnostics into one deterministic report.
+- `CheckCompatibility(...)` reports schema/runtime compatibility findings for a target version.
 - `CompileConversionPlan(...)` reuses normalized rules for repeated conversions.
 - `CompileConversionPlanStrict(...)` combines strict validation with plan compilation.
 - `ComputeRulesCacheKey(...)` returns a stable cache key for normalized rules.
@@ -212,6 +213,9 @@ var doctor = ConversionEngine.RunRuleDoctor(
     sampleInputText: File.ReadAllText("sample.json"),
     inputFormat: DataFormat.Json);
 Console.WriteLine($"Doctor findings: {doctor.Findings.Count}");
+
+var compatibility = ConversionEngine.CheckCompatibility(rulesJson, targetVersion: "1.0.0");
+Console.WriteLine($"Compatible: {compatibility.IsCompatible}");
 ```
 
 ## Error Codes and Troubleshooting

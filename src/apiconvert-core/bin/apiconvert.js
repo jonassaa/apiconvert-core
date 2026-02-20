@@ -29,6 +29,11 @@ async function main() {
     return;
   }
 
+  if (command === "rules" && subcommand === "compatibility") {
+    await handleCompatibility(rest);
+    return;
+  }
+
   if (command === "convert") {
     await handleConvert([subcommand, ...rest].filter(Boolean));
     return;
@@ -130,6 +135,19 @@ async function handleDoctor(args) {
   }
 }
 
+async function handleCompatibility(args) {
+  const options = parseFlags(args);
+  const rulesPath = requireFlag(options, "rules");
+  const targetVersion = requireFlag(options, "target");
+
+  const rawRules = fs.readFileSync(rulesPath, "utf8");
+  const report = core.checkRulesCompatibility(rawRules, { targetVersion });
+  console.log(JSON.stringify(report, null, 2));
+  if (!report.isCompatible) {
+    process.exitCode = 1;
+  }
+}
+
 function parseFlags(args) {
   const options = {};
   for (let i = 0; i < args.length; i += 1) {
@@ -165,6 +183,7 @@ function printUsage() {
     "  apiconvert rules validate <rules.json>",
     "  apiconvert rules lint <rules.json>",
     "  apiconvert rules doctor --rules <rules.json> [--input <sample.ext>] [--format json|xml|query]",
+    "  apiconvert rules compatibility --rules <rules.json> --target <version>",
     "  apiconvert convert --rules <rules.json> --input <input.ext> --output <output.ext>"
   ].join("\n"));
 }

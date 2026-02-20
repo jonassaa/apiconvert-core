@@ -94,6 +94,7 @@ console.log(result.output);
 - `normalizeConversionRulesStrict(raw)` throws when validation errors exist.
 - `validateConversionRules(raw)` returns `{ isValid, errors, rules }` for explicit validation workflows.
 - `lintConversionRules(raw)` returns deterministic diagnostics with severity, code, path, and fix hints.
+- `checkRulesCompatibility(raw, { targetVersion })` reports schema/runtime compatibility diagnostics.
 - `compileConversionPlan(raw)` returns a reusable plan with `cacheKey` and `apply(...)`.
 - `computeRulesCacheKey(raw)` returns a stable cache key for normalized rules.
 
@@ -188,6 +189,7 @@ The npm package ships a CLI for validation, linting, and local conversion:
 apiconvert rules validate rules.json
 apiconvert rules lint rules.json
 apiconvert rules doctor --rules rules.json --input sample.json --format json
+apiconvert rules compatibility --rules rules.json --target 1.0.0
 apiconvert convert --rules rules.json --input input.json --output out.json
 ```
 

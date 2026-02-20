@@ -202,6 +202,26 @@ export interface RuleDoctorReport {
   safeFixPreview: string[];
 }
 
+export interface RulesCompatibilityOptions {
+  targetVersion: string;
+}
+
+export interface RulesCompatibilityDiagnostic {
+  code: string;
+  severity: RuleDoctorFindingSeverity;
+  message: string;
+  suggestion: string;
+}
+
+export interface RulesCompatibilityReport {
+  targetVersion: string;
+  schemaVersion: string | null;
+  supportedRangeMin: string;
+  supportedRangeMax: string;
+  isCompatible: boolean;
+  diagnostics: RulesCompatibilityDiagnostic[];
+}
+
 export interface ConversionRulesGenerationRequest {
   inputFormat: DataFormat;
   outputFormat: DataFormat;

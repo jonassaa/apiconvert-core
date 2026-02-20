@@ -26,6 +26,11 @@ test("CLI validate/lint/convert smoke", () => {
   );
   execFileSync(
     process.execPath,
+    [cliPath, "rules", "compatibility", "--rules", rulesPath, "--target", "1.0.0"],
+    { encoding: "utf8" }
+  );
+  execFileSync(
+    process.execPath,
     [
       cliPath,
       "convert",
