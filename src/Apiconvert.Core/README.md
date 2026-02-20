@@ -139,6 +139,23 @@ var result = ConversionEngine.ApplyConversion(
     new ConversionOptions { CollisionPolicy = OutputCollisionPolicy.Error });
 ```
 
+## Explain / Trace Mode
+
+Enable per-rule execution tracing with `ConversionOptions.Explain`.
+`ConversionResult.Trace` is ordered deterministically by execution order and includes rule path, kind, decision, source value, and output paths.
+
+```csharp
+var result = ConversionEngine.ApplyConversion(
+    input,
+    rules,
+    new ConversionOptions { Explain = true });
+
+foreach (var entry in result.Trace)
+{
+    Console.WriteLine($"{entry.RulePath} [{entry.RuleKind}] => {entry.Decision}");
+}
+```
+
 ## Strict vs Lenient Rules Handling
 
 - `NormalizeConversionRules(...)` is lenient and returns validation errors in `ConversionRules.ValidationErrors`.

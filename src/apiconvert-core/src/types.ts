@@ -32,6 +32,18 @@ export enum OutputCollisionPolicy {
 
 export interface ApplyConversionOptions {
   collisionPolicy?: OutputCollisionPolicy | null;
+  explain?: boolean | null;
+}
+
+export interface ConversionTraceEntry {
+  rulePath: string;
+  ruleKind: string;
+  decision: string;
+  sourceValue?: unknown;
+  outputPaths: string[];
+  expression?: string;
+  warning?: string;
+  error?: string;
 }
 
 export interface ConditionElseIfBranch {
@@ -127,6 +139,7 @@ export interface ConversionResult {
   output?: unknown;
   errors: string[];
   warnings: string[];
+  trace?: ConversionTraceEntry[];
 }
 
 export interface ConversionRulesValidationResult {

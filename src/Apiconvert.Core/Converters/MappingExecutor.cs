@@ -18,6 +18,7 @@ internal static partial class MappingExecutor
         var errors = new List<string>();
         errors.AddRange(rules.ValidationErrors);
         var collisionPolicy = options?.CollisionPolicy ?? OutputCollisionPolicy.LastWriteWins;
+        var trace = options?.Explain == true ? new List<ConversionTraceEntry>() : null;
 
         if (!rules.Rules.Any())
         {
@@ -25,7 +26,8 @@ internal static partial class MappingExecutor
             {
                 Output = input ?? new Dictionary<string, object?>(),
                 Errors = errors,
-                Warnings = new List<string>()
+                Warnings = new List<string>(),
+                Trace = trace ?? new List<ConversionTraceEntry>()
             };
         }
 
@@ -40,10 +42,17 @@ internal static partial class MappingExecutor
             warnings,
             new Dictionary<string, string>(StringComparer.Ordinal),
             collisionPolicy,
+            trace,
             "rules",
             0);
 
-        return new ConversionResult { Output = output, Errors = errors, Warnings = warnings };
+        return new ConversionResult
+        {
+            Output = output,
+            Errors = errors,
+            Warnings = warnings,
+            Trace = trace ?? new List<ConversionTraceEntry>()
+        };
     }
 
     private static void ExecuteRules(
@@ -55,6 +64,7 @@ internal static partial class MappingExecutor
         List<string> warnings,
         Dictionary<string, string> writeOwners,
         OutputCollisionPolicy collisionPolicy,
+        List<ConversionTraceEntry>? trace,
         string path,
         int depth)
     {
@@ -76,6 +86,7 @@ internal static partial class MappingExecutor
                 warnings,
                 writeOwners,
                 collisionPolicy,
+                trace,
                 $"{path}[{index}]",
                 depth);
         }
@@ -90,22 +101,24 @@ internal static partial class MappingExecutor
         List<string> warnings,
         Dictionary<string, string> writeOwners,
         OutputCollisionPolicy collisionPolicy,
+        List<ConversionTraceEntry>? trace,
         string path,
         int depth)
     {
         switch (rule.Kind)
         {
             case "field":
-                ExecuteFieldRule(root, item, rule, output, errors, writeOwners, collisionPolicy, path);
+                ExecuteFieldRule(root, item, rule, output, errors, writeOwners, collisionPolicy, trace, path);
                 return;
             case "array":
-                ExecuteArrayRule(root, item, rule, output, errors, warnings, writeOwners, collisionPolicy, path, depth);
+                ExecuteArrayRule(root, item, rule, output, errors, warnings, writeOwners, collisionPolicy, trace, path, depth);
                 return;
             case "branch":
-                ExecuteBranchRule(root, item, rule, output, errors, warnings, writeOwners, collisionPolicy, path, depth);
+                ExecuteBranchRule(root, item, rule, output, errors, warnings, writeOwners, collisionPolicy, trace, path, depth);
                 return;
             default:
                 errors.Add($"{path}: unsupported kind '{rule.Kind}'.");
+                AddTrace(trace, path, rule.Kind, "unsupported", error: $"{path}: unsupported kind '{rule.Kind}'.");
                 return;
         }
     }

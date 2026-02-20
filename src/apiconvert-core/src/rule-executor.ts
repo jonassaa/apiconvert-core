@@ -9,6 +9,7 @@ import {
   OutputCollisionPolicy,
   type ArrayRule,
   type BranchRule,
+  type ConversionTraceEntry,
   type FieldRule,
   type RuleNode
 } from "./types";
@@ -22,6 +23,7 @@ export function executeRules(
   warnings: string[],
   writeOwners: Map<string, string>,
   collisionPolicy: OutputCollisionPolicy,
+  trace: ConversionTraceEntry[] | null,
   path: string,
   depth: number
 ): void {
@@ -31,7 +33,7 @@ export function executeRules(
   }
 
   rules.forEach((rule, index) => {
-    executeRule(root, item, rule, output, errors, warnings, writeOwners, collisionPolicy, `${path}[${index}]`, depth);
+    executeRule(root, item, rule, output, errors, warnings, writeOwners, collisionPolicy, trace, `${path}[${index}]`, depth);
   });
 }
 
@@ -44,25 +46,28 @@ function executeRule(
   warnings: string[],
   writeOwners: Map<string, string>,
   collisionPolicy: OutputCollisionPolicy,
+  trace: ConversionTraceEntry[] | null,
   path: string,
   depth: number
 ): void {
   if (rule.kind === "field") {
-    executeFieldRule(root, item, rule, output, errors, writeOwners, collisionPolicy, path);
+    executeFieldRule(root, item, rule, output, errors, writeOwners, collisionPolicy, trace, path);
     return;
   }
 
   if (rule.kind === "array") {
-    executeArrayRule(root, item, rule, output, errors, warnings, writeOwners, collisionPolicy, path, depth);
+    executeArrayRule(root, item, rule, output, errors, warnings, writeOwners, collisionPolicy, trace, path, depth);
     return;
   }
 
   if (rule.kind === "branch") {
-    executeBranchRule(root, item, rule, output, errors, warnings, writeOwners, collisionPolicy, path, depth);
+    executeBranchRule(root, item, rule, output, errors, warnings, writeOwners, collisionPolicy, trace, path, depth);
     return;
   }
 
-  errors.push(`${path}: unsupported kind '${(rule as { kind?: string }).kind ?? ""}'.`);
+  const error = `${path}: unsupported kind '${(rule as { kind?: string }).kind ?? ""}'.`;
+  errors.push(error);
+  addTrace(trace, path, (rule as { kind?: string }).kind ?? "", "unsupported", { error });
 }
 
 function executeFieldRule(
@@ -73,11 +78,14 @@ function executeFieldRule(
   errors: string[],
   writeOwners: Map<string, string>,
   collisionPolicy: OutputCollisionPolicy,
+  trace: ConversionTraceEntry[] | null,
   path: string
 ): void {
   const writePaths = getWritePaths(rule);
   if (writePaths.length === 0) {
-    errors.push(`${path}: outputPaths is required.`);
+    const error = `${path}: outputPaths is required.`;
+    errors.push(error);
+    addTrace(trace, path, "field", "invalid", { error });
     return;
   }
 
@@ -89,6 +97,8 @@ function executeFieldRule(
   writePaths.forEach((writePath) => {
     writeValue(output, writeOwners, errors, collisionPolicy, path, writePath, value);
   });
+
+  addTrace(trace, path, "field", "applied", { sourceValue: value, outputPaths: writePaths });
 }
 
 function executeArrayRule(
@@ -100,6 +110,7 @@ function executeArrayRule(
   warnings: string[],
   writeOwners: Map<string, string>,
   collisionPolicy: OutputCollisionPolicy,
+  trace: ConversionTraceEntry[] | null,
   path: string,
   depth: number
 ): void {
@@ -111,16 +122,22 @@ function executeArrayRule(
 
   if (!items) {
     if (value == null) {
-      warnings.push(`Array mapping skipped: inputPath "${rule.inputPath}" not found (${path}).`);
+      const warning = `Array mapping skipped: inputPath "${rule.inputPath}" not found (${path}).`;
+      warnings.push(warning);
+      addTrace(trace, path, "array", "skipped", { sourceValue: value, warning });
     } else {
-      errors.push(`${path}: input path did not resolve to an array (${rule.inputPath}).`);
+      const error = `${path}: input path did not resolve to an array (${rule.inputPath}).`;
+      errors.push(error);
+      addTrace(trace, path, "array", "error", { sourceValue: value, error });
     }
     return;
   }
 
   const writePaths = getWritePaths(rule);
   if (writePaths.length === 0) {
-    errors.push(`${path}: outputPaths is required.`);
+    const error = `${path}: outputPaths is required.`;
+    errors.push(error);
+    addTrace(trace, path, "array", "invalid", { sourceValue: value, error });
     return;
   }
 
@@ -136,6 +153,7 @@ function executeArrayRule(
       warnings,
       new Map<string, string>(),
       collisionPolicy,
+      trace,
       `${path}.itemRules`,
       depth + 1
     );
@@ -145,6 +163,8 @@ function executeArrayRule(
   writePaths.forEach((writePath) => {
     writeValue(output, writeOwners, errors, collisionPolicy, path, writePath, mappedItems);
   });
+
+  addTrace(trace, path, "array", "mapped", { sourceValue: value, outputPaths: writePaths });
 }
 
 function executeBranchRule(
@@ -156,12 +176,14 @@ function executeBranchRule(
   warnings: string[],
   writeOwners: Map<string, string>,
   collisionPolicy: OutputCollisionPolicy,
+  trace: ConversionTraceEntry[] | null,
   path: string,
   depth: number
 ): void {
   const matched = evaluateRuleCondition(root, item, rule.expression, errors, path, "branch expression");
   if (matched) {
-    executeRules(root, item, rule.then ?? [], output, errors, warnings, writeOwners, collisionPolicy, `${path}.then`, depth + 1);
+    addTrace(trace, path, "branch", "then", { sourceValue: true, expression: rule.expression ?? undefined });
+    executeRules(root, item, rule.then ?? [], output, errors, warnings, writeOwners, collisionPolicy, trace, `${path}.then`, depth + 1);
     return;
   }
 
@@ -182,6 +204,7 @@ function executeBranchRule(
       continue;
     }
 
+    addTrace(trace, path, "branch", `elseIf[${index}]`, { sourceValue: true, expression: elseIf.expression ?? undefined });
     executeRules(
       root,
       item,
@@ -191,6 +214,7 @@ function executeBranchRule(
       warnings,
       writeOwners,
       collisionPolicy,
+      trace,
       `${branchPath}.then`,
       depth + 1
     );
@@ -198,8 +222,12 @@ function executeBranchRule(
   }
 
   if ((rule.else ?? []).length > 0) {
-    executeRules(root, item, rule.else ?? [], output, errors, warnings, writeOwners, collisionPolicy, `${path}.else`, depth + 1);
+    addTrace(trace, path, "branch", "else", { sourceValue: false, expression: rule.expression ?? undefined });
+    executeRules(root, item, rule.else ?? [], output, errors, warnings, writeOwners, collisionPolicy, trace, `${path}.else`, depth + 1);
+    return;
   }
+
+  addTrace(trace, path, "branch", "noMatch", { sourceValue: false, expression: rule.expression ?? undefined });
 }
 
 function writeValue(
@@ -249,4 +277,33 @@ function evaluateRuleCondition(
   }
 
   return evaluation.value;
+}
+
+function addTrace(
+  trace: ConversionTraceEntry[] | null,
+  rulePath: string,
+  ruleKind: string,
+  decision: string,
+  details: {
+    sourceValue?: unknown;
+    outputPaths?: string[];
+    expression?: string;
+    warning?: string;
+    error?: string;
+  } = {}
+): void {
+  if (!trace) {
+    return;
+  }
+
+  trace.push({
+    rulePath,
+    ruleKind,
+    decision,
+    sourceValue: details.sourceValue,
+    outputPaths: details.outputPaths ?? [],
+    expression: details.expression,
+    warning: details.warning,
+    error: details.error
+  });
 }

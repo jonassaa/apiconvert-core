@@ -120,6 +120,19 @@ const result = applyConversion(input, rules, {
 });
 ```
 
+## Explain / Trace Mode
+
+Enable deterministic per-rule tracing by passing `explain: true` to `applyConversion`.
+`result.trace` contains ordered events with rule path, kind, decision, source value, and output paths.
+
+```ts
+const result = applyConversion(input, rules, { explain: true });
+
+for (const entry of result.trace) {
+  console.log(`${entry.rulePath} [${entry.ruleKind}] => ${entry.decision}`);
+}
+```
+
 ## Schema Paths
 
 Schema constants point to package-local files:

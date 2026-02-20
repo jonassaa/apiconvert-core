@@ -11,4 +11,9 @@ public sealed record ConversionOptions
     /// Policy used when multiple rules target the same output path.
     /// </summary>
     public OutputCollisionPolicy CollisionPolicy { get; init; } = OutputCollisionPolicy.LastWriteWins;
+
+    /// <summary>
+    /// Enables per-rule execution tracing in <see cref="ConversionResult.Trace"/>.
+    /// </summary>
+    public bool Explain { get; init; }
 }

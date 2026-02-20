@@ -15,15 +15,28 @@ export function applyConversion(
   const nodes = rules.rules ?? [];
   const errors = [...(rules.validationErrors ?? [])];
   const collisionPolicy = options.collisionPolicy ?? OutputCollisionPolicy.LastWriteWins;
+  const trace = options.explain ? [] : null;
 
   if (nodes.length === 0) {
-    return { output: input ?? {}, errors, warnings: [] };
+    return { output: input ?? {}, errors, warnings: [], trace: trace ?? [] };
   }
 
   const output: Record<string, unknown> = {};
   const warnings: string[] = [];
 
-  executeRules(input, null, nodes, output, errors, warnings, new Map<string, string>(), collisionPolicy, "rules", 0);
+  executeRules(
+    input,
+    null,
+    nodes,
+    output,
+    errors,
+    warnings,
+    new Map<string, string>(),
+    collisionPolicy,
+    trace,
+    "rules",
+    0
+  );
 
-  return { output, errors, warnings };
+  return { output, errors, warnings, trace: trace ?? [] };
 }

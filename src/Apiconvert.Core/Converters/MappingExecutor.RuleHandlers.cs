@@ -12,12 +12,15 @@ internal static partial class MappingExecutor
         List<string> errors,
         Dictionary<string, string> writeOwners,
         OutputCollisionPolicy collisionPolicy,
+        List<ConversionTraceEntry>? trace,
         string path)
     {
         var writePaths = GetWritePaths(rule);
         if (writePaths.Count == 0)
         {
-            errors.Add($"{path}: outputPaths is required.");
+            var error = $"{path}: outputPaths is required.";
+            errors.Add(error);
+            AddTrace(trace, path, "field", "invalid", error: error);
             return;
         }
 
@@ -39,6 +42,8 @@ internal static partial class MappingExecutor
                 writePath,
                 value);
         }
+
+        AddTrace(trace, path, "field", "applied", sourceValue: value, outputPaths: writePaths);
     }
 
     private static void ExecuteArrayRule(
@@ -50,6 +55,7 @@ internal static partial class MappingExecutor
         List<string> warnings,
         Dictionary<string, string> writeOwners,
         OutputCollisionPolicy collisionPolicy,
+        List<ConversionTraceEntry>? trace,
         string path,
         int depth)
     {
@@ -64,11 +70,15 @@ internal static partial class MappingExecutor
         {
             if (value == null)
             {
-                warnings.Add($"Array mapping skipped: inputPath \"{rule.InputPath}\" not found ({path}).");
+                var warning = $"Array mapping skipped: inputPath \"{rule.InputPath}\" not found ({path}).";
+                warnings.Add(warning);
+                AddTrace(trace, path, "array", "skipped", sourceValue: value, warning: warning);
             }
             else
             {
-                errors.Add($"{path}: input path did not resolve to an array ({rule.InputPath}).");
+                var error = $"{path}: input path did not resolve to an array ({rule.InputPath}).";
+                errors.Add(error);
+                AddTrace(trace, path, "array", "error", sourceValue: value, error: error);
             }
             return;
         }
@@ -76,7 +86,9 @@ internal static partial class MappingExecutor
         var arrayWritePaths = GetWritePaths(rule);
         if (arrayWritePaths.Count == 0)
         {
-            errors.Add($"{path}: outputPaths is required.");
+            var error = $"{path}: outputPaths is required.";
+            errors.Add(error);
+            AddTrace(trace, path, "array", "invalid", sourceValue: value, error: error);
             return;
         }
 
@@ -93,6 +105,7 @@ internal static partial class MappingExecutor
                 warnings,
                 new Dictionary<string, string>(StringComparer.Ordinal),
                 collisionPolicy,
+                trace,
                 $"{path}.itemRules",
                 depth + 1);
             mappedItems.Add(itemOutput);
@@ -109,6 +122,8 @@ internal static partial class MappingExecutor
                 outputPath,
                 mappedItems);
         }
+
+        AddTrace(trace, path, "array", "mapped", sourceValue: value, outputPaths: arrayWritePaths);
     }
 
     private static void ExecuteBranchRule(
@@ -120,12 +135,14 @@ internal static partial class MappingExecutor
         List<string> warnings,
         Dictionary<string, string> writeOwners,
         OutputCollisionPolicy collisionPolicy,
+        List<ConversionTraceEntry>? trace,
         string path,
         int depth)
     {
         var matched = EvaluateCondition(root, item, rule.Expression, errors, path, "branch expression");
         if (matched)
         {
+            AddTrace(trace, path, "branch", "then", sourceValue: true, expression: rule.Expression);
             ExecuteRules(
                 root,
                 item,
@@ -135,6 +152,7 @@ internal static partial class MappingExecutor
                 warnings,
                 writeOwners,
                 collisionPolicy,
+                trace,
                 $"{path}.then",
                 depth + 1);
             return;
@@ -150,6 +168,7 @@ internal static partial class MappingExecutor
                 continue;
             }
 
+            AddTrace(trace, path, "branch", $"elseIf[{index}]", sourceValue: true, expression: elseIf.Expression);
             ExecuteRules(
                 root,
                 item,
@@ -159,6 +178,7 @@ internal static partial class MappingExecutor
                 warnings,
                 writeOwners,
                 collisionPolicy,
+                trace,
                 $"{branchPath}.then",
                 depth + 1);
             return;
@@ -166,6 +186,7 @@ internal static partial class MappingExecutor
 
         if (rule.Else.Count > 0)
         {
+            AddTrace(trace, path, "branch", "else", sourceValue: false, expression: rule.Expression);
             ExecuteRules(
                 root,
                 item,
@@ -175,9 +196,13 @@ internal static partial class MappingExecutor
                 warnings,
                 writeOwners,
                 collisionPolicy,
+                trace,
                 $"{path}.else",
                 depth + 1);
+            return;
         }
+
+        AddTrace(trace, path, "branch", "noMatch", sourceValue: false, expression: rule.Expression);
     }
 
     private static void WriteValue(
@@ -265,5 +290,34 @@ internal static partial class MappingExecutor
             .Where(path => !string.IsNullOrWhiteSpace(path) && path != "$")
             .Distinct(StringComparer.Ordinal)
             .ToList();
+    }
+
+    private static void AddTrace(
+        List<ConversionTraceEntry>? trace,
+        string rulePath,
+        string ruleKind,
+        string decision,
+        object? sourceValue = null,
+        List<string>? outputPaths = null,
+        string? expression = null,
+        string? warning = null,
+        string? error = null)
+    {
+        if (trace == null)
+        {
+            return;
+        }
+
+        trace.Add(new ConversionTraceEntry
+        {
+            RulePath = rulePath,
+            RuleKind = ruleKind,
+            Decision = decision,
+            SourceValue = sourceValue,
+            OutputPaths = outputPaths == null ? new List<string>() : new List<string>(outputPaths),
+            Expression = expression,
+            Warning = warning,
+            Error = error
+        });
     }
 }

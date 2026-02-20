@@ -370,4 +370,55 @@ public sealed record ConversionResult
     /// Non-fatal warnings encountered during conversion.
     /// </summary>
     public List<string> Warnings { get; init; } = new();
+
+    /// <summary>
+    /// Optional per-rule trace entries describing execution decisions.
+    /// </summary>
+    public List<ConversionTraceEntry> Trace { get; init; } = new();
+}
+
+/// <summary>
+/// Single rule execution trace event.
+/// </summary>
+public sealed record ConversionTraceEntry
+{
+    /// <summary>
+    /// Rule path in the normalized rules graph.
+    /// </summary>
+    public string RulePath { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Rule kind (field, array, branch).
+    /// </summary>
+    public string RuleKind { get; init; } = string.Empty;
+
+    /// <summary>
+    /// High-level outcome for this rule (applied, mapped, else, error, etc).
+    /// </summary>
+    public string Decision { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Resolved source value for the rule when available.
+    /// </summary>
+    public object? SourceValue { get; init; }
+
+    /// <summary>
+    /// Output paths targeted by this rule when applicable.
+    /// </summary>
+    public List<string> OutputPaths { get; init; } = new();
+
+    /// <summary>
+    /// Optional branch/condition expression associated with the event.
+    /// </summary>
+    public string? Expression { get; init; }
+
+    /// <summary>
+    /// Optional warning emitted at this point in execution.
+    /// </summary>
+    public string? Warning { get; init; }
+
+    /// <summary>
+    /// Optional error emitted at this point in execution.
+    /// </summary>
+    public string? Error { get; init; }
 }

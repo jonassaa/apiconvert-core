@@ -371,6 +371,124 @@ public sealed class ConversionEngineTests
     }
 
     [Fact]
+    public void ApplyConversion_ExplainDisabled_ReturnsEmptyTrace()
+    {
+        var rules = new ConversionRules
+        {
+            Rules =
+            [
+                new RuleNode
+                {
+                    Kind = "field",
+                    OutputPaths = ["name"],
+                    Source = new ValueSource { Type = "constant", Value = "Ada" }
+                }
+            ]
+        };
+
+        var result = ConversionEngine.ApplyConversion(new Dictionary<string, object?>(), rules);
+
+        Assert.Empty(result.Errors);
+        Assert.Empty(result.Trace);
+    }
+
+    [Fact]
+    public void ApplyConversion_ExplainEnabled_EmitsDeterministicTraceTimeline()
+    {
+        var input = new Dictionary<string, object?>
+        {
+            ["name"] = "Ada",
+            ["score"] = 72d,
+            ["items"] = new List<object?>
+            {
+                new Dictionary<string, object?> { ["id"] = "A1" },
+                new Dictionary<string, object?> { ["id"] = "B2" }
+            }
+        };
+
+        var rules = new ConversionRules
+        {
+            Rules =
+            [
+                new RuleNode
+                {
+                    Kind = "field",
+                    OutputPaths = ["profile.name"],
+                    Source = new ValueSource { Type = "path", Path = "name" }
+                },
+                new RuleNode
+                {
+                    Kind = "branch",
+                    Expression = "path(score) >= 80",
+                    Then =
+                    [
+                        new RuleNode
+                        {
+                            Kind = "field",
+                            OutputPaths = ["profile.grade"],
+                            Source = new ValueSource { Type = "constant", Value = "B" }
+                        }
+                    ],
+                    Else =
+                    [
+                        new RuleNode
+                        {
+                            Kind = "field",
+                            OutputPaths = ["profile.grade"],
+                            Source = new ValueSource { Type = "constant", Value = "C" }
+                        }
+                    ]
+                },
+                new RuleNode
+                {
+                    Kind = "array",
+                    InputPath = "items",
+                    OutputPaths = ["lines"],
+                    ItemRules =
+                    [
+                        new RuleNode
+                        {
+                            Kind = "field",
+                            OutputPaths = ["id"],
+                            Source = new ValueSource { Type = "path", Path = "id" }
+                        }
+                    ]
+                }
+            ]
+        };
+
+        var result = ConversionEngine.ApplyConversion(input, rules, new ConversionOptions { Explain = true });
+
+        Assert.Empty(result.Errors);
+        Assert.Equal(6, result.Trace.Count);
+
+        Assert.Equal("rules[0]", result.Trace[0].RulePath);
+        Assert.Equal("field", result.Trace[0].RuleKind);
+        Assert.Equal("applied", result.Trace[0].Decision);
+
+        Assert.Equal("rules[1]", result.Trace[1].RulePath);
+        Assert.Equal("branch", result.Trace[1].RuleKind);
+        Assert.Equal("else", result.Trace[1].Decision);
+
+        Assert.Equal("rules[1].else[0]", result.Trace[2].RulePath);
+        Assert.Equal("field", result.Trace[2].RuleKind);
+        Assert.Equal("applied", result.Trace[2].Decision);
+
+        Assert.Equal("rules[2].itemRules[0]", result.Trace[3].RulePath);
+        Assert.Equal("field", result.Trace[3].RuleKind);
+        Assert.Equal("applied", result.Trace[3].Decision);
+
+        Assert.Equal("rules[2].itemRules[0]", result.Trace[4].RulePath);
+        Assert.Equal("field", result.Trace[4].RuleKind);
+        Assert.Equal("applied", result.Trace[4].Decision);
+
+        Assert.Equal("rules[2]", result.Trace[5].RulePath);
+        Assert.Equal("array", result.Trace[5].RuleKind);
+        Assert.Equal("mapped", result.Trace[5].Decision);
+        Assert.Equal(["lines"], result.Trace[5].OutputPaths);
+    }
+
+    [Fact]
     public void CompileConversionPlan_ReusesNormalizedRules()
     {
         var json = """
