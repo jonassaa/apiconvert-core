@@ -1,0 +1,4 @@
+interface:
+  display_name: "Apiconvert Production Consumer Review"
+  short_description: "Production adoption review for .NET or Node consumers"
+  default_prompt: "Review apiconvert-core from a production consumer perspective for TARGET=.NET or TARGET=Node, produce the structured confidence report, and append it to .codex/review-findings.md."

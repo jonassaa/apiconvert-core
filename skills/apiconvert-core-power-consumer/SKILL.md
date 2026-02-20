@@ -79,6 +79,18 @@ After generating the backlog, persist items to Notion:
   - `Codex Instance ID`: value from `APICONVERT_CODEX_INSTANCE_ID`
   - `Codex Task ID`: stable id in format `<APICONVERT_CODEX_INSTANCE_ID>:<short-task-slug>`
 
+Task-management best practices:
+
+- Load env vars from `.codex/local.env` or current shell; never hardcode workspace IDs in tracked files.
+- If `APICONVERT_NOTION_DATA_SOURCE_ID` or `APICONVERT_CODEX_INSTANCE_ID` is missing, pause task writes and ask the user.
+- Reuse and update existing tasks when a matching `Codex Task ID` exists; avoid duplicates for the same request.
+- Keep proposal work in `Backlog` unless actively being refined; keep only one active item in `In Progress`.
+- Use lifecycle status transitions (`Backlog/Ready` -> `In Progress` -> `In Review` -> `Done`) when requests move from idea to implementation.
+- Default `Priority` to `P2` and adjust only when justified by impact/risk.
+- Set `Area` to the narrowest fit and include `parity` in `Tags` for cross-runtime asks.
+- Add mini-RFC content to each task body with scenario, expected behavior, test expectations, and compatibility notes.
+- Keep chat output and Notion entries synchronized; update task status/metadata when priorities or scope shift.
+
 ### 3. Prioritize Like a Customer
 
 Score each candidate with:

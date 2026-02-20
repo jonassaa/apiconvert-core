@@ -45,6 +45,18 @@ Implement features with parity across runtimes, deterministic tests, and explici
 - For parity work spanning both runtimes, add `parity` to `Tags`.
 - Keep chat output and Notion entries aligned; if plan changes, update the corresponding Notion tasks.
 
+### 2.2 Apply task-management best practices
+
+- Load env vars from local private config (`.codex/local.env`) or current shell; never hardcode workspace IDs in tracked files.
+- Reuse existing tasks when the same `Codex Task ID` already exists; update instead of duplicating.
+- Keep exactly one active implementation task in `In Progress`; keep all other planned items in `Backlog`, `Ready`, or `Blocked`.
+- Move task status as work advances (`Backlog/Ready` -> `In Progress` -> `In Review` -> `Done`) and set `Blocked = __YES__` only when truly blocked.
+- Keep `Priority` explicit (`P0`-`P3`) and default to `P2` unless urgency is clear.
+- Keep `Area` specific (`Rules Engine`, `Schema Contract`, `Dotnet Runtime`, `Npm Runtime`, `Shared Test Cases`, `Docs`, `Release`).
+- Add `parity` in `Tags` whenever behavior or tests must stay aligned across .NET and TypeScript.
+- Attach implementation context as it becomes available (`Spec/PR Link`, `Target Version`, `Estimate (pts)`, `Owner`, `Due Date`).
+- Keep the Notion task body implementation-ready: include acceptance checks, key risks, and pending decisions.
+
 ### 3. Inspect current patterns before editing
 
 - Read nearby implementations first; follow existing naming and file layout.

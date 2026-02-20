@@ -1,0 +1,4 @@
+interface:
+  display_name: "Apiconvert .NET API Review"
+  short_description: "Deep .NET package review with actionable API findings"
+  default_prompt: "Review the .NET Apiconvert.Core package as an external consumer, produce a structured report with file/symbol-level findings, and append it to .codex/review-findings.md."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Apiconvert Node API Review"
+  short_description: "Deep Node/TS package review with API and type findings"
+  default_prompt: "Review the Node/TypeScript apiconvert-core package as an external consumer, produce a structured report with file/symbol-level findings, and append it to .codex/review-findings.md."
