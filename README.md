@@ -153,9 +153,11 @@ const outputJson = formatPayload(result.output, rules.outputFormat!, true);
 dotnet build Apiconvert.Core.sln
 dotnet test Apiconvert.Core.sln
 npm --prefix tests/npm/apiconvert-core-tests test
+node tests/parity/parity-report.mjs --report tests/parity/parity-report.json
 ```
 
 Shared conversion behavior should be validated through `tests/cases` in both runtimes.
+The parity suite emits a machine-readable report at `tests/parity/parity-report.json`.
 
 ## Release
 
