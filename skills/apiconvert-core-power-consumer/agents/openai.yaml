@@ -1,4 +1,4 @@
 interface:
   display_name: "Apiconvert.Core Power Consumer"
   short_description: "Consumer-grade feature requests and adoption-driven RFCs"
-  default_prompt: "Inspect Apiconvert.Core like a demanding consumer, then produce friction findings, a prioritized feature backlog, and implementable mini-RFCs with .NET/JS parity expectations."
+  default_prompt: "Inspect Apiconvert.Core like a demanding consumer, then produce friction findings, a prioritized feature backlog, and implementable mini-RFCs with .NET/JS parity expectations. Accept an optional requested task count and treat it as a soft target."

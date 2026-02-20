@@ -26,6 +26,14 @@ Assume NuGet and npm should behave the same for equivalent rules and shared case
 
 ## Required Workflow
 
+### 0. Task Count Input (optional)
+
+Accept an optional user input for requested proposal count (for example: `task_count = 12`).
+
+- Treat the count as a soft target, not a strict requirement.
+- If no count is provided, use the default ranges below.
+- If discovery reveals substantially more or fewer high-quality candidates, return the most defensible set and briefly explain why.
+
 ### 1. Consumer Discovery (always first)
 
 Inspect the repository like a new integrator. Cover:
@@ -39,7 +47,10 @@ Produce a **Consumer Experience Report** with 10-20 concrete friction bullets.
 
 ### 2. Generate Consumer Backlog
 
-Produce 15-25 feature requests grouped under:
+Produce a grouped feature-request backlog.
+
+- Default target: 15-25 requests.
+- If `task_count` is provided, target approximately that many requests (around ±30% is acceptable).
 
 - Onboarding and docs
 - Rules authoring and validation
@@ -77,7 +88,10 @@ Score each candidate with:
 - Effort guess (S/M/L)
 - Adoption unlock
 
-Return top 8-10 items.
+Return prioritized top items.
+
+- Default target: top 8-10.
+- If `task_count` is provided, prioritize a meaningful subset (typically around 40-60% of backlog), not a fixed count.
 
 ### 4. Write Mini-RFCs for Top Items
 
@@ -110,8 +124,8 @@ Always include one request that is small, high-impact, and fully spec'd for fast
 Always return, in this order:
 
 1. Consumer Experience Report
-2. Backlog (15-25 items)
-3. Prioritized top 8-10 with Impact/Confidence/Effort/Adoption unlock
+2. Backlog (count based on defaults or requested `task_count`)
+3. Prioritized top items with Impact/Confidence/Effort/Adoption unlock
 4. Mini-RFCs for top items
 5. One 1-day quick win request
 
