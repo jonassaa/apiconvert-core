@@ -82,6 +82,66 @@ public sealed class ConversionEngineTests
     }
 
     [Fact]
+    public void NormalizeConversionRules_FieldAliases_ExpandToCanonicalSourceAndOutput()
+    {
+        var json = """
+        {
+          "rules": [
+            { "kind": "field", "from": "name", "to": "user.name" },
+            { "kind": "field", "to": ["meta.source"], "const": "crm" },
+            { "kind": "field", "from": "email", "to": ["user.emailLower"], "as": "toLowerCase" }
+          ]
+        }
+        """;
+
+        var rules = ConversionEngine.NormalizeConversionRules(json);
+
+        Assert.Equal(3, rules.Rules.Count);
+        Assert.Equal("user.name", rules.Rules[0].OutputPaths[0]);
+        Assert.Equal("path", rules.Rules[0].Source?.Type);
+        Assert.Equal("name", rules.Rules[0].Source?.Path);
+
+        Assert.Equal("constant", rules.Rules[1].Source?.Type);
+        Assert.Equal("crm", rules.Rules[1].Source?.Value);
+
+        Assert.Equal("transform", rules.Rules[2].Source?.Type);
+        Assert.Equal(TransformType.ToLowerCase, rules.Rules[2].Source?.Transform);
+        Assert.Empty(rules.ValidationErrors);
+    }
+
+    [Fact]
+    public void NormalizeConversionRules_MapRule_ExpandsToFieldRules()
+    {
+        var json = """
+        {
+          "rules": [
+            {
+              "kind": "map",
+              "entries": [
+                { "from": "id", "to": "user.id" },
+                { "from": "name", "to": "user.name" }
+              ]
+            }
+          ]
+        }
+        """;
+
+        var rules = ConversionEngine.NormalizeConversionRules(json);
+        var result = ConversionEngine.ApplyConversion(
+            new Dictionary<string, object?> { ["id"] = "123", ["name"] = "Ada" },
+            rules);
+
+        Assert.Equal(2, rules.Rules.Count);
+        Assert.Equal("user.id", rules.Rules[0].OutputPaths[0]);
+        Assert.Equal("user.name", rules.Rules[1].OutputPaths[0]);
+        Assert.Empty(result.Errors);
+        var output = Assert.IsType<Dictionary<string, object?>>(result.Output);
+        var user = Assert.IsType<Dictionary<string, object?>>(output["user"]);
+        Assert.Equal("123", user["id"]);
+        Assert.Equal("Ada", user["name"]);
+    }
+
+    [Fact]
     public void ApplyConversion_ExecutesBranchThenElseIfElse()
     {
         var input = new Dictionary<string, object?>

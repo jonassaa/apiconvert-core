@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using System.Text.Json;
 
 namespace Apiconvert.Core.Rules;
 
@@ -279,6 +280,38 @@ public sealed record RuleNode
     public ValueSource? Source { get; init; }
 
     /// <summary>
+    /// Authoring shorthand alias for path source.
+    /// </summary>
+    [JsonPropertyName("from")]
+    public string? From { get; init; }
+
+    /// <summary>
+    /// Authoring shorthand alias for output path(s).
+    /// Supports string or string[] in input JSON.
+    /// </summary>
+    [JsonPropertyName("to")]
+    public JsonElement? To { get; init; }
+
+    /// <summary>
+    /// Authoring shorthand alias for single output path.
+    /// </summary>
+    [JsonPropertyName("outputPath")]
+    public string? OutputPath { get; init; }
+
+    /// <summary>
+    /// Authoring shorthand alias for constant source value.
+    /// Supports scalar JSON literals.
+    /// </summary>
+    [JsonPropertyName("const")]
+    public JsonElement? Const { get; init; }
+
+    /// <summary>
+    /// Authoring shorthand alias for transform key with from-path source.
+    /// </summary>
+    [JsonPropertyName("as")]
+    public string? As { get; init; }
+
+    /// <summary>
     /// Default value when the field source is missing.
     /// </summary>
     [JsonPropertyName("defaultValue")]
@@ -325,6 +358,12 @@ public sealed record RuleNode
     /// </summary>
     [JsonPropertyName("else")]
     public List<RuleNode> Else { get; init; } = new();
+
+    /// <summary>
+    /// Authoring shorthand map block entries that expand into field rules.
+    /// </summary>
+    [JsonPropertyName("entries")]
+    public List<RuleNode> Entries { get; init; } = new();
 }
 
 /// <summary>

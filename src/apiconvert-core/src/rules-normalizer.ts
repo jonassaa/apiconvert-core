@@ -14,7 +14,7 @@ import {
   type ValueSource
 } from "./types";
 
-const SUPPORTED_RULE_KINDS = new Set(["field", "array", "branch"]);
+const SUPPORTED_RULE_KINDS = new Set(["field", "array", "branch", "map"]);
 const SUPPORTED_SOURCE_TYPES = new Set(["path", "transform", "condition", "constant", "merge"]);
 
 export function normalizeConversionRules(raw: unknown): ConversionRules {
@@ -284,6 +284,9 @@ function normalizeRuleNodes(nodes: unknown[], path: string, validationErrors: st
       case "array":
         normalized.push(normalizeArrayRuleNode(nodeRecord, nodePath, validationErrors));
         return;
+      case "map":
+        normalized.push(...normalizeMapRuleNode(nodeRecord, nodePath, validationErrors));
+        return;
       default:
         normalized.push(normalizeBranchRuleNode(nodeRecord, nodePath, validationErrors));
     }
@@ -305,7 +308,15 @@ function normalizeFieldRuleNode(
   nodePath: string,
   validationErrors: string[]
 ): FieldRule {
-  const outputPaths = normalizeOutputPaths(field.outputPaths);
+  const outputAliases = [...readStringOrStringArray(field.to)];
+  if (typeof field.outputPath === "string") {
+    outputAliases.push(field.outputPath);
+  }
+
+  const outputPaths = normalizeOutputPaths([
+    ...(Array.isArray(field.outputPaths) ? field.outputPaths : []),
+    ...outputAliases
+  ]);
   if (outputPaths.length === 0) {
     validationErrors.push(`${nodePath}: outputPaths is required.`);
   }
@@ -313,9 +324,98 @@ function normalizeFieldRuleNode(
   return {
     kind: "field",
     outputPaths,
-    source: normalizeValueSource(field.source, `${nodePath}.source`, validationErrors),
+    source: resolveFieldSource(field, nodePath, validationErrors),
     defaultValue: normalizeNullableString(field.defaultValue)
   };
+}
+
+function normalizeMapRuleNode(
+  mapRule: Record<string, unknown>,
+  nodePath: string,
+  validationErrors: string[]
+): FieldRule[] {
+  const entries = mapRule.entries;
+  if (!Array.isArray(entries) || entries.length === 0) {
+    validationErrors.push(`${nodePath}.entries: is required for map rule.`);
+    return [];
+  }
+
+  return entries
+    .map((entry, index) => {
+      const entryPath = `${nodePath}.entries[${index}]`;
+      const entryRecord = toRecord(entry);
+      if (!entryRecord) {
+        validationErrors.push(`${entryPath}: must be an object.`);
+        return null;
+      }
+
+      return normalizeFieldRuleNode(entryRecord, entryPath, validationErrors);
+    })
+    .filter((entry): entry is FieldRule => entry != null);
+}
+
+function resolveFieldSource(
+  field: Record<string, unknown>,
+  nodePath: string,
+  validationErrors: string[]
+): ValueSource {
+  if (field.source != null) {
+    return normalizeValueSource(field.source, `${nodePath}.source`, validationErrors);
+  }
+
+  const from = normalizeString(field.from);
+  if (field.const !== undefined) {
+    return normalizeValueSource(
+      { type: "constant", value: normalizeConstAlias(field.const) },
+      `${nodePath}.source`,
+      validationErrors
+    );
+  }
+
+  const transformAlias = normalizeString(field.as);
+  if (transformAlias) {
+    if (!from) {
+      validationErrors.push(`${nodePath}: from is required when using as.`);
+      return normalizeValueSource({ type: "path" }, `${nodePath}.source`, validationErrors);
+    }
+
+    return normalizeValueSource(
+      { type: "transform", path: from, transform: transformAlias },
+      `${nodePath}.source`,
+      validationErrors
+    );
+  }
+
+  if (from) {
+    return normalizeValueSource({ type: "path", path: from }, `${nodePath}.source`, validationErrors);
+  }
+
+  return normalizeValueSource(field.source, `${nodePath}.source`, validationErrors);
+}
+
+function normalizeConstAlias(value: unknown): string {
+  if (value == null) {
+    return "";
+  }
+  if (typeof value === "string") {
+    return value;
+  }
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  return JSON.stringify(value);
+}
+
+function readStringOrStringArray(value: unknown): string[] {
+  if (typeof value === "string") {
+    return [value];
+  }
+
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.filter((entry): entry is string => typeof entry === "string");
 }
 
 function normalizeArrayRuleNode(
