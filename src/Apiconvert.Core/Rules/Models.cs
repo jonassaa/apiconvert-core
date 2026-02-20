@@ -422,3 +422,49 @@ public sealed record ConversionTraceEntry
     /// </summary>
     public string? Error { get; init; }
 }
+
+/// <summary>
+/// Lint severity for rule diagnostics.
+/// </summary>
+public enum RuleLintSeverity
+{
+    /// <summary>
+    /// Non-blocking issue with a recommended fix.
+    /// </summary>
+    Warning,
+    /// <summary>
+    /// Definite problem that should be fixed.
+    /// </summary>
+    Error
+}
+
+/// <summary>
+/// Single lint diagnostic for conversion rules.
+/// </summary>
+public sealed record RuleLintDiagnostic
+{
+    /// <summary>
+    /// Stable machine-readable diagnostic code.
+    /// </summary>
+    public string Code { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Diagnostic severity.
+    /// </summary>
+    public RuleLintSeverity Severity { get; init; }
+
+    /// <summary>
+    /// Rule path where the diagnostic applies.
+    /// </summary>
+    public string RulePath { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Human-readable diagnostic message.
+    /// </summary>
+    public string Message { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Suggested remediation for this issue.
+    /// </summary>
+    public string Suggestion { get; init; } = string.Empty;
+}

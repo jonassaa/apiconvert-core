@@ -1,5 +1,6 @@
 import { applyConversion } from "./mapping-engine";
 import { formatPayload, parsePayload } from "./payload-converter";
+import { lintConversionRules } from "./rules-linter";
 import {
   normalizeConversionRules,
   normalizeConversionRulesStrict,
@@ -11,6 +12,7 @@ export * from "./types";
 export {
   applyConversion,
   formatPayload,
+  lintConversionRules,
   normalizeConversionRules,
   normalizeConversionRulesStrict,
   parsePayload,

@@ -35,6 +35,19 @@ export interface ApplyConversionOptions {
   explain?: boolean | null;
 }
 
+export enum RuleLintSeverity {
+  Warning = "warning",
+  Error = "error"
+}
+
+export interface RuleLintDiagnostic {
+  code: string;
+  severity: RuleLintSeverity;
+  rulePath: string;
+  message: string;
+  suggestion: string;
+}
+
 export interface ConversionTraceEntry {
   rulePath: string;
   ruleKind: string;
@@ -146,6 +159,11 @@ export interface ConversionRulesValidationResult {
   rules: ConversionRules;
   isValid: boolean;
   errors: string[];
+}
+
+export interface ConversionRulesLintResult {
+  diagnostics: RuleLintDiagnostic[];
+  hasErrors: boolean;
 }
 
 export interface ConversionRulesGenerationRequest {

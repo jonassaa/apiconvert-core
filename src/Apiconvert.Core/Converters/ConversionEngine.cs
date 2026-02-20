@@ -66,6 +66,16 @@ public static class ConversionEngine
     }
 
     /// <summary>
+    /// Runs lint diagnostics over raw rules without mutating or executing conversion.
+    /// </summary>
+    /// <param name="rawRules">Rules input (object or JSON-like model).</param>
+    /// <returns>Deterministic lint diagnostics with severity and fix guidance.</returns>
+    public static List<RuleLintDiagnostic> LintRules(object? rawRules)
+    {
+        return RulesLinter.LintRules(rawRules);
+    }
+
+    /// <summary>
     /// Applies conversion rules to the given input payload.
     /// </summary>
     /// <param name="input">Input payload (already parsed).</param>

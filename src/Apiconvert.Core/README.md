@@ -160,8 +160,17 @@ foreach (var entry in result.Trace)
 
 - `NormalizeConversionRules(...)` is lenient and returns validation errors in `ConversionRules.ValidationErrors`.
 - `NormalizeConversionRulesStrict(...)` throws when rules input is invalid.
+- `LintRules(...)` returns non-mutating diagnostics with severity, code, rule path, and suggested fixes.
 - `CompileConversionPlan(...)` reuses normalized rules for repeated conversions.
 - `CompileConversionPlanStrict(...)` combines strict validation with plan compilation.
+
+```csharp
+var diagnostics = ConversionEngine.LintRules(File.ReadAllText("rules.json"));
+foreach (var diagnostic in diagnostics)
+{
+    Console.WriteLine($"{diagnostic.Severity} {diagnostic.Code} {diagnostic.RulePath}: {diagnostic.Message}");
+}
+```
 
 ## Error Codes and Troubleshooting
 
