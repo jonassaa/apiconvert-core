@@ -10,16 +10,29 @@
   "type": "commonjs",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
   "files": [
     "dist",
     "schemas",
     "README.md"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json"
+    "sync-schemas": "node ./scripts/sync-schemas.mjs",
+    "build": "npm run sync-schemas && tsc -p tsconfig.json"
   },
   "dependencies": {
-    "fast-xml-parser": "^5.3.4"
+    "fast-xml-parser": "^5.3.7"
   },
   "devDependencies": {
     "typescript": "^5.4.5"

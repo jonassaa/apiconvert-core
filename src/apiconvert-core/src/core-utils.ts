@@ -26,8 +26,10 @@ export function parsePrimitive(value: string): unknown {
   if (value === "false") return false;
   if (value === "null") return null;
   if (value === "undefined") return null;
-  const parsed = Number.parseFloat(value);
-  if (!Number.isNaN(parsed) && isFinite(parsed)) return parsed;
+  if (/^[+-]?(?:\d+\.?\d*|\.\d+)$/.test(value)) {
+    const parsed = Number(value);
+    if (!Number.isNaN(parsed) && isFinite(parsed)) return parsed;
+  }
   return value;
 }
 

@@ -18,12 +18,30 @@ export function tokenizeConditionExpression(expression: string): ConditionToken[
       continue;
     }
 
-    if (/\d/.test(current) || (current === "." && index + 1 < expression.length && /\d/.test(expression[index + 1]))) {
+    if (
+      /\d/.test(current) ||
+      (current === "." && index + 1 < expression.length && /\d/.test(expression[index + 1]))
+    ) {
       const start = index;
-      index += 1;
-      while (index < expression.length && /[\d.]/.test(expression[index])) {
+      if (current === ".") {
         index += 1;
       }
+
+      while (index < expression.length && /\d/.test(expression[index])) {
+        index += 1;
+      }
+
+      if (index < expression.length && expression[index] === ".") {
+        index += 1;
+        while (index < expression.length && /\d/.test(expression[index])) {
+          index += 1;
+        }
+      }
+
+      if (index < expression.length && expression[index] === ".") {
+        throw createTokenizerError(expression, "Invalid number literal.", index, 1);
+      }
+
       tokens.push({ type: "number", text: expression.slice(start, index), position: start });
       continue;
     }

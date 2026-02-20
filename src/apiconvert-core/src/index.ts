@@ -1,10 +1,21 @@
 import { applyConversion } from "./mapping-engine";
 import { formatPayload, parsePayload } from "./payload-converter";
-import { normalizeConversionRules } from "./rules-normalizer";
+import {
+  normalizeConversionRules,
+  normalizeConversionRulesStrict,
+  validateConversionRules
+} from "./rules-normalizer";
 import { DataFormat } from "./types";
 
 export * from "./types";
-export { applyConversion, formatPayload, normalizeConversionRules, parsePayload };
+export {
+  applyConversion,
+  formatPayload,
+  normalizeConversionRules,
+  normalizeConversionRulesStrict,
+  parsePayload,
+  validateConversionRules
+};
 
 export async function runConversionCase(args: {
   rulesText: string;

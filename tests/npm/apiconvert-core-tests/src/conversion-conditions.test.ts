@@ -192,6 +192,12 @@ test("branch expression diagnostics are actionable", () => {
   assert.match(trailingToken, /position 20/);
 });
 
+test("malformed numeric literals fail with clear diagnostics", () => {
+  const malformedNumber = getBranchExpressionError("path(x) == 1.2.3");
+  assert.match(malformedNumber, /invalid branch expression/);
+  assert.match(malformedNumber, /Invalid number literal/);
+});
+
 function getBranchExpressionError(expression: string): string {
   const rules = normalizeConversionRules({
     inputFormat: "json",

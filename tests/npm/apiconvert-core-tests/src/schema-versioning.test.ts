@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
+import { rulesSchemaPath, rulesSchemaVersionedPath } from "@apiconvert/core";
 
 test("current schema matches latest versioned schema", () => {
   const repoRoot = locateRepoRoot();
@@ -35,6 +36,17 @@ test("legacy schema alias remains available and parseable", () => {
   assert.equal(parsed.type, "object");
   assert.ok(parsed.$defs && typeof parsed.$defs === "object");
   assert.ok(parsed.properties && typeof parsed.properties === "object");
+});
+
+test("published package includes schema files at exported paths", () => {
+  const packageJsonPath = require.resolve("@apiconvert/core/package.json");
+  const packageRoot = path.dirname(packageJsonPath);
+
+  const legacyPath = path.join(packageRoot, rulesSchemaPath.replace(/^\//, ""));
+  const versionedPath = path.join(packageRoot, rulesSchemaVersionedPath.replace(/^\//, ""));
+
+  assert.ok(fs.existsSync(legacyPath), `Missing schema file at ${legacyPath}`);
+  assert.ok(fs.existsSync(versionedPath), `Missing schema file at ${versionedPath}`);
 });
 
 function locateRepoRoot(): string {

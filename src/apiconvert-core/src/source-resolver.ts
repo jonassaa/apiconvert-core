@@ -77,6 +77,7 @@ export function resolveSourceValue(
     case "condition":
       return resolveConditionSourceValue(root, item, source, errors, errorContext, depth);
     default:
+      errors.push(`${errorContext}: unsupported source type '${String((source as { type?: unknown }).type ?? "")}'.`);
       return null;
   }
 }

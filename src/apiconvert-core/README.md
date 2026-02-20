@@ -79,8 +79,26 @@ if (result.errors.length > 0) {
 console.log(result.output);
 ```
 
+## Validation Modes
+
+- `normalizeConversionRules(raw)` normalizes and accumulates `validationErrors` without throwing.
+- `normalizeConversionRulesStrict(raw)` throws when validation errors exist.
+- `validateConversionRules(raw)` returns `{ isValid, errors, rules }` for explicit validation workflows.
+
+```ts
+import { normalizeConversionRulesStrict } from "@apiconvert/core";
+
+const rules = normalizeConversionRulesStrict(rulesText);
+```
+
 ## Parse and Format Helpers
 
 The package also exports:
 - `parsePayload(text, format)` for `json`, `xml`, and `query`
 - `formatPayload(value, format, pretty)`
+
+## Schema Paths
+
+Schema constants point to package-local files:
+- `rulesSchemaPath` => `/schemas/rules/rules.schema.json`
+- `rulesSchemaVersionedPath` => `/schemas/rules/v{version}/schema.json`

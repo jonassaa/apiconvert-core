@@ -25,17 +25,15 @@ export enum ConditionOutputMode {
 }
 
 export interface ConditionElseIfBranch {
-  expression?: string | null;
+  expression: string | null;
   source?: ValueSource | null;
   value?: string | null;
 }
 
-export interface ValueSource {
-  type: string;
+interface ValueSourceBase {
   path?: string | null;
   paths?: string[] | null;
   value?: string | null;
-  transform?: TransformType | null;
   expression?: string | null;
   trueValue?: string | null;
   falseValue?: string | null;
@@ -47,7 +45,36 @@ export interface ValueSource {
   separator?: string | null;
   tokenIndex?: number | null;
   trimAfterSplit?: boolean | null;
+  transform?: TransformType | null;
 }
+
+export interface PathValueSource extends ValueSourceBase {
+  type: "path";
+}
+
+export interface ConstantValueSource extends ValueSourceBase {
+  type: "constant";
+}
+
+export interface TransformValueSource extends ValueSourceBase {
+  type: "transform";
+  transform?: TransformType | null;
+}
+
+export interface MergeValueSource extends ValueSourceBase {
+  type: "merge";
+}
+
+export interface ConditionValueSource extends ValueSourceBase {
+  type: "condition";
+}
+
+export type ValueSource =
+  | PathValueSource
+  | ConstantValueSource
+  | TransformValueSource
+  | MergeValueSource
+  | ConditionValueSource;
 
 export interface FieldRule {
   kind: "field";
@@ -90,6 +117,12 @@ export interface ConversionResult {
   output?: unknown;
   errors: string[];
   warnings: string[];
+}
+
+export interface ConversionRulesValidationResult {
+  rules: ConversionRules;
+  isValid: boolean;
+  errors: string[];
 }
 
 export interface ConversionRulesGenerationRequest {
