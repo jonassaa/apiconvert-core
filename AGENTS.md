@@ -87,4 +87,6 @@ When adding or changing behavior, validate:
 A skill is a set of local instructions to follow that is stored in a `SKILL.md` file.
 
 ### Available skills
+- `apiconvert-core-power-consumer`: Act as a demanding package consumer and produce adoption-focused friction findings, prioritized requests, and implementable mini-RFCs with .NET/JS parity expectations. (file: `skills/apiconvert-core-power-consumer/SKILL.md`)
 - `apiconvert-feature-delivery`: Plan, implement, test, and review new Apiconvert features across both runtimes with parity checks and deterministic test coverage. (file: `skills/apiconvert-feature-delivery/SKILL.md`)
+- `apiconvert-rules-generator`: Generate Apiconvert conversion rules from sample input/output payloads using the latest schema and cross-runtime-compatible rule patterns. (file: `skills/apiconvert-rules-generator/SKILL.md`)
