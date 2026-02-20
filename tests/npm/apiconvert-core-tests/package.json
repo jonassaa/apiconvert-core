@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "pretest": "npm install && npm --prefix ../../../src/apiconvert-core install && npm --prefix ../../../src/apiconvert-core run build",
-    "test": "npm run build && node --test dist/*.test.js"
+    "test": "npm run build && node --test dist/*.test.js",
+    "parity:check": "node ../../../tests/parity/parity-gate.mjs --report tests/parity/parity-report.json --summary tests/parity/parity-summary.json --max-mismatches 0"
   },
   "dependencies": {
     "@apiconvert/core": "file:../../../src/apiconvert-core"

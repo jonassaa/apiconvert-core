@@ -61,13 +61,15 @@ jobs:
             --rules ./tests/cases/basic-json/rules.json \
             --input ./tests/cases/basic-json/input.json \
             --output ./tests/parity/cli-smoke-output.json
-      - name: Run parity conformance suite
-        run: node ./tests/parity/parity-report.mjs --report ./tests/parity/parity-report.json
-      - name: Upload parity report
+      - name: Run parity gate
+        run: node ./tests/parity/parity-gate.mjs --report ./tests/parity/parity-report.json --summary ./tests/parity/parity-summary.json --max-mismatches 0
+      - name: Upload parity artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: parity-report
-          path: tests/parity/parity-report.json
+          name: parity-artifacts
+          path: |
+            tests/parity/parity-report.json
+            tests/parity/parity-summary.json
 
   publish:
     runs-on: ubuntu-latest
