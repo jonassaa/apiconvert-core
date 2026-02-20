@@ -10,6 +10,9 @@
   "type": "commonjs",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "apiconvert": "./bin/apiconvert.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -23,6 +26,7 @@
     "node": ">=18"
   },
   "files": [
+    "bin",
     "dist",
     "schemas",
     "README.md"

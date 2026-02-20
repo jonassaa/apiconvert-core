@@ -47,6 +47,14 @@ jobs:
     - name: Run npm tests
       working-directory: tests/npm/apiconvert-core-tests
       run: npm test
+    - name: CLI smoke test (validate/lint/convert)
+      run: |
+        node ./src/apiconvert-core/bin/apiconvert.js rules validate ./tests/cases/basic-json/rules.json
+        node ./src/apiconvert-core/bin/apiconvert.js rules lint ./tests/cases/basic-json/rules.json
+        node ./src/apiconvert-core/bin/apiconvert.js convert \
+          --rules ./tests/cases/basic-json/rules.json \
+          --input ./tests/cases/basic-json/input.json \
+          --output ./tests/parity/cli-smoke-output.json
     - name: Run parity conformance suite
       run: node ./tests/parity/parity-report.mjs --report ./tests/parity/parity-report.json
     - name: Upload parity report

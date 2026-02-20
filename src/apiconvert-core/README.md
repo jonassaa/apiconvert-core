@@ -179,6 +179,16 @@ Schema constants point to package-local files:
 - `rulesSchemaPath` => `/schemas/rules/rules.schema.json`
 - `rulesSchemaVersionedPath` => `/schemas/rules/v{version}/schema.json`
 
+## CLI
+
+The npm package ships a CLI for validation, linting, and local conversion:
+
+```bash
+apiconvert rules validate rules.json
+apiconvert rules lint rules.json
+apiconvert convert --rules rules.json --input input.json --output out.json
+```
+
 ## Error Codes and Troubleshooting
 
 Use the shared catalog for deterministic diagnostic mapping and remediation guidance:
