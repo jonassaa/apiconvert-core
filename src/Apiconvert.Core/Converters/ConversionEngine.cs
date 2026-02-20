@@ -70,10 +70,11 @@ public static class ConversionEngine
     /// </summary>
     /// <param name="input">Input payload (already parsed).</param>
     /// <param name="rawRules">Rules input (object or JSON-like model).</param>
+    /// <param name="options">Optional execution options.</param>
     /// <returns>Conversion result containing output and errors.</returns>
-    public static ConversionResult ApplyConversion(object? input, object? rawRules)
+    public static ConversionResult ApplyConversion(object? input, object? rawRules, ConversionOptions? options = null)
     {
-        return MappingExecutor.ApplyConversion(input, rawRules);
+        return MappingExecutor.ApplyConversion(input, rawRules, options);
     }
 
     /// <summary>
@@ -81,15 +82,16 @@ public static class ConversionEngine
     /// </summary>
     /// <param name="input">Input payload (already parsed).</param>
     /// <param name="plan">Compiled conversion plan.</param>
+    /// <param name="options">Optional execution options.</param>
     /// <returns>Conversion result containing output and errors.</returns>
-    public static ConversionResult ApplyConversion(object? input, ConversionPlan plan)
+    public static ConversionResult ApplyConversion(object? input, ConversionPlan plan, ConversionOptions? options = null)
     {
         if (plan is null)
         {
             throw new ArgumentNullException(nameof(plan));
         }
 
-        return plan.Apply(input);
+        return plan.Apply(input, options);
     }
 
     /// <summary>

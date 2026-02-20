@@ -105,6 +105,21 @@ The package also exports:
 - `parsePayload(text, format)` for `json`, `xml`, and `query`
 - `formatPayload(value, format, pretty)`
 
+## Output Collision Policy
+
+When multiple rules write to the same output path, pass `collisionPolicy` to `applyConversion`:
+- `lastWriteWins` (default)
+- `firstWriteWins`
+- `error` (keeps first value and records collision errors)
+
+```ts
+import { applyConversion, OutputCollisionPolicy } from "@apiconvert/core";
+
+const result = applyConversion(input, rules, {
+  collisionPolicy: OutputCollisionPolicy.Error
+});
+```
+
 ## Schema Paths
 
 Schema constants point to package-local files:

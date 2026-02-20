@@ -331,6 +331,46 @@ public sealed class ConversionEngineTests
     }
 
     [Fact]
+    public void ApplyConversion_DefaultCollisionPolicy_LastWriteWins()
+    {
+        var result = ConvertWithCollisionRules();
+
+        Assert.Empty(result.Errors);
+        var output = Assert.IsType<Dictionary<string, object?>>(result.Output);
+        Assert.Equal("third", output["name"]);
+    }
+
+    [Fact]
+    public void ApplyConversion_FirstWriteWins_KeepsFirstValue()
+    {
+        var result = ConvertWithCollisionRules(new ConversionOptions
+        {
+            CollisionPolicy = OutputCollisionPolicy.FirstWriteWins
+        });
+
+        Assert.Empty(result.Errors);
+        var output = Assert.IsType<Dictionary<string, object?>>(result.Output);
+        Assert.Equal("first", output["name"]);
+    }
+
+    [Fact]
+    public void ApplyConversion_ErrorCollisionPolicy_ReportsAllCollisions()
+    {
+        var result = ConvertWithCollisionRules(new ConversionOptions
+        {
+            CollisionPolicy = OutputCollisionPolicy.Error
+        });
+
+        Assert.Equal(2, result.Errors.Count);
+        Assert.Contains(result.Errors, error => error.Contains("rules[1]", StringComparison.Ordinal));
+        Assert.Contains(result.Errors, error => error.Contains("rules[2]", StringComparison.Ordinal));
+        Assert.All(result.Errors, error => Assert.Contains("already written by rules[0]", error, StringComparison.Ordinal));
+
+        var output = Assert.IsType<Dictionary<string, object?>>(result.Output);
+        Assert.Equal("first", output["name"]);
+    }
+
+    [Fact]
     public void CompileConversionPlan_ReusesNormalizedRules()
     {
         var json = """
@@ -492,5 +532,35 @@ public sealed class ConversionEngineTests
             rules);
         Assert.NotEmpty(result.Errors);
         return result.Errors[0];
+    }
+
+    private static ConversionResult ConvertWithCollisionRules(ConversionOptions? options = null)
+    {
+        var rules = new ConversionRules
+        {
+            Rules =
+            [
+                new RuleNode
+                {
+                    Kind = "field",
+                    OutputPaths = ["name"],
+                    Source = new ValueSource { Type = "constant", Value = "first" }
+                },
+                new RuleNode
+                {
+                    Kind = "field",
+                    OutputPaths = ["name"],
+                    Source = new ValueSource { Type = "constant", Value = "second" }
+                },
+                new RuleNode
+                {
+                    Kind = "field",
+                    OutputPaths = ["name"],
+                    Source = new ValueSource { Type = "constant", Value = "third" }
+                }
+            ]
+        };
+
+        return ConversionEngine.ApplyConversion(new Dictionary<string, object?>(), rules, options);
     }
 }

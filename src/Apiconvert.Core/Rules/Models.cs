@@ -87,6 +87,25 @@ public enum ConditionOutputMode
 }
 
 /// <summary>
+/// Policy used when multiple rules write to the same output path.
+/// </summary>
+public enum OutputCollisionPolicy
+{
+    /// <summary>
+    /// Last write wins (current behavior).
+    /// </summary>
+    LastWriteWins,
+    /// <summary>
+    /// First write wins and subsequent writes are ignored.
+    /// </summary>
+    FirstWriteWins,
+    /// <summary>
+    /// Keep the first write and report collisions as errors.
+    /// </summary>
+    Error
+}
+
+/// <summary>
 /// Else-if branch for condition sources.
 /// </summary>
 public sealed record ConditionElseIfBranch

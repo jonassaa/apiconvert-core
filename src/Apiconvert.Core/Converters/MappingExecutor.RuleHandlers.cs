@@ -10,6 +10,8 @@ internal static partial class MappingExecutor
         RuleNode rule,
         Dictionary<string, object?> output,
         List<string> errors,
+        Dictionary<string, string> writeOwners,
+        OutputCollisionPolicy collisionPolicy,
         string path)
     {
         var writePaths = GetWritePaths(rule);
@@ -28,7 +30,14 @@ internal static partial class MappingExecutor
 
         foreach (var writePath in writePaths)
         {
-            SetValueByPath(output, writePath, value);
+            WriteValue(
+                output,
+                writeOwners,
+                errors,
+                collisionPolicy,
+                path,
+                writePath,
+                value);
         }
     }
 
@@ -39,6 +48,8 @@ internal static partial class MappingExecutor
         Dictionary<string, object?> output,
         List<string> errors,
         List<string> warnings,
+        Dictionary<string, string> writeOwners,
+        OutputCollisionPolicy collisionPolicy,
         string path,
         int depth)
     {
@@ -80,6 +91,8 @@ internal static partial class MappingExecutor
                 itemOutput,
                 errors,
                 warnings,
+                new Dictionary<string, string>(StringComparer.Ordinal),
+                collisionPolicy,
                 $"{path}.itemRules",
                 depth + 1);
             mappedItems.Add(itemOutput);
@@ -87,7 +100,14 @@ internal static partial class MappingExecutor
 
         foreach (var outputPath in arrayWritePaths)
         {
-            SetValueByPath(output, outputPath, mappedItems);
+            WriteValue(
+                output,
+                writeOwners,
+                errors,
+                collisionPolicy,
+                path,
+                outputPath,
+                mappedItems);
         }
     }
 
@@ -98,13 +118,25 @@ internal static partial class MappingExecutor
         Dictionary<string, object?> output,
         List<string> errors,
         List<string> warnings,
+        Dictionary<string, string> writeOwners,
+        OutputCollisionPolicy collisionPolicy,
         string path,
         int depth)
     {
         var matched = EvaluateCondition(root, item, rule.Expression, errors, path, "branch expression");
         if (matched)
         {
-            ExecuteRules(root, item, rule.Then, output, errors, warnings, $"{path}.then", depth + 1);
+            ExecuteRules(
+                root,
+                item,
+                rule.Then,
+                output,
+                errors,
+                warnings,
+                writeOwners,
+                collisionPolicy,
+                $"{path}.then",
+                depth + 1);
             return;
         }
 
@@ -118,13 +150,67 @@ internal static partial class MappingExecutor
                 continue;
             }
 
-            ExecuteRules(root, item, elseIf.Then, output, errors, warnings, $"{branchPath}.then", depth + 1);
+            ExecuteRules(
+                root,
+                item,
+                elseIf.Then,
+                output,
+                errors,
+                warnings,
+                writeOwners,
+                collisionPolicy,
+                $"{branchPath}.then",
+                depth + 1);
             return;
         }
 
         if (rule.Else.Count > 0)
         {
-            ExecuteRules(root, item, rule.Else, output, errors, warnings, $"{path}.else", depth + 1);
+            ExecuteRules(
+                root,
+                item,
+                rule.Else,
+                output,
+                errors,
+                warnings,
+                writeOwners,
+                collisionPolicy,
+                $"{path}.else",
+                depth + 1);
+        }
+    }
+
+    private static void WriteValue(
+        Dictionary<string, object?> output,
+        Dictionary<string, string> writeOwners,
+        List<string> errors,
+        OutputCollisionPolicy collisionPolicy,
+        string rulePath,
+        string outputPath,
+        object? value)
+    {
+        if (!writeOwners.TryGetValue(outputPath, out var firstWriterPath))
+        {
+            writeOwners[outputPath] = rulePath;
+            SetValueByPath(output, outputPath, value);
+            return;
+        }
+
+        switch (collisionPolicy)
+        {
+            case OutputCollisionPolicy.LastWriteWins:
+                writeOwners[outputPath] = rulePath;
+                SetValueByPath(output, outputPath, value);
+                return;
+            case OutputCollisionPolicy.FirstWriteWins:
+                return;
+            case OutputCollisionPolicy.Error:
+                errors.Add($"{rulePath}: output collision at \"{outputPath}\" (already written by {firstWriterPath}).");
+                return;
+            default:
+                writeOwners[outputPath] = rulePath;
+                SetValueByPath(output, outputPath, value);
+                return;
         }
     }
 

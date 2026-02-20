@@ -125,6 +125,20 @@ Examples:
 - `ParsePayload(string, DataFormat)` and stream/`JsonNode` overloads
 - `FormatPayload(object?, DataFormat, bool)` and stream overload
 
+## Output Collision Policy
+
+When multiple rules write to the same output path, configure deterministic behavior with `ConversionOptions.CollisionPolicy`:
+- `LastWriteWins` (default)
+- `FirstWriteWins`
+- `Error` (keeps first value and records collision errors)
+
+```csharp
+var result = ConversionEngine.ApplyConversion(
+    input,
+    rules,
+    new ConversionOptions { CollisionPolicy = OutputCollisionPolicy.Error });
+```
+
 ## Strict vs Lenient Rules Handling
 
 - `NormalizeConversionRules(...)` is lenient and returns validation errors in `ConversionRules.ValidationErrors`.

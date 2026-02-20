@@ -24,6 +24,16 @@ export enum ConditionOutputMode {
   Match = "match"
 }
 
+export enum OutputCollisionPolicy {
+  LastWriteWins = "lastWriteWins",
+  FirstWriteWins = "firstWriteWins",
+  Error = "error"
+}
+
+export interface ApplyConversionOptions {
+  collisionPolicy?: OutputCollisionPolicy | null;
+}
+
 export interface ConditionElseIfBranch {
   expression: string | null;
   source?: ValueSource | null;

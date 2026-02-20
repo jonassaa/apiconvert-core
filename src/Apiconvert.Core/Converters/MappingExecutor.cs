@@ -7,16 +7,17 @@ internal static partial class MappingExecutor
     private const int MaxConditionBranchDepth = 64;
     private const int MaxRuleNestingDepth = 64;
 
-    internal static ConversionResult ApplyConversion(object? input, object? rawRules)
+    internal static ConversionResult ApplyConversion(object? input, object? rawRules, ConversionOptions? options = null)
     {
         var rules = RulesNormalizer.NormalizeConversionRules(rawRules);
-        return ApplyConversion(input, rules);
+        return ApplyConversion(input, rules, options);
     }
 
-    internal static ConversionResult ApplyConversion(object? input, ConversionRules rules)
+    internal static ConversionResult ApplyConversion(object? input, ConversionRules rules, ConversionOptions? options = null)
     {
         var errors = new List<string>();
         errors.AddRange(rules.ValidationErrors);
+        var collisionPolicy = options?.CollisionPolicy ?? OutputCollisionPolicy.LastWriteWins;
 
         if (!rules.Rules.Any())
         {
@@ -30,7 +31,17 @@ internal static partial class MappingExecutor
 
         var output = new Dictionary<string, object?>();
         var warnings = new List<string>();
-        ExecuteRules(input, null, rules.Rules, output, errors, warnings, "rules", 0);
+        ExecuteRules(
+            input,
+            null,
+            rules.Rules,
+            output,
+            errors,
+            warnings,
+            new Dictionary<string, string>(StringComparer.Ordinal),
+            collisionPolicy,
+            "rules",
+            0);
 
         return new ConversionResult { Output = output, Errors = errors, Warnings = warnings };
     }
@@ -42,6 +53,8 @@ internal static partial class MappingExecutor
         Dictionary<string, object?> output,
         List<string> errors,
         List<string> warnings,
+        Dictionary<string, string> writeOwners,
+        OutputCollisionPolicy collisionPolicy,
         string path,
         int depth)
     {
@@ -54,7 +67,17 @@ internal static partial class MappingExecutor
         for (var index = 0; index < rules.Count; index++)
         {
             var rule = rules[index];
-            ExecuteRule(root, item, rule, output, errors, warnings, $"{path}[{index}]", depth);
+            ExecuteRule(
+                root,
+                item,
+                rule,
+                output,
+                errors,
+                warnings,
+                writeOwners,
+                collisionPolicy,
+                $"{path}[{index}]",
+                depth);
         }
     }
 
@@ -65,19 +88,21 @@ internal static partial class MappingExecutor
         Dictionary<string, object?> output,
         List<string> errors,
         List<string> warnings,
+        Dictionary<string, string> writeOwners,
+        OutputCollisionPolicy collisionPolicy,
         string path,
         int depth)
     {
         switch (rule.Kind)
         {
             case "field":
-                ExecuteFieldRule(root, item, rule, output, errors, path);
+                ExecuteFieldRule(root, item, rule, output, errors, writeOwners, collisionPolicy, path);
                 return;
             case "array":
-                ExecuteArrayRule(root, item, rule, output, errors, warnings, path, depth);
+                ExecuteArrayRule(root, item, rule, output, errors, warnings, writeOwners, collisionPolicy, path, depth);
                 return;
             case "branch":
-                ExecuteBranchRule(root, item, rule, output, errors, warnings, path, depth);
+                ExecuteBranchRule(root, item, rule, output, errors, warnings, writeOwners, collisionPolicy, path, depth);
                 return;
             default:
                 errors.Add($"{path}: unsupported kind '{rule.Kind}'.");

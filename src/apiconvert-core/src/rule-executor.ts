@@ -6,6 +6,7 @@ import {
 import { tryEvaluateConditionExpression } from "./condition-expression";
 import { resolvePathValue, resolveSourceValue } from "./source-resolver";
 import {
+  OutputCollisionPolicy,
   type ArrayRule,
   type BranchRule,
   type FieldRule,
@@ -19,6 +20,8 @@ export function executeRules(
   output: Record<string, unknown>,
   errors: string[],
   warnings: string[],
+  writeOwners: Map<string, string>,
+  collisionPolicy: OutputCollisionPolicy,
   path: string,
   depth: number
 ): void {
@@ -28,7 +31,7 @@ export function executeRules(
   }
 
   rules.forEach((rule, index) => {
-    executeRule(root, item, rule, output, errors, warnings, `${path}[${index}]`, depth);
+    executeRule(root, item, rule, output, errors, warnings, writeOwners, collisionPolicy, `${path}[${index}]`, depth);
   });
 }
 
@@ -39,21 +42,23 @@ function executeRule(
   output: Record<string, unknown>,
   errors: string[],
   warnings: string[],
+  writeOwners: Map<string, string>,
+  collisionPolicy: OutputCollisionPolicy,
   path: string,
   depth: number
 ): void {
   if (rule.kind === "field") {
-    executeFieldRule(root, item, rule, output, errors, path);
+    executeFieldRule(root, item, rule, output, errors, writeOwners, collisionPolicy, path);
     return;
   }
 
   if (rule.kind === "array") {
-    executeArrayRule(root, item, rule, output, errors, warnings, path, depth);
+    executeArrayRule(root, item, rule, output, errors, warnings, writeOwners, collisionPolicy, path, depth);
     return;
   }
 
   if (rule.kind === "branch") {
-    executeBranchRule(root, item, rule, output, errors, warnings, path, depth);
+    executeBranchRule(root, item, rule, output, errors, warnings, writeOwners, collisionPolicy, path, depth);
     return;
   }
 
@@ -66,6 +71,8 @@ function executeFieldRule(
   rule: FieldRule,
   output: Record<string, unknown>,
   errors: string[],
+  writeOwners: Map<string, string>,
+  collisionPolicy: OutputCollisionPolicy,
   path: string
 ): void {
   const writePaths = getWritePaths(rule);
@@ -80,7 +87,7 @@ function executeFieldRule(
   }
 
   writePaths.forEach((writePath) => {
-    setValueByPath(output, writePath, value);
+    writeValue(output, writeOwners, errors, collisionPolicy, path, writePath, value);
   });
 }
 
@@ -91,6 +98,8 @@ function executeArrayRule(
   output: Record<string, unknown>,
   errors: string[],
   warnings: string[],
+  writeOwners: Map<string, string>,
+  collisionPolicy: OutputCollisionPolicy,
   path: string,
   depth: number
 ): void {
@@ -118,12 +127,23 @@ function executeArrayRule(
   const mappedItems: unknown[] = [];
   items.forEach((arrayItem) => {
     const itemOutput: Record<string, unknown> = {};
-    executeRules(root, arrayItem, rule.itemRules ?? [], itemOutput, errors, warnings, `${path}.itemRules`, depth + 1);
+    executeRules(
+      root,
+      arrayItem,
+      rule.itemRules ?? [],
+      itemOutput,
+      errors,
+      warnings,
+      new Map<string, string>(),
+      collisionPolicy,
+      `${path}.itemRules`,
+      depth + 1
+    );
     mappedItems.push(itemOutput);
   });
 
   writePaths.forEach((writePath) => {
-    setValueByPath(output, writePath, mappedItems);
+    writeValue(output, writeOwners, errors, collisionPolicy, path, writePath, mappedItems);
   });
 }
 
@@ -134,12 +154,14 @@ function executeBranchRule(
   output: Record<string, unknown>,
   errors: string[],
   warnings: string[],
+  writeOwners: Map<string, string>,
+  collisionPolicy: OutputCollisionPolicy,
   path: string,
   depth: number
 ): void {
   const matched = evaluateRuleCondition(root, item, rule.expression, errors, path, "branch expression");
   if (matched) {
-    executeRules(root, item, rule.then ?? [], output, errors, warnings, `${path}.then`, depth + 1);
+    executeRules(root, item, rule.then ?? [], output, errors, warnings, writeOwners, collisionPolicy, `${path}.then`, depth + 1);
     return;
   }
 
@@ -160,12 +182,50 @@ function executeBranchRule(
       continue;
     }
 
-    executeRules(root, item, elseIf.then ?? [], output, errors, warnings, `${branchPath}.then`, depth + 1);
+    executeRules(
+      root,
+      item,
+      elseIf.then ?? [],
+      output,
+      errors,
+      warnings,
+      writeOwners,
+      collisionPolicy,
+      `${branchPath}.then`,
+      depth + 1
+    );
     return;
   }
 
   if ((rule.else ?? []).length > 0) {
-    executeRules(root, item, rule.else ?? [], output, errors, warnings, `${path}.else`, depth + 1);
+    executeRules(root, item, rule.else ?? [], output, errors, warnings, writeOwners, collisionPolicy, `${path}.else`, depth + 1);
+  }
+}
+
+function writeValue(
+  output: Record<string, unknown>,
+  writeOwners: Map<string, string>,
+  errors: string[],
+  collisionPolicy: OutputCollisionPolicy,
+  rulePath: string,
+  outputPath: string,
+  value: unknown
+): void {
+  const firstWriterPath = writeOwners.get(outputPath);
+  if (!firstWriterPath) {
+    writeOwners.set(outputPath, rulePath);
+    setValueByPath(output, outputPath, value);
+    return;
+  }
+
+  if (collisionPolicy === OutputCollisionPolicy.LastWriteWins) {
+    writeOwners.set(outputPath, rulePath);
+    setValueByPath(output, outputPath, value);
+    return;
+  }
+
+  if (collisionPolicy === OutputCollisionPolicy.Error) {
+    errors.push(`${rulePath}: output collision at "${outputPath}" (already written by ${firstWriterPath}).`);
   }
 }
 

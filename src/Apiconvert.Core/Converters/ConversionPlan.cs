@@ -21,9 +21,10 @@ public sealed class ConversionPlan
     /// Applies this plan to the provided input payload.
     /// </summary>
     /// <param name="input">Input payload (already parsed).</param>
+    /// <param name="options">Optional execution options.</param>
     /// <returns>Conversion result containing output and diagnostics.</returns>
-    public ConversionResult Apply(object? input)
+    public ConversionResult Apply(object? input, ConversionOptions? options = null)
     {
-        return MappingExecutor.ApplyConversion(input, Rules);
+        return MappingExecutor.ApplyConversion(input, Rules, options);
     }
 }
