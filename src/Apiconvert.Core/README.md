@@ -163,6 +163,11 @@ foreach (var entry in result.Trace)
 - `CompileConversionPlan(...)` reuses normalized rules for repeated conversions.
 - `CompileConversionPlanStrict(...)` combines strict validation with plan compilation.
 
+## Error Codes and Troubleshooting
+
+Use the shared catalog for deterministic diagnostic mapping and remediation guidance:
+- [`docs/error-code-catalog.md`](../../docs/error-code-catalog.md)
+
 ## Thread Safety
 
 - Conversion execution is deterministic and side-effect free.

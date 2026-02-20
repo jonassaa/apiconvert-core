@@ -38,6 +38,8 @@ jobs:
         env:
           SCHEMA_CHECK_BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: ./scripts/check-schema-versioning.sh
+      - name: Check docs links
+        run: ./scripts/check-doc-links.sh
 
       - name: Setup Node
         uses: actions/setup-node@v4

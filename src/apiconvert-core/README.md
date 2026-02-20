@@ -138,3 +138,8 @@ for (const entry of result.trace) {
 Schema constants point to package-local files:
 - `rulesSchemaPath` => `/schemas/rules/rules.schema.json`
 - `rulesSchemaVersionedPath` => `/schemas/rules/v{version}/schema.json`
+
+## Error Codes and Troubleshooting
+
+Use the shared catalog for deterministic diagnostic mapping and remediation guidance:
+- [`docs/error-code-catalog.md`](../../docs/error-code-catalog.md)
