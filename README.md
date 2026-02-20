@@ -160,6 +160,7 @@ Shared conversion behavior should be validated through `tests/cases` in both run
 The parity suite emits a machine-readable report at `tests/parity/parity-report.json`.
 The parity gate also emits `tests/parity/parity-summary.json` with pass/fail criteria.
 Toolkit docs: [`docs/parity-gate-toolkit.md`](docs/parity-gate-toolkit.md).
+Consumer recipes: [`docs/consumer-cookbook.md`](docs/consumer-cookbook.md).
 
 ## Release
 
