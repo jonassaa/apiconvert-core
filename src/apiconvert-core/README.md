@@ -187,6 +187,7 @@ The npm package ships a CLI for validation, linting, and local conversion:
 ```bash
 apiconvert rules validate rules.json
 apiconvert rules lint rules.json
+apiconvert rules doctor --rules rules.json --input sample.json --format json
 apiconvert convert --rules rules.json --input input.json --output out.json
 ```
 

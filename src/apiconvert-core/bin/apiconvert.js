@@ -24,6 +24,11 @@ async function main() {
     return;
   }
 
+  if (command === "rules" && subcommand === "doctor") {
+    await handleDoctor(rest);
+    return;
+  }
+
   if (command === "convert") {
     await handleConvert([subcommand, ...rest].filter(Boolean));
     return;
@@ -91,6 +96,40 @@ async function handleConvert(args) {
   console.log(JSON.stringify({ outputPath, warnings: result.warnings }, null, 2));
 }
 
+async function handleDoctor(args) {
+  const options = parseFlags(args);
+  const rulesPath = requireFlag(options, "rules");
+  const inputPath = options.input;
+  const formatFlag = options.format;
+
+  const rawRules = fs.readFileSync(rulesPath, "utf8");
+
+  let sampleInputText = null;
+  let inputFormat = null;
+  if (inputPath) {
+    sampleInputText = fs.readFileSync(inputPath, "utf8");
+    inputFormat = extensionToFormat(path.extname(inputPath), null);
+  }
+
+  if (formatFlag) {
+    inputFormat = extensionToFormat(`.${formatFlag}`, null);
+    if (!inputFormat) {
+      throw new Error("Unsupported --format value. Use json, xml, or query.");
+    }
+  }
+
+  const report = core.runRuleDoctor(rawRules, {
+    sampleInputText,
+    inputFormat,
+    applySafeFixes: false
+  });
+
+  console.log(JSON.stringify(report, null, 2));
+  if (report.hasErrors) {
+    process.exitCode = 1;
+  }
+}
+
 function parseFlags(args) {
   const options = {};
   for (let i = 0; i < args.length; i += 1) {
@@ -125,6 +164,7 @@ function printUsage() {
     "Usage:",
     "  apiconvert rules validate <rules.json>",
     "  apiconvert rules lint <rules.json>",
+    "  apiconvert rules doctor --rules <rules.json> [--input <sample.ext>] [--format json|xml|query]",
     "  apiconvert convert --rules <rules.json> --input <input.ext> --output <output.ext>"
   ].join("\n"));
 }

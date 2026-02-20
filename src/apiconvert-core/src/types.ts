@@ -174,6 +174,34 @@ export interface ConversionRulesLintResult {
   hasErrors: boolean;
 }
 
+export enum RuleDoctorFindingSeverity {
+  Info = "info",
+  Warning = "warning",
+  Error = "error"
+}
+
+export interface RuleDoctorFinding {
+  code: string;
+  stage: "validation" | "lint" | "runtime";
+  severity: RuleDoctorFindingSeverity;
+  rulePath: string;
+  message: string;
+  suggestion?: string;
+}
+
+export interface RuleDoctorOptions {
+  sampleInputText?: string | null;
+  inputFormat?: DataFormat | null;
+  applySafeFixes?: boolean | null;
+}
+
+export interface RuleDoctorReport {
+  findings: RuleDoctorFinding[];
+  hasErrors: boolean;
+  canApplySafeFixes: boolean;
+  safeFixPreview: string[];
+}
+
 export interface ConversionRulesGenerationRequest {
   inputFormat: DataFormat;
   outputFormat: DataFormat;

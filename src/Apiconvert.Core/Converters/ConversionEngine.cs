@@ -89,6 +89,124 @@ public static class ConversionEngine
     }
 
     /// <summary>
+    /// Runs deterministic rule-doctor diagnostics by combining validation, lint, and optional runtime checks.
+    /// </summary>
+    /// <param name="rawRules">Rules input (object or JSON-like model).</param>
+    /// <param name="sampleInputText">Optional sample input payload text for runtime diagnostics.</param>
+    /// <param name="inputFormat">Input format for <paramref name="sampleInputText"/>. Defaults to JSON.</param>
+    /// <param name="applySafeFixes">Reserved for future use. Current implementation returns preview-only fixes.</param>
+    /// <returns>Rule-doctor report with ordered findings and safe-fix preview.</returns>
+    public static RuleDoctorReport RunRuleDoctor(
+        object? rawRules,
+        string? sampleInputText = null,
+        DataFormat inputFormat = DataFormat.Json,
+        bool applySafeFixes = false)
+    {
+        var normalizedRules = NormalizeConversionRules(rawRules);
+        var lintDiagnostics = LintRules(rawRules);
+        var findings = new List<RuleDoctorFinding>();
+
+        foreach (var validationError in normalizedRules.ValidationErrors)
+        {
+            findings.Add(new RuleDoctorFinding
+            {
+                Code = "ACV-LINT-001",
+                Stage = "validation",
+                Severity = RuleDoctorFindingSeverity.Error,
+                RulePath = "rules",
+                Message = validationError,
+                Suggestion = "Fix schema/normalization errors before conversion."
+            });
+        }
+
+        foreach (var diagnostic in lintDiagnostics)
+        {
+            findings.Add(new RuleDoctorFinding
+            {
+                Code = diagnostic.Code,
+                Stage = "lint",
+                Severity = diagnostic.Severity == RuleLintSeverity.Error
+                    ? RuleDoctorFindingSeverity.Error
+                    : RuleDoctorFindingSeverity.Warning,
+                RulePath = diagnostic.RulePath,
+                Message = diagnostic.Message,
+                Suggestion = diagnostic.Suggestion
+            });
+        }
+
+        if (!string.IsNullOrEmpty(sampleInputText))
+        {
+            var (value, parseError) = ParsePayload(sampleInputText, inputFormat);
+            if (parseError is not null)
+            {
+                findings.Add(new RuleDoctorFinding
+                {
+                    Code = "ACV-DOCTOR-001",
+                    Stage = "runtime",
+                    Severity = RuleDoctorFindingSeverity.Error,
+                    RulePath = "runtime.input",
+                    Message = $"Failed to parse sample input: {parseError}",
+                    Suggestion = "Pass sample input matching the selected format."
+                });
+            }
+            else
+            {
+                var conversion = ApplyConversion(value, normalizedRules);
+                foreach (var warning in conversion.Warnings)
+                {
+                    findings.Add(new RuleDoctorFinding
+                    {
+                        Code = "ACV-DOCTOR-010",
+                        Stage = "runtime",
+                        Severity = RuleDoctorFindingSeverity.Warning,
+                        RulePath = "runtime",
+                        Message = warning,
+                        Suggestion = "Adjust rules or input sample to avoid runtime warnings."
+                    });
+                }
+
+                foreach (var error in conversion.Errors)
+                {
+                    findings.Add(new RuleDoctorFinding
+                    {
+                        Code = "ACV-DOCTOR-011",
+                        Stage = "runtime",
+                        Severity = RuleDoctorFindingSeverity.Error,
+                        RulePath = "runtime",
+                        Message = error,
+                        Suggestion = "Fix rule source paths, transforms, or branch expressions."
+                    });
+                }
+            }
+        }
+        else
+        {
+            findings.Add(new RuleDoctorFinding
+            {
+                Code = "ACV-DOCTOR-100",
+                Stage = "runtime",
+                Severity = RuleDoctorFindingSeverity.Info,
+                RulePath = "runtime",
+                Message = "Runtime checks skipped (no sample input provided).",
+                Suggestion = "Provide sample input to include conversion-time diagnostics."
+            });
+        }
+
+        var safeFixPreview = lintDiagnostics
+            .Select(diagnostic => $"{diagnostic.RulePath}: {diagnostic.Suggestion}")
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+
+        return new RuleDoctorReport
+        {
+            Findings = findings,
+            HasErrors = findings.Any(finding => finding.Severity == RuleDoctorFindingSeverity.Error),
+            CanApplySafeFixes = false,
+            SafeFixPreview = safeFixPreview
+        };
+    }
+
+    /// <summary>
     /// Applies conversion rules to the given input payload.
     /// </summary>
     /// <param name="input">Input payload (already parsed).</param>

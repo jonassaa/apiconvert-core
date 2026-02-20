@@ -474,3 +474,84 @@ public sealed record RuleLintDiagnostic
     /// </summary>
     public string Suggestion { get; init; } = string.Empty;
 }
+
+/// <summary>
+/// Rule doctor finding severity.
+/// </summary>
+public enum RuleDoctorFindingSeverity
+{
+    /// <summary>
+    /// Informational finding.
+    /// </summary>
+    Info,
+    /// <summary>
+    /// Non-blocking warning.
+    /// </summary>
+    Warning,
+    /// <summary>
+    /// Blocking error.
+    /// </summary>
+    Error
+}
+
+/// <summary>
+/// Single rule doctor finding entry.
+/// </summary>
+public sealed record RuleDoctorFinding
+{
+    /// <summary>
+    /// Stable machine-readable finding code.
+    /// </summary>
+    public string Code { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Processing stage that emitted the finding.
+    /// </summary>
+    public string Stage { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Finding severity.
+    /// </summary>
+    public RuleDoctorFindingSeverity Severity { get; init; }
+
+    /// <summary>
+    /// Rule path or runtime location.
+    /// </summary>
+    public string RulePath { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Human-readable message.
+    /// </summary>
+    public string Message { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Suggested remediation.
+    /// </summary>
+    public string Suggestion { get; init; } = string.Empty;
+}
+
+/// <summary>
+/// Report produced by rule doctor orchestration.
+/// </summary>
+public sealed record RuleDoctorReport
+{
+    /// <summary>
+    /// Ordered findings from validation, lint, and runtime checks.
+    /// </summary>
+    public List<RuleDoctorFinding> Findings { get; init; } = new();
+
+    /// <summary>
+    /// Whether any blocking errors were found.
+    /// </summary>
+    public bool HasErrors { get; init; }
+
+    /// <summary>
+    /// Whether safe fixes were automatically applied.
+    /// </summary>
+    public bool CanApplySafeFixes { get; init; }
+
+    /// <summary>
+    /// Preview of safe, deterministic fix suggestions.
+    /// </summary>
+    public List<string> SafeFixPreview { get; init; } = new();
+}
