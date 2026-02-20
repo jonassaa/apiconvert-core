@@ -17,6 +17,8 @@ test("CLI validate/lint/convert smoke", () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "apiconvert-cli-"));
   const outputPath = path.join(tempDir, "out.json");
   const bundledPath = path.join(tempDir, "bundled.rules.json");
+  const benchInputPath = path.join(tempDir, "bench.ndjson");
+  fs.writeFileSync(benchInputPath, `${JSON.stringify({ name: "Ada" })}\n${JSON.stringify({ name: "Lin" })}\n`);
 
   execFileSync(process.execPath, [cliPath, "rules", "validate", rulesPath], { encoding: "utf8" });
   execFileSync(process.execPath, [cliPath, "rules", "lint", rulesPath], { encoding: "utf8" });
@@ -49,9 +51,16 @@ test("CLI validate/lint/convert smoke", () => {
     ],
     { encoding: "utf8" }
   );
+  const benchmarkOutput = execFileSync(
+    process.execPath,
+    [cliPath, "benchmark", "--rules", rulesPath, "--input", benchInputPath, "--iterations", "2"],
+    { encoding: "utf8" }
+  );
 
   const expected = JSON.stringify(JSON.parse(fs.readFileSync(expectedOutputPath, "utf8")));
   const actual = JSON.stringify(JSON.parse(fs.readFileSync(outputPath, "utf8")));
+  const benchmark = JSON.parse(benchmarkOutput) as { totalRuns: number };
   assert.equal(actual, expected);
   assert.ok(fs.existsSync(bundledPath));
+  assert.equal(benchmark.totalRuns, 4);
 });

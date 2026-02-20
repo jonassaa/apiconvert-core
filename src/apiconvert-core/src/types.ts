@@ -226,6 +226,29 @@ export interface RuleBundleOptions {
   baseDirectory?: string | null;
 }
 
+export interface ConversionProfileOptions {
+  iterations?: number | null;
+  warmupIterations?: number | null;
+}
+
+export interface ConversionLatencyProfile {
+  min: number;
+  p50: number;
+  p95: number;
+  p99: number;
+  max: number;
+  mean: number;
+}
+
+export interface ConversionProfileReport {
+  planCacheKey: string;
+  compileMs: number;
+  warmupIterations: number;
+  iterations: number;
+  totalRuns: number;
+  latencyMs: ConversionLatencyProfile;
+}
+
 export interface ConversionRulesGenerationRequest {
   inputFormat: DataFormat;
   outputFormat: DataFormat;

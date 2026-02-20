@@ -44,6 +44,11 @@ async function main() {
     return;
   }
 
+  if (command === "benchmark") {
+    await handleBenchmark([subcommand, ...rest].filter(Boolean));
+    return;
+  }
+
   printUsage();
   process.exitCode = 1;
 }
@@ -163,6 +168,21 @@ async function handleBundle(args) {
   console.log(JSON.stringify({ outputPath, validationErrors: bundled.validationErrors ?? [] }, null, 2));
 }
 
+async function handleBenchmark(args) {
+  const options = parseFlags(args);
+  const rulesPath = requireFlag(options, "rules");
+  const inputPath = requireFlag(options, "input");
+  const iterations = options.iterations ? Number(options.iterations) : 100;
+  if (!Number.isFinite(iterations) || iterations <= 0) {
+    throw new Error("--iterations must be a positive number.");
+  }
+
+  const rawRules = fs.readFileSync(rulesPath, "utf8");
+  const inputItems = parseNdjson(fs.readFileSync(inputPath, "utf8"));
+  const report = core.profileConversionPlan(rawRules, inputItems, { iterations });
+  console.log(JSON.stringify(report, null, 2));
+}
+
 function parseFlags(args) {
   const options = {};
   for (let i = 0; i < args.length; i += 1) {
@@ -200,8 +220,24 @@ function printUsage() {
     "  apiconvert rules doctor --rules <rules.json> [--input <sample.ext>] [--format json|xml|query]",
     "  apiconvert rules compatibility --rules <rules.json> --target <version>",
     "  apiconvert rules bundle --rules <entry.rules.json> --out <bundled.rules.json>",
-    "  apiconvert convert --rules <rules.json> --input <input.ext> --output <output.ext>"
+    "  apiconvert convert --rules <rules.json> --input <input.ext> --output <output.ext>",
+    "  apiconvert benchmark --rules <rules.json> --input <samples.ndjson> [--iterations <n>]"
   ].join("\n"));
+}
+
+function parseNdjson(text) {
+  const lines = text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+
+  return lines.map((line, index) => {
+    try {
+      return JSON.parse(line);
+    } catch (error) {
+      throw new Error(`Invalid NDJSON at line ${index + 1}: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  });
 }
 
 main().catch((error) => {

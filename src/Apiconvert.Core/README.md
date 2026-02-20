@@ -196,6 +196,7 @@ var result = ConversionEngine.ApplyConversion(
 - `CheckCompatibility(...)` reports schema/runtime compatibility findings for a target version.
 - `BundleRules(...)` resolves modular `include` files into one deterministic rules object.
 - `CompileConversionPlan(...)` reuses normalized rules for repeated conversions.
+- `ProfileConversionPlan(...)` reports compile/apply latency percentiles for sample inputs.
 - `CompileConversionPlanStrict(...)` combines strict validation with plan compilation.
 - `ComputeRulesCacheKey(...)` returns a stable cache key for normalized rules.
 
@@ -220,6 +221,12 @@ Console.WriteLine($"Compatible: {compatibility.IsCompatible}");
 
 var bundled = ConversionEngine.BundleRules("entry.rules.json");
 Console.WriteLine($"Bundled rules: {bundled.Rules.Count}");
+
+var profile = ConversionEngine.ProfileConversionPlan(
+    rulesJson,
+    inputs: new object?[] { new { name = "Ada" }, new { name = "Lin" } },
+    options: new ConversionProfileOptions { Iterations = 1000, WarmupIterations = 50 });
+Console.WriteLine($"P95(ms): {profile.LatencyMs.P95}");
 ```
 
 ## Error Codes and Troubleshooting

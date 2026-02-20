@@ -1,4 +1,5 @@
 using Apiconvert.Core.Rules;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
@@ -313,6 +314,104 @@ public static class ConversionEngine
     public static ConversionRules BundleRules(string entryRulesPath, RuleBundleOptions? options = null)
     {
         return RulesBundler.BundleRules(entryRulesPath, options);
+    }
+
+    /// <summary>
+    /// Profiles a compiled conversion plan using deterministic report fields.
+    /// </summary>
+    /// <param name="rawRules">Rules input (object or JSON-like model).</param>
+    /// <param name="inputs">Input samples used for repeated apply runs.</param>
+    /// <param name="options">Optional profiling options.</param>
+    /// <returns>Conversion profile report with compile and apply latency metrics.</returns>
+    public static ConversionProfileReport ProfileConversionPlan(
+        object? rawRules,
+        IEnumerable<object?> inputs,
+        ConversionProfileOptions? options = null)
+    {
+        if (inputs is null)
+        {
+            throw new ArgumentNullException(nameof(inputs));
+        }
+
+        var inputList = inputs.ToList();
+        if (inputList.Count == 0)
+        {
+            throw new ArgumentException("At least one input sample is required.", nameof(inputs));
+        }
+
+        var profileOptions = options ?? new ConversionProfileOptions();
+        var iterations = Math.Max(1, profileOptions.Iterations);
+        var warmupIterations = Math.Max(0, profileOptions.WarmupIterations);
+
+        var compileStopwatch = Stopwatch.StartNew();
+        var plan = CompileConversionPlan(rawRules);
+        compileStopwatch.Stop();
+
+        for (var i = 0; i < warmupIterations; i++)
+        {
+            foreach (var input in inputList)
+            {
+                _ = plan.Apply(input);
+            }
+        }
+
+        var runDurations = new List<double>(iterations * inputList.Count);
+        for (var i = 0; i < iterations; i++)
+        {
+            foreach (var input in inputList)
+            {
+                var runStopwatch = Stopwatch.StartNew();
+                _ = plan.Apply(input);
+                runStopwatch.Stop();
+                runDurations.Add(runStopwatch.Elapsed.TotalMilliseconds);
+            }
+        }
+
+        var latency = BuildLatencyProfile(runDurations);
+        return new ConversionProfileReport
+        {
+            PlanCacheKey = plan.CacheKey,
+            CompileMs = compileStopwatch.Elapsed.TotalMilliseconds,
+            WarmupIterations = warmupIterations,
+            Iterations = iterations,
+            TotalRuns = runDurations.Count,
+            LatencyMs = latency
+        };
+    }
+
+    private static ConversionLatencyProfile BuildLatencyProfile(List<double> values)
+    {
+        if (values.Count == 0)
+        {
+            return new ConversionLatencyProfile();
+        }
+
+        values.Sort();
+        var sum = values.Sum();
+
+        return new ConversionLatencyProfile
+        {
+            Min = Percentile(values, 0),
+            P50 = Percentile(values, 50),
+            P95 = Percentile(values, 95),
+            P99 = Percentile(values, 99),
+            Max = Percentile(values, 100),
+            Mean = sum / values.Count
+        };
+    }
+
+    private static double Percentile(List<double> sortedValues, int percentile)
+    {
+        if (sortedValues.Count == 0)
+        {
+            return 0;
+        }
+
+        var index = Math.Min(
+            sortedValues.Count - 1,
+            Math.Max(0, (int)Math.Ceiling((percentile / 100d) * sortedValues.Count) - 1));
+
+        return sortedValues[index];
     }
 
     private static string? ExtractSchemaVersion(object? rawRules)

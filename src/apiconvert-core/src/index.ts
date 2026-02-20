@@ -4,6 +4,7 @@ import { checkRulesCompatibility } from "./compatibility";
 import { formatPayload, parsePayload } from "./payload-converter";
 import { bundleConversionRules } from "./rules-bundler";
 import { lintConversionRules } from "./rules-linter";
+import { profileConversionPlan } from "./profile-conversion-plan";
 import { runRuleDoctor } from "./rule-doctor";
 import {
   normalizeConversionRules,
@@ -21,6 +22,7 @@ export {
   bundleConversionRules,
   formatPayload,
   lintConversionRules,
+  profileConversionPlan,
   runRuleDoctor,
   streamJsonArrayConversion,
   normalizeConversionRules,

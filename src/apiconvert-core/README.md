@@ -97,6 +97,7 @@ console.log(result.output);
 - `checkRulesCompatibility(raw, { targetVersion })` reports schema/runtime compatibility diagnostics.
 - `bundleConversionRules(entryRulesPath)` resolves `include` modules into one deterministic rules object.
 - `compileConversionPlan(raw)` returns a reusable plan with `cacheKey` and `apply(...)`.
+- `profileConversionPlan(planOrRules, inputs, { iterations })` reports compile/apply latency percentiles.
 - `computeRulesCacheKey(raw)` returns a stable cache key for normalized rules.
 
 ```ts
@@ -193,6 +194,7 @@ apiconvert rules doctor --rules rules.json --input sample.json --format json
 apiconvert rules compatibility --rules rules.json --target 1.0.0
 apiconvert rules bundle --rules entry.rules.json --out bundled.rules.json
 apiconvert convert --rules rules.json --input input.json --output out.json
+apiconvert benchmark --rules rules.json --input samples.ndjson --iterations 1000
 ```
 
 ## Error Codes and Troubleshooting

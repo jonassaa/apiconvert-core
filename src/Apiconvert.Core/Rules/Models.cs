@@ -629,3 +629,91 @@ public sealed record RuleBundleOptions
     /// </summary>
     public string? BaseDirectory { get; init; }
 }
+
+/// <summary>
+/// Options for profiling conversion plans.
+/// </summary>
+public sealed record ConversionProfileOptions
+{
+    /// <summary>
+    /// Number of measured iterations.
+    /// </summary>
+    public int Iterations { get; init; } = 100;
+
+    /// <summary>
+    /// Number of warmup iterations excluded from measured latency.
+    /// </summary>
+    public int WarmupIterations { get; init; } = 10;
+}
+
+/// <summary>
+/// Latency percentiles for conversion profile runs.
+/// </summary>
+public sealed record ConversionLatencyProfile
+{
+    /// <summary>
+    /// Minimum measured latency in milliseconds.
+    /// </summary>
+    public double Min { get; init; }
+
+    /// <summary>
+    /// 50th percentile latency in milliseconds.
+    /// </summary>
+    public double P50 { get; init; }
+
+    /// <summary>
+    /// 95th percentile latency in milliseconds.
+    /// </summary>
+    public double P95 { get; init; }
+
+    /// <summary>
+    /// 99th percentile latency in milliseconds.
+    /// </summary>
+    public double P99 { get; init; }
+
+    /// <summary>
+    /// Maximum measured latency in milliseconds.
+    /// </summary>
+    public double Max { get; init; }
+
+    /// <summary>
+    /// Mean measured latency in milliseconds.
+    /// </summary>
+    public double Mean { get; init; }
+}
+
+/// <summary>
+/// Deterministic conversion profile report for compiled plans.
+/// </summary>
+public sealed record ConversionProfileReport
+{
+    /// <summary>
+    /// Stable cache key of the profiled plan.
+    /// </summary>
+    public string PlanCacheKey { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Time spent compiling the plan in milliseconds.
+    /// </summary>
+    public double CompileMs { get; init; }
+
+    /// <summary>
+    /// Warmup iterations executed before measurement.
+    /// </summary>
+    public int WarmupIterations { get; init; }
+
+    /// <summary>
+    /// Measured iterations.
+    /// </summary>
+    public int Iterations { get; init; }
+
+    /// <summary>
+    /// Total number of measured conversion runs.
+    /// </summary>
+    public int TotalRuns { get; init; }
+
+    /// <summary>
+    /// Measured latency summary in milliseconds.
+    /// </summary>
+    public ConversionLatencyProfile LatencyMs { get; init; } = new();
+}
