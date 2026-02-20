@@ -83,6 +83,24 @@ When adding or changing behavior, validate:
 - The package metadata is defined in `src/Apiconvert.Core/Apiconvert.Core.csproj`.
 - License metadata is set to `LicenseRef-Proprietary`; confirm before publishing.
 
+## Task Tracking (Notion)
+- Load Notion task tracker settings from local env vars (do not hardcode private workspace ids in tracked files):
+  - `APICONVERT_NOTION_DATABASE_URL` (e.g., `https://www.notion.so/...`)
+  - `APICONVERT_NOTION_DATA_SOURCE_ID` (e.g., `collection://...`)
+- Local private config location: `.codex/local.env` (git-ignored).
+- When work produces tasks, plans, proposals, or follow-up actions, write them as pages in the data source from `APICONVERT_NOTION_DATA_SOURCE_ID` (not only in chat output).
+- If either env var is missing, ask the user for values before creating/updating Notion pages.
+- Use these properties when creating/updating tasks:
+  - `Name` (required title)
+  - `Status` (`Backlog`, `Ready`, `In Progress`, `Blocked`, `In Review`, `Done`)
+  - `Priority` (`P0`, `P1`, `P2`, `P3`)
+  - `Owner`, `Due Date`, `Area`, `Tags`, `Estimate (pts)`, `Blocked`, `Target Version`, `Spec/PR Link`
+- Default conventions for generated items unless user specifies otherwise:
+  - `Status`: `Backlog`
+  - `Priority`: `P2`
+  - `Area`: best-fit from the schema (`Rules Engine`, `Schema Contract`, `Dotnet Runtime`, `Npm Runtime`, `Shared Test Cases`, `Docs`, `Release`)
+  - `Tags`: include `parity` when work affects both runtimes.
+
 ## Skills
 A skill is a set of local instructions to follow that is stored in a `SKILL.md` file.
 

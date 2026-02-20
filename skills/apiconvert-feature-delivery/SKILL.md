@@ -27,6 +27,21 @@ Implement features with parity across runtimes, deterministic tests, and explici
   - Verification and review.
 - Explicitly call out risky assumptions before coding.
 
+### 2.1 Persist the plan to Notion tasks
+
+- Read Notion target from env var: `APICONVERT_NOTION_DATA_SOURCE_ID`.
+- Optional display/reference URL from: `APICONVERT_NOTION_DATABASE_URL`.
+- If `APICONVERT_NOTION_DATA_SOURCE_ID` is missing, ask user before writing tasks.
+- Create one Notion page per planned task (usually 3-6 items).
+- Set properties at minimum:
+  - `Name`: concise action statement.
+  - `Status`: `Backlog` (or `In Progress` for the currently active step).
+  - `Priority`: choose `P0`-`P3`.
+  - `Area`: best-fit area for the task.
+- Add helpful metadata when available: `Tags`, `Estimate (pts)`, `Target Version`, `Spec/PR Link`.
+- For parity work spanning both runtimes, add `parity` to `Tags`.
+- Keep chat output and Notion entries aligned; if plan changes, update the corresponding Notion tasks.
+
 ### 3. Inspect current patterns before editing
 
 - Read nearby implementations first; follow existing naming and file layout.
@@ -90,3 +105,4 @@ Treat work as complete only when all are true:
 - Any public API change is reflected in docs.
 - Version bump intent is explicitly stated (patch/minor/major) and release-tag readiness is confirmed.
 - Residual risks and follow-ups are stated explicitly.
+- Plan/progress/follow-up tasks are written to the Notion task database.

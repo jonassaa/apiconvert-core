@@ -51,6 +51,20 @@ Produce 15-25 feature requests grouped under:
 - Cross-platform parity (.NET + JS)
 - Tooling (CLI, CI helpers, fixtures)
 
+After generating the backlog, persist items to Notion:
+
+- Data source from env var: `APICONVERT_NOTION_DATA_SOURCE_ID`
+- Optional database URL from env var: `APICONVERT_NOTION_DATABASE_URL`
+- If `APICONVERT_NOTION_DATA_SOURCE_ID` is missing, ask the user before writing tasks.
+- Create a task page for each prioritized/top request and any immediate quick-win item.
+- Use properties:
+  - `Name`: clear feature/request title
+  - `Status`: `Backlog`
+  - `Priority`: mapped from impact/confidence/effort judgment
+  - `Area`: best-fit domain (`Rules Engine`, `Schema Contract`, `Dotnet Runtime`, `Npm Runtime`, `Shared Test Cases`, `Docs`, `Release`)
+  - `Tags`: include `parity` when request requires .NET/JS alignment
+  - `Spec/PR Link`: include issue/spec URL when available
+
 ### 3. Prioritize Like a Customer
 
 Score each candidate with:
@@ -82,6 +96,8 @@ For each top item, include:
    - Determinism/regression assertions
 7. Success metrics.
 
+For each mini-RFC, add the RFC summary in the Notion page content/body so implementation can start directly from the task record.
+
 ### 5. Include One 1-Day Quick Win
 
 Always include one request that is small, high-impact, and fully spec'd for fast implementation.
@@ -95,6 +111,8 @@ Always return, in this order:
 3. Prioritized top 8-10 with Impact/Confidence/Effort/Adoption unlock
 4. Mini-RFCs for top items
 5. One 1-day quick win request
+
+In addition to the chat response, ensure corresponding Notion tasks are created/updated in the data source from `APICONVERT_NOTION_DATA_SOURCE_ID`.
 
 ## Request Quality Standard
 
