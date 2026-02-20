@@ -155,6 +155,19 @@ export interface ConversionResult {
   errors: string[];
   warnings: string[];
   trace?: ConversionTraceEntry[];
+  diagnostics: ConversionDiagnostic[];
+}
+
+export enum ConversionDiagnosticSeverity {
+  Warning = "warning",
+  Error = "error"
+}
+
+export interface ConversionDiagnostic {
+  code: string;
+  rulePath: string;
+  message: string;
+  severity: ConversionDiagnosticSeverity;
 }
 
 export interface CompiledConversionPlan {

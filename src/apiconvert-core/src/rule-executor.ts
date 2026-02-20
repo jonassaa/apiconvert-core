@@ -6,9 +6,11 @@ import {
 import { tryEvaluateConditionExpression } from "./condition-expression";
 import { resolvePathValue, resolveSourceValue } from "./source-resolver";
 import {
+  ConversionDiagnosticSeverity,
   OutputCollisionPolicy,
   type ArrayRule,
   type BranchRule,
+  type ConversionDiagnostic,
   type ConversionTraceEntry,
   type FieldRule,
   type RuleNode
@@ -20,7 +22,7 @@ export function executeRules(
   rules: RuleNode[],
   output: Record<string, unknown>,
   errors: string[],
-  warnings: string[],
+  diagnostics: ConversionDiagnostic[],
   writeOwners: Map<string, string>,
   collisionPolicy: OutputCollisionPolicy,
   transforms: Record<string, (value: unknown) => unknown>,
@@ -29,12 +31,25 @@ export function executeRules(
   depth: number
 ): void {
   if (depth > 64) {
-    errors.push(`${path}: rule recursion limit exceeded.`);
+    addError(diagnostics, "ACV-RUN-900", path, `${path}: rule recursion limit exceeded.`);
     return;
   }
 
   rules.forEach((rule, index) => {
-    executeRule(root, item, rule, output, errors, warnings, writeOwners, collisionPolicy, transforms, trace, `${path}[${index}]`, depth);
+    executeRule(
+      root,
+      item,
+      rule,
+      output,
+      errors,
+      diagnostics,
+      writeOwners,
+      collisionPolicy,
+      transforms,
+      trace,
+      `${path}[${index}]`,
+      depth
+    );
   });
 }
 
@@ -44,7 +59,7 @@ function executeRule(
   rule: RuleNode,
   output: Record<string, unknown>,
   errors: string[],
-  warnings: string[],
+  diagnostics: ConversionDiagnostic[],
   writeOwners: Map<string, string>,
   collisionPolicy: OutputCollisionPolicy,
   transforms: Record<string, (value: unknown) => unknown>,
@@ -53,22 +68,22 @@ function executeRule(
   depth: number
 ): void {
   if (rule.kind === "field") {
-    executeFieldRule(root, item, rule, output, errors, writeOwners, collisionPolicy, transforms, trace, path);
+    executeFieldRule(root, item, rule, output, errors, diagnostics, writeOwners, collisionPolicy, transforms, trace, path);
     return;
   }
 
   if (rule.kind === "array") {
-    executeArrayRule(root, item, rule, output, errors, warnings, writeOwners, collisionPolicy, transforms, trace, path, depth);
+    executeArrayRule(root, item, rule, output, errors, diagnostics, writeOwners, collisionPolicy, transforms, trace, path, depth);
     return;
   }
 
   if (rule.kind === "branch") {
-    executeBranchRule(root, item, rule, output, errors, warnings, writeOwners, collisionPolicy, transforms, trace, path, depth);
+    executeBranchRule(root, item, rule, output, errors, diagnostics, writeOwners, collisionPolicy, transforms, trace, path, depth);
     return;
   }
 
   const error = `${path}: unsupported kind '${(rule as { kind?: string }).kind ?? ""}'.`;
-  errors.push(error);
+  addError(diagnostics, "ACV-RUN-901", path, error);
   addTrace(trace, path, (rule as { kind?: string }).kind ?? "", "unsupported", { error });
 }
 
@@ -78,6 +93,7 @@ function executeFieldRule(
   rule: FieldRule,
   output: Record<string, unknown>,
   errors: string[],
+  diagnostics: ConversionDiagnostic[],
   writeOwners: Map<string, string>,
   collisionPolicy: OutputCollisionPolicy,
   transforms: Record<string, (value: unknown) => unknown>,
@@ -87,18 +103,18 @@ function executeFieldRule(
   const writePaths = getWritePaths(rule);
   if (writePaths.length === 0) {
     const error = `${path}: outputPaths is required.`;
-    errors.push(error);
+    addError(diagnostics, "ACV-RUN-100", path, error);
     addTrace(trace, path, "field", "invalid", { error });
     return;
   }
 
-  let value = resolveSourceValue(root, item, rule.source, errors, transforms, `${path}.source`);
+  let value = resolveSourceValue(root, item, rule.source, errors, diagnostics, transforms, `${path}.source`);
   if ((value == null || value === "") && rule.defaultValue) {
     value = parsePrimitive(rule.defaultValue);
   }
 
   writePaths.forEach((writePath) => {
-    writeValue(output, writeOwners, errors, collisionPolicy, path, writePath, value);
+    writeValue(output, writeOwners, errors, diagnostics, collisionPolicy, path, writePath, value);
   });
 
   addTrace(trace, path, "field", "applied", { sourceValue: value, outputPaths: writePaths });
@@ -110,7 +126,7 @@ function executeArrayRule(
   rule: ArrayRule,
   output: Record<string, unknown>,
   errors: string[],
-  warnings: string[],
+  diagnostics: ConversionDiagnostic[],
   writeOwners: Map<string, string>,
   collisionPolicy: OutputCollisionPolicy,
   transforms: Record<string, (value: unknown) => unknown>,
@@ -118,7 +134,7 @@ function executeArrayRule(
   path: string,
   depth: number
 ): void {
-  const value = resolveSourceValue(root, item, { type: "path", path: rule.inputPath ?? "" }, errors, transforms, path);
+  const value = resolveSourceValue(root, item, { type: "path", path: rule.inputPath ?? "" }, errors, diagnostics, transforms, path);
   let items = Array.isArray(value) ? value : null;
   if (!items && rule.coerceSingle && value != null) {
     items = [value];
@@ -127,11 +143,11 @@ function executeArrayRule(
   if (!items) {
     if (value == null) {
       const warning = `Array mapping skipped: inputPath "${rule.inputPath}" not found (${path}).`;
-      warnings.push(warning);
+      addWarning(diagnostics, "ACV-RUN-101", path, warning);
       addTrace(trace, path, "array", "skipped", { sourceValue: value, warning });
     } else {
       const error = `${path}: input path did not resolve to an array (${rule.inputPath}).`;
-      errors.push(error);
+      addError(diagnostics, "ACV-RUN-102", path, error);
       addTrace(trace, path, "array", "error", { sourceValue: value, error });
     }
     return;
@@ -140,7 +156,7 @@ function executeArrayRule(
   const writePaths = getWritePaths(rule);
   if (writePaths.length === 0) {
     const error = `${path}: outputPaths is required.`;
-    errors.push(error);
+    addError(diagnostics, "ACV-RUN-100", path, error);
     addTrace(trace, path, "array", "invalid", { sourceValue: value, error });
     return;
   }
@@ -154,7 +170,7 @@ function executeArrayRule(
       rule.itemRules ?? [],
       itemOutput,
       errors,
-      warnings,
+      diagnostics,
       new Map<string, string>(),
       collisionPolicy,
       transforms,
@@ -166,7 +182,7 @@ function executeArrayRule(
   });
 
   writePaths.forEach((writePath) => {
-    writeValue(output, writeOwners, errors, collisionPolicy, path, writePath, mappedItems);
+    writeValue(output, writeOwners, errors, diagnostics, collisionPolicy, path, writePath, mappedItems);
   });
 
   addTrace(trace, path, "array", "mapped", { sourceValue: value, outputPaths: writePaths });
@@ -178,7 +194,7 @@ function executeBranchRule(
   rule: BranchRule,
   output: Record<string, unknown>,
   errors: string[],
-  warnings: string[],
+  diagnostics: ConversionDiagnostic[],
   writeOwners: Map<string, string>,
   collisionPolicy: OutputCollisionPolicy,
   transforms: Record<string, (value: unknown) => unknown>,
@@ -186,10 +202,10 @@ function executeBranchRule(
   path: string,
   depth: number
 ): void {
-  const matched = evaluateRuleCondition(root, item, rule.expression, errors, path, "branch expression");
+  const matched = evaluateRuleCondition(root, item, rule.expression, errors, diagnostics, path, "branch expression");
   if (matched) {
     addTrace(trace, path, "branch", "then", { sourceValue: true, expression: rule.expression ?? undefined });
-    executeRules(root, item, rule.then ?? [], output, errors, warnings, writeOwners, collisionPolicy, transforms, trace, `${path}.then`, depth + 1);
+    executeRules(root, item, rule.then ?? [], output, errors, diagnostics, writeOwners, collisionPolicy, transforms, trace, `${path}.then`, depth + 1);
     return;
   }
 
@@ -202,6 +218,7 @@ function executeBranchRule(
       item,
       elseIf.expression,
       errors,
+      diagnostics,
       branchPath,
       "branch expression"
     );
@@ -217,7 +234,7 @@ function executeBranchRule(
       elseIf.then ?? [],
       output,
       errors,
-      warnings,
+      diagnostics,
       writeOwners,
       collisionPolicy,
       transforms,
@@ -230,7 +247,7 @@ function executeBranchRule(
 
   if ((rule.else ?? []).length > 0) {
     addTrace(trace, path, "branch", "else", { sourceValue: false, expression: rule.expression ?? undefined });
-    executeRules(root, item, rule.else ?? [], output, errors, warnings, writeOwners, collisionPolicy, transforms, trace, `${path}.else`, depth + 1);
+    executeRules(root, item, rule.else ?? [], output, errors, diagnostics, writeOwners, collisionPolicy, transforms, trace, `${path}.else`, depth + 1);
     return;
   }
 
@@ -241,6 +258,7 @@ function writeValue(
   output: Record<string, unknown>,
   writeOwners: Map<string, string>,
   errors: string[],
+  diagnostics: ConversionDiagnostic[],
   collisionPolicy: OutputCollisionPolicy,
   rulePath: string,
   outputPath: string,
@@ -260,7 +278,12 @@ function writeValue(
   }
 
   if (collisionPolicy === OutputCollisionPolicy.Error) {
-    errors.push(`${rulePath}: output collision at "${outputPath}" (already written by ${firstWriterPath}).`);
+    addError(
+      diagnostics,
+      "ACV-RUN-103",
+      rulePath,
+      `${rulePath}: output collision at "${outputPath}" (already written by ${firstWriterPath}).`
+    );
   }
 }
 
@@ -269,17 +292,23 @@ function evaluateRuleCondition(
   item: unknown,
   expression: string | null | undefined,
   errors: string[],
+  diagnostics: ConversionDiagnostic[],
   errorContext: string,
   label: string
 ): boolean {
   if (!expression || expression.trim().length === 0) {
-    errors.push(`${errorContext}: ${label} is required.`);
+    addError(diagnostics, "ACV-RUN-301", errorContext, `${errorContext}: ${label} is required.`);
     return false;
   }
 
   const evaluation = tryEvaluateConditionExpression(expression, (path) => resolvePathValue(root, item, path));
   if (!evaluation.ok) {
-    errors.push(`${errorContext}: invalid ${label} "${expression}": ${evaluation.error}`);
+    addError(
+      diagnostics,
+      "ACV-RUN-302",
+      errorContext,
+      `${errorContext}: invalid ${label} "${expression}": ${evaluation.error}`
+    );
     return false;
   }
 
@@ -313,4 +342,22 @@ function addTrace(
     warning: details.warning,
     error: details.error
   });
+}
+
+function addError(
+  diagnostics: ConversionDiagnostic[],
+  code: string,
+  rulePath: string,
+  message: string
+): void {
+  diagnostics.push({ code, rulePath, message, severity: ConversionDiagnosticSeverity.Error });
+}
+
+function addWarning(
+  diagnostics: ConversionDiagnostic[],
+  code: string,
+  rulePath: string,
+  message: string
+): void {
+  diagnostics.push({ code, rulePath, message, severity: ConversionDiagnosticSeverity.Warning });
 }

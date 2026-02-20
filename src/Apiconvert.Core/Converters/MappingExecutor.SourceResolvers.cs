@@ -11,13 +11,14 @@ internal static partial class MappingExecutor
         object? item,
         ValueSource source,
         List<string> errors,
+        List<ConversionDiagnostic> diagnostics,
         IReadOnlyDictionary<string, Func<object?, object?>> transformRegistry,
         string errorContext,
         int depth = 0)
     {
         if (depth > MaxConditionBranchDepth)
         {
-            errors.Add($"{errorContext}: condition/source recursion limit exceeded.");
+            AddError(diagnostics, "ACV-RUN-800", errorContext, $"{errorContext}: condition/source recursion limit exceeded.");
             return null;
         }
 
@@ -93,11 +94,15 @@ internal static partial class MappingExecutor
 
                 if (!string.IsNullOrWhiteSpace(source.CustomTransform))
                 {
-                    if (!transformRegistry.TryGetValue(source.CustomTransform, out var transform))
-                    {
-                        errors.Add($"{errorContext}: custom transform '{source.CustomTransform}' is not registered.");
-                        return null;
-                    }
+                        if (!transformRegistry.TryGetValue(source.CustomTransform, out var transform))
+                        {
+                            AddError(
+                                diagnostics,
+                                "ACV-RUN-201",
+                                errorContext,
+                                $"{errorContext}: custom transform '{source.CustomTransform}' is not registered.");
+                            return null;
+                        }
 
                     try
                     {
@@ -105,7 +110,11 @@ internal static partial class MappingExecutor
                     }
                     catch (Exception ex)
                     {
-                        errors.Add($"{errorContext}: custom transform '{source.CustomTransform}' failed: {ex.Message}");
+                        AddError(
+                            diagnostics,
+                            "ACV-RUN-202",
+                            errorContext,
+                            $"{errorContext}: custom transform '{source.CustomTransform}' failed: {ex.Message}");
                         return null;
                     }
                 }
@@ -114,9 +123,10 @@ internal static partial class MappingExecutor
             }
             case "condition":
             {
-                return ResolveConditionSourceValue(root, item, source, errors, transformRegistry, errorContext, depth);
+                return ResolveConditionSourceValue(root, item, source, errors, diagnostics, transformRegistry, errorContext, depth);
             }
             default:
+                AddError(diagnostics, "ACV-RUN-203", errorContext, $"{errorContext}: unsupported source type '{source.Type}'.");
                 return null;
         }
     }
@@ -126,11 +136,12 @@ internal static partial class MappingExecutor
         object? item,
         ValueSource source,
         List<string> errors,
+        List<ConversionDiagnostic> diagnostics,
         IReadOnlyDictionary<string, Func<object?, object?>> transformRegistry,
         string errorContext,
         int depth)
     {
-        var matched = EvaluateCondition(root, item, source.Expression, errors, errorContext, "condition expression");
+        var matched = EvaluateCondition(root, item, source.Expression, errors, diagnostics, errorContext, "condition expression");
 
         if (source.ConditionOutput == ConditionOutputMode.Match)
         {
@@ -145,6 +156,7 @@ internal static partial class MappingExecutor
                 source.TrueSource,
                 source.TrueValue,
                 errors,
+                diagnostics,
                 transformRegistry,
                 $"{errorContext} true branch",
                 depth);
@@ -158,6 +170,7 @@ internal static partial class MappingExecutor
                 item,
                 branch.Expression,
                 errors,
+                diagnostics,
                 $"{errorContext} elseIf[{index}]",
                 "elseIf expression");
             if (!branchMatched)
@@ -171,6 +184,7 @@ internal static partial class MappingExecutor
                 branch.Source,
                 branch.Value,
                 errors,
+                diagnostics,
                 transformRegistry,
                 $"{errorContext} elseIf[{index}] branch",
                 depth);
@@ -182,6 +196,7 @@ internal static partial class MappingExecutor
             source.FalseSource,
             source.FalseValue,
             errors,
+            diagnostics,
             transformRegistry,
             $"{errorContext} false branch",
             depth);
@@ -192,19 +207,20 @@ internal static partial class MappingExecutor
         object? item,
         string? expression,
         List<string> errors,
+        List<ConversionDiagnostic> diagnostics,
         string errorContext,
         string label)
     {
         if (string.IsNullOrWhiteSpace(expression))
         {
-            errors.Add($"{errorContext}: {label} is required.");
+            AddError(diagnostics, "ACV-RUN-301", errorContext, $"{errorContext}: {label} is required.");
             return false;
         }
 
         var evaluation = TryEvaluateConditionExpression(root, item, expression, out var matched, out var error);
         if (!evaluation)
         {
-            errors.Add($"{errorContext}: invalid {label} \"{expression}\": {error}");
+            AddError(diagnostics, "ACV-RUN-302", errorContext, $"{errorContext}: invalid {label} \"{expression}\": {error}");
             return false;
         }
 
@@ -217,13 +233,14 @@ internal static partial class MappingExecutor
         ValueSource? branchSource,
         string? branchValue,
         List<string> errors,
+        List<ConversionDiagnostic> diagnostics,
         IReadOnlyDictionary<string, Func<object?, object?>> transformRegistry,
         string errorContext,
         int depth)
     {
         if (branchSource != null)
         {
-            return ResolveSourceValue(root, item, branchSource, errors, transformRegistry, errorContext, depth + 1);
+            return ResolveSourceValue(root, item, branchSource, errors, diagnostics, transformRegistry, errorContext, depth + 1);
         }
 
         return ParsePrimitive(branchValue ?? string.Empty);

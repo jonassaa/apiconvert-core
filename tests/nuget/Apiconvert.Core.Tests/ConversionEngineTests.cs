@@ -185,6 +185,92 @@ public sealed class ConversionEngineTests
     }
 
     [Fact]
+    public void ApplyConversion_RuntimeDiagnostics_IncludeMissingArrayPathBranchFailureCollisionAndTransformFailure()
+    {
+        var missingArrayPath = ConversionEngine.ApplyConversion(
+            new Dictionary<string, object?> { ["name"] = "Ada" },
+            new ConversionRules
+            {
+                Rules =
+                [
+                    new RuleNode
+                    {
+                        Kind = "array",
+                        InputPath = "items",
+                        OutputPaths = ["items"],
+                        ItemRules = []
+                    }
+                ]
+            });
+
+        var missingArrayDiagnostic = Assert.Single(missingArrayPath.Diagnostics, d => d.Code == "ACV-RUN-101");
+        Assert.Equal("rules[0]", missingArrayDiagnostic.RulePath);
+        Assert.Contains(missingArrayDiagnostic.Message, missingArrayPath.Warnings);
+
+        var branchFailure = ConversionEngine.ApplyConversion(
+            new Dictionary<string, object?> { ["name"] = "Ada" },
+            new ConversionRules
+            {
+                Rules =
+                [
+                    new RuleNode
+                    {
+                        Kind = "branch",
+                        Expression = "path(name) is 'Ada'",
+                        Then = []
+                    }
+                ]
+            });
+
+        var branchDiagnostic = Assert.Single(branchFailure.Diagnostics, d => d.Code == "ACV-RUN-302");
+        Assert.Equal("rules[0]", branchDiagnostic.RulePath);
+        Assert.Contains(branchDiagnostic.Message, branchFailure.Errors);
+
+        var collision = ConversionEngine.ApplyConversion(
+            new Dictionary<string, object?> { ["name"] = "Ada" },
+            new ConversionRules
+            {
+                Rules =
+                [
+                    new RuleNode
+                    {
+                        Kind = "field",
+                        OutputPaths = ["user.name"],
+                        Source = new ValueSource { Type = "path", Path = "name" }
+                    },
+                    new RuleNode
+                    {
+                        Kind = "field",
+                        OutputPaths = ["user.name"],
+                        Source = new ValueSource { Type = "constant", Value = "override" }
+                    }
+                ]
+            },
+            new ConversionOptions { CollisionPolicy = OutputCollisionPolicy.Error });
+
+        var collisionDiagnostic = Assert.Single(collision.Diagnostics, d => d.Code == "ACV-RUN-103");
+        Assert.Contains(collisionDiagnostic.Message, collision.Errors);
+
+        var transformFailure = ConversionEngine.ApplyConversion(
+            new Dictionary<string, object?> { ["name"] = "Ada" },
+            new ConversionRules
+            {
+                Rules =
+                [
+                    new RuleNode
+                    {
+                        Kind = "field",
+                        OutputPaths = ["user.custom"],
+                        Source = new ValueSource { Type = "transform", Path = "name", CustomTransform = "reverse" }
+                    }
+                ]
+            });
+
+        var transformDiagnostic = Assert.Single(transformFailure.Diagnostics, d => d.Code == "ACV-RUN-201");
+        Assert.Contains(transformDiagnostic.Message, transformFailure.Errors);
+    }
+
+    [Fact]
     public void ApplyConversion_ExecutesBranchThenElseIfElse()
     {
         var input = new Dictionary<string, object?>

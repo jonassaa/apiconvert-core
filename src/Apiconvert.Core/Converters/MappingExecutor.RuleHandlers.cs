@@ -10,6 +10,7 @@ internal static partial class MappingExecutor
         RuleNode rule,
         Dictionary<string, object?> output,
         List<string> errors,
+        List<ConversionDiagnostic> diagnostics,
         Dictionary<string, string> writeOwners,
         OutputCollisionPolicy collisionPolicy,
         IReadOnlyDictionary<string, Func<object?, object?>> transformRegistry,
@@ -20,13 +21,13 @@ internal static partial class MappingExecutor
         if (writePaths.Count == 0)
         {
             var error = $"{path}: outputPaths is required.";
-            errors.Add(error);
+            AddError(diagnostics, "ACV-RUN-100", path, error);
             AddTrace(trace, path, "field", "invalid", error: error);
             return;
         }
 
         var source = rule.Source ?? new ValueSource();
-        var value = ResolveSourceValue(root, item, source, errors, transformRegistry, $"{path}.source");
+        var value = ResolveSourceValue(root, item, source, errors, diagnostics, transformRegistry, $"{path}.source");
         if ((value == null || (value is string str && string.IsNullOrEmpty(str))) && !string.IsNullOrEmpty(rule.DefaultValue))
         {
             value = ParsePrimitive(rule.DefaultValue);
@@ -38,6 +39,7 @@ internal static partial class MappingExecutor
                 output,
                 writeOwners,
                 errors,
+                diagnostics,
                 collisionPolicy,
                 path,
                 writePath,
@@ -54,6 +56,7 @@ internal static partial class MappingExecutor
         Dictionary<string, object?> output,
         List<string> errors,
         List<string> warnings,
+        List<ConversionDiagnostic> diagnostics,
         Dictionary<string, string> writeOwners,
         OutputCollisionPolicy collisionPolicy,
         IReadOnlyDictionary<string, Func<object?, object?>> transformRegistry,
@@ -73,13 +76,13 @@ internal static partial class MappingExecutor
             if (value == null)
             {
                 var warning = $"Array mapping skipped: inputPath \"{rule.InputPath}\" not found ({path}).";
-                warnings.Add(warning);
+                AddWarning(diagnostics, "ACV-RUN-101", path, warning);
                 AddTrace(trace, path, "array", "skipped", sourceValue: value, warning: warning);
             }
             else
             {
                 var error = $"{path}: input path did not resolve to an array ({rule.InputPath}).";
-                errors.Add(error);
+                AddError(diagnostics, "ACV-RUN-102", path, error);
                 AddTrace(trace, path, "array", "error", sourceValue: value, error: error);
             }
             return;
@@ -89,7 +92,7 @@ internal static partial class MappingExecutor
         if (arrayWritePaths.Count == 0)
         {
             var error = $"{path}: outputPaths is required.";
-            errors.Add(error);
+            AddError(diagnostics, "ACV-RUN-100", path, error);
             AddTrace(trace, path, "array", "invalid", sourceValue: value, error: error);
             return;
         }
@@ -105,6 +108,7 @@ internal static partial class MappingExecutor
                 itemOutput,
                 errors,
                 warnings,
+                diagnostics,
                 new Dictionary<string, string>(StringComparer.Ordinal),
                 collisionPolicy,
                 transformRegistry,
@@ -120,6 +124,7 @@ internal static partial class MappingExecutor
                 output,
                 writeOwners,
                 errors,
+                diagnostics,
                 collisionPolicy,
                 path,
                 outputPath,
@@ -136,6 +141,7 @@ internal static partial class MappingExecutor
         Dictionary<string, object?> output,
         List<string> errors,
         List<string> warnings,
+        List<ConversionDiagnostic> diagnostics,
         Dictionary<string, string> writeOwners,
         OutputCollisionPolicy collisionPolicy,
         IReadOnlyDictionary<string, Func<object?, object?>> transformRegistry,
@@ -143,7 +149,7 @@ internal static partial class MappingExecutor
         string path,
         int depth)
     {
-        var matched = EvaluateCondition(root, item, rule.Expression, errors, path, "branch expression");
+        var matched = EvaluateCondition(root, item, rule.Expression, errors, diagnostics, path, "branch expression");
         if (matched)
         {
             AddTrace(trace, path, "branch", "then", sourceValue: true, expression: rule.Expression);
@@ -154,6 +160,7 @@ internal static partial class MappingExecutor
                 output,
                 errors,
                 warnings,
+                diagnostics,
                 writeOwners,
                 collisionPolicy,
                 transformRegistry,
@@ -167,7 +174,7 @@ internal static partial class MappingExecutor
         {
             var elseIf = rule.ElseIf[index];
             var branchPath = $"{path}.elseIf[{index}]";
-            var elseIfMatched = EvaluateCondition(root, item, elseIf.Expression, errors, branchPath, "branch expression");
+            var elseIfMatched = EvaluateCondition(root, item, elseIf.Expression, errors, diagnostics, branchPath, "branch expression");
             if (!elseIfMatched)
             {
                 continue;
@@ -181,6 +188,7 @@ internal static partial class MappingExecutor
                 output,
                 errors,
                 warnings,
+                diagnostics,
                 writeOwners,
                 collisionPolicy,
                 transformRegistry,
@@ -200,6 +208,7 @@ internal static partial class MappingExecutor
                 output,
                 errors,
                 warnings,
+                diagnostics,
                 writeOwners,
                 collisionPolicy,
                 transformRegistry,
@@ -216,6 +225,7 @@ internal static partial class MappingExecutor
         Dictionary<string, object?> output,
         Dictionary<string, string> writeOwners,
         List<string> errors,
+        List<ConversionDiagnostic> diagnostics,
         OutputCollisionPolicy collisionPolicy,
         string rulePath,
         string outputPath,
@@ -237,7 +247,11 @@ internal static partial class MappingExecutor
             case OutputCollisionPolicy.FirstWriteWins:
                 return;
             case OutputCollisionPolicy.Error:
-                errors.Add($"{rulePath}: output collision at \"{outputPath}\" (already written by {firstWriterPath}).");
+                AddError(
+                    diagnostics,
+                    "ACV-RUN-103",
+                    rulePath,
+                    $"{rulePath}: output collision at \"{outputPath}\" (already written by {firstWriterPath}).");
                 return;
             default:
                 writeOwners[outputPath] = rulePath;

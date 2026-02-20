@@ -1,6 +1,7 @@
 import { normalizeConversionRules } from "./rules-normalizer";
 import { executeRules } from "./rule-executor";
 import {
+  ConversionDiagnosticSeverity,
   OutputCollisionPolicy,
   type ApplyConversionOptions,
   type ConversionResult,
@@ -22,17 +23,24 @@ export function applyConversionWithRules(
   options: ApplyConversionOptions = {}
 ): ConversionResult {
   const nodes = rules.rules ?? [];
-  const errors = [...(rules.validationErrors ?? [])];
+  const diagnostics = (rules.validationErrors ?? []).map((message) => ({
+    code: "ACV-RUN-000",
+    rulePath: "rules",
+    message,
+    severity: ConversionDiagnosticSeverity.Error
+  }));
+  const errors = diagnostics
+    .filter((entry) => entry.severity === ConversionDiagnosticSeverity.Error)
+    .map((entry) => entry.message);
   const collisionPolicy = options.collisionPolicy ?? OutputCollisionPolicy.LastWriteWins;
   const transforms = options.transforms ?? {};
   const trace = options.explain ? [] : null;
 
   if (nodes.length === 0) {
-    return { output: input ?? {}, errors, warnings: [], trace: trace ?? [] };
+    return { output: input ?? {}, errors, warnings: [], trace: trace ?? [], diagnostics };
   }
 
   const output: Record<string, unknown> = {};
-  const warnings: string[] = [];
 
   executeRules(
     input,
@@ -40,7 +48,7 @@ export function applyConversionWithRules(
     nodes,
     output,
     errors,
-    warnings,
+    diagnostics,
     new Map<string, string>(),
     collisionPolicy,
     transforms,
@@ -49,7 +57,17 @@ export function applyConversionWithRules(
     0
   );
 
-  return { output, errors, warnings, trace: trace ?? [] };
+  return {
+    output,
+    errors: diagnostics
+      .filter((entry) => entry.severity === ConversionDiagnosticSeverity.Error)
+      .map((entry) => entry.message),
+    warnings: diagnostics
+      .filter((entry) => entry.severity === ConversionDiagnosticSeverity.Warning)
+      .map((entry) => entry.message),
+    trace: trace ?? [],
+    diagnostics
+  };
 }
 
 export async function* streamJsonArrayConversion(

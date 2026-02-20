@@ -15,8 +15,13 @@ internal static partial class MappingExecutor
 
     internal static ConversionResult ApplyConversion(object? input, ConversionRules rules, ConversionOptions? options = null)
     {
+        var diagnostics = new List<ConversionDiagnostic>();
+        foreach (var validationError in rules.ValidationErrors)
+        {
+            AddError(diagnostics, "ACV-RUN-000", "rules", validationError);
+        }
+
         var errors = new List<string>();
-        errors.AddRange(rules.ValidationErrors);
         var collisionPolicy = options?.CollisionPolicy ?? OutputCollisionPolicy.LastWriteWins;
         var transformRegistry = options?.TransformRegistry ?? new Dictionary<string, Func<object?, object?>>(StringComparer.Ordinal);
         var trace = options?.Explain == true ? new List<ConversionTraceEntry>() : null;
@@ -26,9 +31,16 @@ internal static partial class MappingExecutor
             return new ConversionResult
             {
                 Output = input ?? new Dictionary<string, object?>(),
-                Errors = errors,
-                Warnings = new List<string>(),
-                Trace = trace ?? new List<ConversionTraceEntry>()
+                Errors = diagnostics
+                    .Where(diagnostic => diagnostic.Severity == ConversionDiagnosticSeverity.Error)
+                    .Select(diagnostic => diagnostic.Message)
+                    .ToList(),
+                Warnings = diagnostics
+                    .Where(diagnostic => diagnostic.Severity == ConversionDiagnosticSeverity.Warning)
+                    .Select(diagnostic => diagnostic.Message)
+                    .ToList(),
+                Trace = trace ?? new List<ConversionTraceEntry>(),
+                Diagnostics = diagnostics
             };
         }
 
@@ -41,6 +53,7 @@ internal static partial class MappingExecutor
             output,
             errors,
             warnings,
+            diagnostics,
             new Dictionary<string, string>(StringComparer.Ordinal),
             collisionPolicy,
             transformRegistry,
@@ -51,9 +64,16 @@ internal static partial class MappingExecutor
         return new ConversionResult
         {
             Output = output,
-            Errors = errors,
-            Warnings = warnings,
-            Trace = trace ?? new List<ConversionTraceEntry>()
+            Errors = diagnostics
+                .Where(diagnostic => diagnostic.Severity == ConversionDiagnosticSeverity.Error)
+                .Select(diagnostic => diagnostic.Message)
+                .ToList(),
+            Warnings = diagnostics
+                .Where(diagnostic => diagnostic.Severity == ConversionDiagnosticSeverity.Warning)
+                .Select(diagnostic => diagnostic.Message)
+                .ToList(),
+            Trace = trace ?? new List<ConversionTraceEntry>(),
+            Diagnostics = diagnostics
         };
     }
 
@@ -64,6 +84,7 @@ internal static partial class MappingExecutor
         Dictionary<string, object?> output,
         List<string> errors,
         List<string> warnings,
+        List<ConversionDiagnostic> diagnostics,
         Dictionary<string, string> writeOwners,
         OutputCollisionPolicy collisionPolicy,
         IReadOnlyDictionary<string, Func<object?, object?>> transformRegistry,
@@ -73,7 +94,7 @@ internal static partial class MappingExecutor
     {
         if (depth > MaxRuleNestingDepth)
         {
-            errors.Add($"{path}: rule recursion limit exceeded.");
+            AddError(diagnostics, "ACV-RUN-900", path, $"{path}: rule recursion limit exceeded.");
             return;
         }
 
@@ -87,6 +108,7 @@ internal static partial class MappingExecutor
                 output,
                 errors,
                 warnings,
+                diagnostics,
                 writeOwners,
                 collisionPolicy,
                 transformRegistry,
@@ -103,6 +125,7 @@ internal static partial class MappingExecutor
         Dictionary<string, object?> output,
         List<string> errors,
         List<string> warnings,
+        List<ConversionDiagnostic> diagnostics,
         Dictionary<string, string> writeOwners,
         OutputCollisionPolicy collisionPolicy,
         IReadOnlyDictionary<string, Func<object?, object?>> transformRegistry,
@@ -113,18 +136,41 @@ internal static partial class MappingExecutor
         switch (rule.Kind)
         {
             case "field":
-                ExecuteFieldRule(root, item, rule, output, errors, writeOwners, collisionPolicy, transformRegistry, trace, path);
+                ExecuteFieldRule(root, item, rule, output, errors, diagnostics, writeOwners, collisionPolicy, transformRegistry, trace, path);
                 return;
             case "array":
-                ExecuteArrayRule(root, item, rule, output, errors, warnings, writeOwners, collisionPolicy, transformRegistry, trace, path, depth);
+                ExecuteArrayRule(root, item, rule, output, errors, warnings, diagnostics, writeOwners, collisionPolicy, transformRegistry, trace, path, depth);
                 return;
             case "branch":
-                ExecuteBranchRule(root, item, rule, output, errors, warnings, writeOwners, collisionPolicy, transformRegistry, trace, path, depth);
+                ExecuteBranchRule(root, item, rule, output, errors, warnings, diagnostics, writeOwners, collisionPolicy, transformRegistry, trace, path, depth);
                 return;
             default:
-                errors.Add($"{path}: unsupported kind '{rule.Kind}'.");
-                AddTrace(trace, path, rule.Kind, "unsupported", error: $"{path}: unsupported kind '{rule.Kind}'.");
+                var error = $"{path}: unsupported kind '{rule.Kind}'.";
+                AddError(diagnostics, "ACV-RUN-901", path, error);
+                AddTrace(trace, path, rule.Kind, "unsupported", error: error);
                 return;
         }
+    }
+
+    private static void AddError(List<ConversionDiagnostic> diagnostics, string code, string rulePath, string message)
+    {
+        diagnostics.Add(new ConversionDiagnostic
+        {
+            Code = code,
+            RulePath = rulePath,
+            Message = message,
+            Severity = ConversionDiagnosticSeverity.Error
+        });
+    }
+
+    private static void AddWarning(List<ConversionDiagnostic> diagnostics, string code, string rulePath, string message)
+    {
+        diagnostics.Add(new ConversionDiagnostic
+        {
+            Code = code,
+            RulePath = rulePath,
+            Message = message,
+            Severity = ConversionDiagnosticSeverity.Warning
+        });
     }
 }

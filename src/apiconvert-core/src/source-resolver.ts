@@ -2,8 +2,10 @@ import { getValueByPath, parsePrimitive, toNumber } from "./core-utils";
 import { tryEvaluateConditionExpression } from "./condition-expression";
 import {
   ConditionOutputMode,
+  ConversionDiagnosticSeverity,
   MergeMode,
   TransformType,
+  type ConversionDiagnostic,
   type ValueSource
 } from "./types";
 
@@ -12,12 +14,13 @@ export function resolveSourceValue(
   item: unknown,
   source: ValueSource,
   errors: string[],
+  diagnostics: ConversionDiagnostic[],
   transforms: Record<string, (value: unknown) => unknown>,
   errorContext: string,
   depth = 0
 ): unknown {
   if (depth > 32) {
-    errors.push(`${errorContext}: condition/source recursion limit exceeded.`);
+    addError(diagnostics, "ACV-RUN-800", errorContext, `${errorContext}: condition/source recursion limit exceeded.`);
     return null;
   }
 
@@ -80,14 +83,22 @@ export function resolveSourceValue(
       if (source.customTransform) {
         const transform = transforms[source.customTransform];
         if (!transform) {
-          errors.push(`${errorContext}: custom transform '${source.customTransform}' is not registered.`);
+          addError(
+            diagnostics,
+            "ACV-RUN-201",
+            errorContext,
+            `${errorContext}: custom transform '${source.customTransform}' is not registered.`
+          );
           return null;
         }
 
         try {
           return transform(baseValue);
         } catch (error) {
-          errors.push(
+          addError(
+            diagnostics,
+            "ACV-RUN-202",
+            errorContext,
             `${errorContext}: custom transform '${source.customTransform}' failed: ${error instanceof Error ? error.message : String(error)}.`
           );
           return null;
@@ -97,9 +108,14 @@ export function resolveSourceValue(
       return resolveTransform(baseValue, TransformType.ToLowerCase);
     }
     case "condition":
-      return resolveConditionSourceValue(root, item, source, errors, transforms, errorContext, depth);
+      return resolveConditionSourceValue(root, item, source, errors, diagnostics, transforms, errorContext, depth);
     default:
-      errors.push(`${errorContext}: unsupported source type '${String((source as { type?: unknown }).type ?? "")}'.`);
+      addError(
+        diagnostics,
+        "ACV-RUN-203",
+        errorContext,
+        `${errorContext}: unsupported source type '${String((source as { type?: unknown }).type ?? "")}'.`
+      );
       return null;
   }
 }
@@ -109,6 +125,7 @@ function resolveConditionSourceValue(
   item: unknown,
   source: ValueSource,
   errors: string[],
+  diagnostics: ConversionDiagnostic[],
   transforms: Record<string, (value: unknown) => unknown>,
   errorContext: string,
   depth: number
@@ -118,6 +135,7 @@ function resolveConditionSourceValue(
     item,
     source.expression,
     errors,
+    diagnostics,
     errorContext,
     "condition expression"
   );
@@ -133,6 +151,7 @@ function resolveConditionSourceValue(
       source.trueSource ?? null,
       source.trueValue ?? null,
       errors,
+      diagnostics,
       transforms,
       `${errorContext} true branch`,
       depth
@@ -147,6 +166,7 @@ function resolveConditionSourceValue(
       item,
       branch.expression,
       errors,
+      diagnostics,
       `${errorContext} elseIf[${index}]`,
       "elseIf expression"
     );
@@ -160,6 +180,7 @@ function resolveConditionSourceValue(
       branch.source ?? null,
       branch.value ?? null,
       errors,
+      diagnostics,
       transforms,
       `${errorContext} elseIf[${index}] branch`,
       depth
@@ -172,6 +193,7 @@ function resolveConditionSourceValue(
     source.falseSource ?? null,
     source.falseValue ?? null,
     errors,
+    diagnostics,
     transforms,
     `${errorContext} false branch`,
     depth
@@ -183,17 +205,23 @@ function evaluateCondition(
   item: unknown,
   expression: string | null | undefined,
   errors: string[],
+  diagnostics: ConversionDiagnostic[],
   errorContext: string,
   label: string
 ): boolean {
   if (!expression || expression.trim().length === 0) {
-    errors.push(`${errorContext}: ${label} is required.`);
+    addError(diagnostics, "ACV-RUN-301", errorContext, `${errorContext}: ${label} is required.`);
     return false;
   }
 
   const evaluation = tryEvaluateConditionExpression(expression, (path) => resolvePathValue(root, item, path));
   if (!evaluation.ok) {
-    errors.push(`${errorContext}: invalid ${label} "${expression}": ${evaluation.error}`);
+    addError(
+      diagnostics,
+      "ACV-RUN-302",
+      errorContext,
+      `${errorContext}: invalid ${label} "${expression}": ${evaluation.error}`
+    );
     return false;
   }
 
@@ -206,12 +234,13 @@ function resolveConditionBranchValue(
   source: ValueSource | null,
   value: string | null,
   errors: string[],
+  diagnostics: ConversionDiagnostic[],
   transforms: Record<string, (value: unknown) => unknown>,
   errorContext: string,
   depth: number
 ): unknown {
   if (source) {
-    return resolveSourceValue(root, item, source, errors, transforms, errorContext, depth + 1);
+    return resolveSourceValue(root, item, source, errors, diagnostics, transforms, errorContext, depth + 1);
   }
 
   return parsePrimitive(value ?? "");
@@ -265,4 +294,13 @@ function resolveTransform(value: unknown, transform: TransformType | string): un
     default:
       return value;
   }
+}
+
+function addError(
+  diagnostics: ConversionDiagnostic[],
+  code: string,
+  rulePath: string,
+  message: string
+): void {
+  diagnostics.push({ code, rulePath, message, severity: ConversionDiagnosticSeverity.Error });
 }

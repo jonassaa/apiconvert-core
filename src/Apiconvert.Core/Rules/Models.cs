@@ -420,6 +420,52 @@ public sealed record ConversionResult
     /// Optional per-rule trace entries describing execution decisions.
     /// </summary>
     public List<ConversionTraceEntry> Trace { get; init; } = new();
+
+    /// <summary>
+    /// Structured runtime diagnostics emitted during conversion.
+    /// </summary>
+    public List<ConversionDiagnostic> Diagnostics { get; init; } = new();
+}
+
+/// <summary>
+/// Runtime conversion diagnostic severity.
+/// </summary>
+public enum ConversionDiagnosticSeverity
+{
+    /// <summary>
+    /// Non-fatal runtime warning.
+    /// </summary>
+    Warning,
+    /// <summary>
+    /// Runtime conversion error.
+    /// </summary>
+    Error
+}
+
+/// <summary>
+/// Structured runtime conversion diagnostic entry.
+/// </summary>
+public sealed record ConversionDiagnostic
+{
+    /// <summary>
+    /// Stable machine-readable diagnostic code.
+    /// </summary>
+    public string Code { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Rule path where the diagnostic occurred.
+    /// </summary>
+    public string RulePath { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Human-readable diagnostic message.
+    /// </summary>
+    public string Message { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Runtime severity.
+    /// </summary>
+    public ConversionDiagnosticSeverity Severity { get; init; }
 }
 
 /// <summary>
