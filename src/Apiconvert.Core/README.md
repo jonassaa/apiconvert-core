@@ -2,6 +2,25 @@
 
 `Apiconvert.Core` is the .NET conversion engine for JSON, XML, and query payloads.
 
+## Getting Started
+
+```csharp
+using Apiconvert.Core.Converters;
+using Apiconvert.Core.Rules;
+
+var rules = ConversionEngine.NormalizeConversionRulesStrict(File.ReadAllText("rules.json"));
+var plan = ConversionEngine.CompileConversionPlan(rules);
+
+var (input, parseError) = ConversionEngine.ParsePayload("""{"name":"Ada"}""", rules.InputFormat);
+if (parseError is not null) throw new FormatException(parseError);
+
+var result = plan.Apply(input);
+if (result.Errors.Count > 0) throw new InvalidOperationException(string.Join("; ", result.Errors));
+
+var output = ConversionEngine.FormatPayload(result.Output, rules.OutputFormat, pretty: true);
+Console.WriteLine(output);
+```
+
 ## Design Constraints
 
 The engine is intentionally rule-driven and deterministic:
@@ -41,6 +60,7 @@ Additional rule/source options:
 - field: optional `defaultValue`
 - array: optional `coerceSingle`
 - condition source: optional `trueSource` / `falseSource`, `trueValue` / `falseValue`, `elseIf`, and `conditionOutput` (`branch` or `match`)
+- output root path `$` is not supported for `outputPaths`
 
 ## Example
 
@@ -104,3 +124,15 @@ Examples:
 `ConversionEngine` also exposes payload helpers:
 - `ParsePayload(string, DataFormat)` and stream/`JsonNode` overloads
 - `FormatPayload(object?, DataFormat, bool)` and stream overload
+
+## Strict vs Lenient Rules Handling
+
+- `NormalizeConversionRules(...)` is lenient and returns validation errors in `ConversionRules.ValidationErrors`.
+- `NormalizeConversionRulesStrict(...)` throws when rules input is invalid.
+- `CompileConversionPlan(...)` reuses normalized rules for repeated conversions.
+- `CompileConversionPlanStrict(...)` combines strict validation with plan compilation.
+
+## Thread Safety
+
+- Conversion execution is deterministic and side-effect free.
+- Treat rule objects as immutable after configuration. Public rule lists are mutable; avoid mutating shared rules while converting on multiple threads.

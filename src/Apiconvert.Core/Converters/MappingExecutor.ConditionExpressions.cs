@@ -67,15 +67,71 @@ internal static partial class MappingExecutor
 
         return binary.Operator switch
         {
-            "==" => Equals(left, right),
-            "!=" => !Equals(left, right),
+            "==" => ValuesEqual(left, right),
+            "!=" => !ValuesEqual(left, right),
             ">" => ToNumber(left) > ToNumber(right),
             ">=" => ToNumber(left) >= ToNumber(right),
             "<" => ToNumber(left) < ToNumber(right),
             "<=" => ToNumber(left) <= ToNumber(right),
-            "in" => right is List<object?> list && list.Any(entry => Equals(left, entry)),
+            "in" => right is List<object?> list && list.Any(entry => ValuesEqual(left, entry)),
             _ => throw new InvalidOperationException($"Unsupported binary operator '{binary.Operator}'.")
         };
+    }
+
+    private static bool ValuesEqual(object? left, object? right)
+    {
+        if (TryGetNumericValue(left, out var leftNumber) && TryGetNumericValue(right, out var rightNumber))
+        {
+            return leftNumber == rightNumber;
+        }
+
+        return Equals(left, right);
+    }
+
+    private static bool TryGetNumericValue(object? value, out double number)
+    {
+        switch (value)
+        {
+            case byte b:
+                number = b;
+                return true;
+            case sbyte sb:
+                number = sb;
+                return true;
+            case short s:
+                number = s;
+                return true;
+            case ushort us:
+                number = us;
+                return true;
+            case int i:
+                number = i;
+                return true;
+            case uint ui:
+                number = ui;
+                return true;
+            case long l:
+                number = l;
+                return true;
+            case ulong ul:
+                number = ul;
+                return true;
+            case float f:
+                number = f;
+                return true;
+            case double d:
+                number = d;
+                return true;
+            case decimal dec:
+                number = (double)dec;
+                return true;
+            case string text when double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed):
+                number = parsed;
+                return true;
+            default:
+                number = 0;
+                return false;
+        }
     }
 
     private static bool ToBoolean(object? value)

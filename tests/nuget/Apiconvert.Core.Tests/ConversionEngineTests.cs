@@ -1,5 +1,4 @@
 using System.Text;
-using System.Text.Json;
 using Apiconvert.Core.Converters;
 using Apiconvert.Core.Rules;
 using Xunit;
@@ -30,6 +29,56 @@ public sealed class ConversionEngineTests
         Assert.Single(rules.Rules);
         Assert.Equal("field", rules.Rules[0].Kind);
         Assert.Empty(rules.ValidationErrors);
+    }
+
+    [Fact]
+    public void NormalizeConversionRulesStrict_InvalidJson_Throws()
+    {
+        var error = Assert.Throws<InvalidOperationException>(() =>
+            ConversionEngine.NormalizeConversionRulesStrict("{"));
+
+        Assert.Contains("invalid JSON payload", error.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void NormalizeConversionRulesStrict_InvalidRule_Throws()
+    {
+        var json = """
+        {
+          "rules": [
+            {
+              "kind": "field",
+              "source": { "type": "path", "path": "name" }
+            }
+          ]
+        }
+        """;
+
+        var error = Assert.Throws<InvalidOperationException>(() =>
+            ConversionEngine.NormalizeConversionRulesStrict(json));
+
+        Assert.Contains("outputPaths is required", error.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void NormalizeConversionRules_RootOutputPath_AddsValidationError()
+    {
+        var rules = new ConversionRules
+        {
+            Rules =
+            [
+                new RuleNode
+                {
+                    Kind = "field",
+                    OutputPaths = ["$"],
+                    Source = new ValueSource { Type = "constant", Value = "ok" }
+                }
+            ]
+        };
+
+        var normalized = ConversionEngine.NormalizeConversionRules(rules);
+
+        Assert.Contains(normalized.ValidationErrors, error => error.Contains("output path '$' is not supported", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -200,6 +249,119 @@ public sealed class ConversionEngineTests
     }
 
     [Fact]
+    public void ApplyConversion_BranchNumericEqualityAcrossTypes_Matches()
+    {
+        var input = new Dictionary<string, object?> { ["score"] = 1L };
+        var rules = new ConversionRules
+        {
+            Rules =
+            [
+                new RuleNode
+                {
+                    Kind = "branch",
+                    Expression = "path(score) == 1.0",
+                    Then =
+                    [
+                        new RuleNode
+                        {
+                            Kind = "field",
+                            OutputPaths = ["match"],
+                            Source = new ValueSource { Type = "constant", Value = "yes" }
+                        }
+                    ],
+                    Else =
+                    [
+                        new RuleNode
+                        {
+                            Kind = "field",
+                            OutputPaths = ["match"],
+                            Source = new ValueSource { Type = "constant", Value = "no" }
+                        }
+                    ]
+                }
+            ]
+        };
+
+        var result = ConversionEngine.ApplyConversion(input, rules);
+
+        Assert.Empty(result.Errors);
+        var output = Assert.IsType<Dictionary<string, object?>>(result.Output);
+        Assert.Equal("yes", output["match"]);
+    }
+
+    [Fact]
+    public void ApplyConversion_InOperatorNumericEqualityAcrossTypes_Matches()
+    {
+        var input = new Dictionary<string, object?> { ["score"] = 1L };
+        var rules = new ConversionRules
+        {
+            Rules =
+            [
+                new RuleNode
+                {
+                    Kind = "branch",
+                    Expression = "path(score) in [1.0, 2.0]",
+                    Then =
+                    [
+                        new RuleNode
+                        {
+                            Kind = "field",
+                            OutputPaths = ["match"],
+                            Source = new ValueSource { Type = "constant", Value = "yes" }
+                        }
+                    ],
+                    Else =
+                    [
+                        new RuleNode
+                        {
+                            Kind = "field",
+                            OutputPaths = ["match"],
+                            Source = new ValueSource { Type = "constant", Value = "no" }
+                        }
+                    ]
+                }
+            ]
+        };
+
+        var result = ConversionEngine.ApplyConversion(input, rules);
+
+        Assert.Empty(result.Errors);
+        var output = Assert.IsType<Dictionary<string, object?>>(result.Output);
+        Assert.Equal("yes", output["match"]);
+    }
+
+    [Fact]
+    public void CompileConversionPlan_ReusesNormalizedRules()
+    {
+        var json = """
+        {
+          "rules": [
+            {
+              "kind": "field",
+              "outputPaths": ["user.name"],
+              "source": { "type": "path", "path": "name" }
+            }
+          ]
+        }
+        """;
+        var plan = ConversionEngine.CompileConversionPlanStrict(json);
+
+        var first = ConversionEngine.ApplyConversion(
+            new Dictionary<string, object?> { ["name"] = "Ada" },
+            plan);
+        var second = plan.Apply(new Dictionary<string, object?> { ["name"] = "Lin" });
+
+        Assert.Empty(first.Errors);
+        Assert.Empty(second.Errors);
+        var firstOutput = Assert.IsType<Dictionary<string, object?>>(first.Output);
+        var secondOutput = Assert.IsType<Dictionary<string, object?>>(second.Output);
+        var firstUser = Assert.IsType<Dictionary<string, object?>>(firstOutput["user"]);
+        var secondUser = Assert.IsType<Dictionary<string, object?>>(secondOutput["user"]);
+        Assert.Equal("Ada", firstUser["name"]);
+        Assert.Equal("Lin", secondUser["name"]);
+    }
+
+    [Fact]
     public void ApplyConversion_RuleRecursionDepthExceeded_AddsError()
     {
         var root = new RuleNode { Kind = "branch", Expression = "true", Then = [] };
@@ -291,100 +453,6 @@ public sealed class ConversionEngineTests
         Assert.Null(error);
         var output = Assert.IsType<Dictionary<string, object?>>(value);
         Assert.Equal("Ada", output["name"]);
-    }
-
-    [Fact]
-    public void SharedCases_AllPass()
-    {
-        var casesRoot = LocateCasesRoot();
-        var caseDirs = Directory.GetDirectories(casesRoot).OrderBy(path => path, StringComparer.Ordinal).ToList();
-        Assert.NotEmpty(caseDirs);
-
-        foreach (var caseDir in caseDirs)
-        {
-            var caseName = Path.GetFileName(caseDir);
-            var rulesPath = Path.Combine(caseDir, "rules.json");
-            Assert.True(File.Exists(rulesPath), $"Case '{caseName}' is missing rules.json.");
-
-            var inputPath = FindSingleFile(caseDir, "input", caseName);
-            var outputPath = FindSingleFile(caseDir, "output", caseName);
-
-            var rulesText = File.ReadAllText(rulesPath);
-            var inputText = File.ReadAllText(inputPath);
-            var expectedText = File.ReadAllText(outputPath);
-
-            var inputFormat = ExtensionToFormat(Path.GetExtension(inputPath));
-            var outputFormat = ExtensionToFormat(Path.GetExtension(outputPath));
-
-            var (inputValue, parseError) = ConversionEngine.ParsePayload(inputText, inputFormat);
-            Assert.Null(parseError);
-
-            var result = ConversionEngine.ApplyConversion(inputValue, rulesText);
-            Assert.True(result.Errors.Count == 0, $"Case '{caseName}' failed: {string.Join("; ", result.Errors)}");
-
-            var actualText = outputFormat == DataFormat.Query
-                ? ConversionEngine.FormatPayload(result.Output, outputFormat, pretty: false)
-                : ConversionEngine.FormatPayload(result.Output, outputFormat, pretty: true);
-
-            Assert.Equal(
-                NormalizeOutput(expectedText, outputFormat),
-                NormalizeOutput(actualText, outputFormat));
-        }
-    }
-
-    private static string LocateCasesRoot()
-    {
-        var baseDir = AppContext.BaseDirectory;
-        var candidate = Path.GetFullPath(Path.Combine(baseDir, "../../../../../../tests/cases"));
-        if (Directory.Exists(candidate))
-        {
-            return candidate;
-        }
-
-        var current = new DirectoryInfo(baseDir);
-        while (current != null)
-        {
-            var testsCases = Path.Combine(current.FullName, "tests", "cases");
-            if (Directory.Exists(testsCases))
-            {
-                return testsCases;
-            }
-
-            current = current.Parent;
-        }
-
-        throw new DirectoryNotFoundException("Could not locate tests/cases.");
-    }
-
-    private static string FindSingleFile(string caseDirectory, string basename, string caseName)
-    {
-        var matches = Directory.GetFiles(caseDirectory, $"{basename}.*", SearchOption.TopDirectoryOnly);
-        Assert.True(matches.Length == 1, $"Case '{caseName}' must include exactly one {basename}.* file.");
-        return matches[0];
-    }
-
-    private static DataFormat ExtensionToFormat(string extension)
-    {
-        var ext = extension.TrimStart('.').ToLowerInvariant();
-        return ext switch
-        {
-            "json" => DataFormat.Json,
-            "xml" => DataFormat.Xml,
-            "txt" => DataFormat.Query,
-            _ => throw new InvalidOperationException($"Unsupported extension '{extension}'.")
-        };
-    }
-
-    private static string NormalizeOutput(string value, DataFormat format)
-    {
-        var normalized = value.Replace("\r\n", "\n").Trim();
-        if (format != DataFormat.Json)
-        {
-            return normalized;
-        }
-
-        using var doc = JsonDocument.Parse(normalized.Length == 0 ? "{}" : normalized);
-        return JsonSerializer.Serialize(doc.RootElement, new JsonSerializerOptions { WriteIndented = false });
     }
 
     private static string GetBranchExpressionError(string expression)

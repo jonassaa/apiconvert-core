@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Text;
-using System.Text.RegularExpressions;
 using Apiconvert.Core.Rules;
 
 namespace Apiconvert.Core.Converters;
@@ -261,20 +260,17 @@ internal static partial class MappingExecutor
         foreach (var part in parts)
         {
             if (current == null) return null;
-            var arrayMatch = Regex.Match(part, "^(\\w+)\\[(\\d+)\\]$");
-            if (arrayMatch.Success)
+            if (TryParseIndexedProperty(part, out var key, out var indexedValue))
             {
-                var key = arrayMatch.Groups[1].Value;
-                var index = int.Parse(arrayMatch.Groups[2].Value, CultureInfo.InvariantCulture);
                 if (current is not Dictionary<string, object?> dict || !dict.TryGetValue(key, out var next)) return null;
-                if (next is not List<object?> list || index >= list.Count) return null;
-                current = list[index];
+                if (next is not List<object?> indexedList || indexedValue >= indexedList.Count) return null;
+                current = indexedList[indexedValue];
                 continue;
             }
 
-            if (Regex.IsMatch(part, "^\\d+$"))
+            if (TryParseArrayIndex(part, out var index))
             {
-                if (current is not List<object?> list || !int.TryParse(part, out var index) || index >= list.Count) return null;
+                if (current is not List<object?> list || index >= list.Count) return null;
                 current = list[index];
                 continue;
             }
@@ -283,6 +279,32 @@ internal static partial class MappingExecutor
             current = value;
         }
         return current;
+    }
+
+    private static bool TryParseIndexedProperty(string segment, out string key, out int index)
+    {
+        key = string.Empty;
+        index = 0;
+
+        var bracketStart = segment.IndexOf('[');
+        if (bracketStart <= 0 || segment[^1] != ']')
+        {
+            return false;
+        }
+
+        key = segment[..bracketStart];
+        if (key.Length == 0)
+        {
+            return false;
+        }
+
+        var indexPart = segment.AsSpan(bracketStart + 1, segment.Length - bracketStart - 2);
+        return int.TryParse(indexPart, NumberStyles.None, CultureInfo.InvariantCulture, out index);
+    }
+
+    private static bool TryParseArrayIndex(string segment, out int index)
+    {
+        return int.TryParse(segment, NumberStyles.None, CultureInfo.InvariantCulture, out index);
     }
 
     private static object? ParsePrimitive(string value)

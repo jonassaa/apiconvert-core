@@ -20,6 +20,52 @@ public static class ConversionEngine
     }
 
     /// <summary>
+    /// Normalizes raw rules into the canonical model and throws if validation fails.
+    /// </summary>
+    /// <param name="raw">Raw rules input (object or JSON-like model).</param>
+    /// <returns>Normalized conversion rules.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="raw"/> is null.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when rule normalization fails.</exception>
+    public static ConversionRules NormalizeConversionRulesStrict(object? raw)
+    {
+        if (raw is null)
+        {
+            throw new ArgumentNullException(nameof(raw), "Rules input is required in strict mode.");
+        }
+
+        var rules = RulesNormalizer.NormalizeConversionRules(raw);
+        if (rules.ValidationErrors.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"Rule normalization failed: {string.Join("; ", rules.ValidationErrors)}");
+        }
+
+        return rules;
+    }
+
+    /// <summary>
+    /// Compiles raw rules into a reusable conversion plan.
+    /// </summary>
+    /// <param name="rawRules">Rules input (object or JSON-like model).</param>
+    /// <returns>Compiled conversion plan.</returns>
+    public static ConversionPlan CompileConversionPlan(object? rawRules)
+    {
+        var rules = NormalizeConversionRules(rawRules);
+        return new ConversionPlan(rules);
+    }
+
+    /// <summary>
+    /// Compiles raw rules into a reusable conversion plan and throws on validation errors.
+    /// </summary>
+    /// <param name="rawRules">Rules input (object or JSON-like model).</param>
+    /// <returns>Compiled conversion plan.</returns>
+    public static ConversionPlan CompileConversionPlanStrict(object? rawRules)
+    {
+        var rules = NormalizeConversionRulesStrict(rawRules);
+        return new ConversionPlan(rules);
+    }
+
+    /// <summary>
     /// Applies conversion rules to the given input payload.
     /// </summary>
     /// <param name="input">Input payload (already parsed).</param>
@@ -28,6 +74,22 @@ public static class ConversionEngine
     public static ConversionResult ApplyConversion(object? input, object? rawRules)
     {
         return MappingExecutor.ApplyConversion(input, rawRules);
+    }
+
+    /// <summary>
+    /// Applies a compiled conversion plan to the given input payload.
+    /// </summary>
+    /// <param name="input">Input payload (already parsed).</param>
+    /// <param name="plan">Compiled conversion plan.</param>
+    /// <returns>Conversion result containing output and errors.</returns>
+    public static ConversionResult ApplyConversion(object? input, ConversionPlan plan)
+    {
+        if (plan is null)
+        {
+            throw new ArgumentNullException(nameof(plan));
+        }
+
+        return plan.Apply(input);
     }
 
     /// <summary>

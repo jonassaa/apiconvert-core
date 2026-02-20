@@ -10,6 +10,11 @@ internal static partial class MappingExecutor
     internal static ConversionResult ApplyConversion(object? input, object? rawRules)
     {
         var rules = RulesNormalizer.NormalizeConversionRules(rawRules);
+        return ApplyConversion(input, rules);
+    }
+
+    internal static ConversionResult ApplyConversion(object? input, ConversionRules rules)
+    {
         var errors = new List<string>();
         errors.AddRange(rules.ValidationErrors);
 

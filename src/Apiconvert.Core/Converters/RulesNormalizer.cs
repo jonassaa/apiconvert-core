@@ -7,9 +7,11 @@ internal static class RulesNormalizer
 {
     internal static ConversionRules NormalizeConversionRules(object? raw)
     {
+        var validationErrors = new List<string>();
+
         if (raw is ConversionRules rules)
         {
-            return NormalizeRules(rules);
+            return NormalizeRules(rules, validationErrors);
         }
 
         if (raw is string json)
@@ -19,9 +21,10 @@ internal static class RulesNormalizer
                 var doc = JsonDocument.Parse(json);
                 raw = doc.RootElement.Clone();
             }
-            catch
+            catch (Exception ex)
             {
-                return new ConversionRules();
+                validationErrors.Add($"rules: invalid JSON payload. {ex.Message}");
+                return new ConversionRules { ValidationErrors = validationErrors };
             }
         }
 
@@ -31,37 +34,48 @@ internal static class RulesNormalizer
             {
                 if (TryDeserialize<ConversionRules>(element, out var parsedRules) && parsedRules != null)
                 {
-                    return NormalizeRules(parsedRules);
+                    return NormalizeRules(parsedRules, validationErrors);
                 }
+
+                validationErrors.Add("rules: JSON payload could not be deserialized into ConversionRules.");
+                return new ConversionRules { ValidationErrors = validationErrors };
             }
+
+            validationErrors.Add($"rules: expected JSON object but received {element.ValueKind}.");
+            return new ConversionRules { ValidationErrors = validationErrors };
+        }
+
+        if (raw != null)
+        {
+            validationErrors.Add($"rules: unsupported rules input type '{raw.GetType().FullName}'.");
+            return new ConversionRules { ValidationErrors = validationErrors };
         }
 
         return new ConversionRules();
     }
 
-    private static ConversionRules NormalizeRules(ConversionRules rules)
+    private static ConversionRules NormalizeRules(ConversionRules rules, List<string> validationErrors)
     {
-        var validationErrors = new List<string>();
-
         return rules with
         {
             InputFormat = rules.InputFormat,
             OutputFormat = rules.OutputFormat,
-            Rules = NormalizeRuleNodes(rules.Rules ?? new List<RuleNode>(), "rules", validationErrors),
+            Rules = NormalizeRuleNodes(rules.Rules, "rules", validationErrors),
             ValidationErrors = validationErrors
         };
     }
 
     private static List<RuleNode> NormalizeRuleNodes(
-        List<RuleNode> nodes,
+        IReadOnlyList<RuleNode>? nodes,
         string path,
         List<string> validationErrors)
     {
         var normalized = new List<RuleNode>();
+        var inputNodes = nodes ?? Array.Empty<RuleNode>();
 
-        for (var index = 0; index < nodes.Count; index++)
+        for (var index = 0; index < inputNodes.Count; index++)
         {
-            var node = nodes[index] ?? new RuleNode();
+            var node = inputNodes[index] ?? new RuleNode();
             var nodePath = $"{path}[{index}]";
             var kind = (node.Kind ?? string.Empty).Trim().ToLowerInvariant();
 
@@ -96,7 +110,7 @@ internal static class RulesNormalizer
 
     private static RuleNode NormalizeFieldNode(RuleNode node, string nodePath, List<string> validationErrors)
     {
-        var outputPaths = NormalizeOutputPaths(node.OutputPaths);
+        var outputPaths = NormalizeOutputPaths(node.OutputPaths, nodePath, validationErrors);
         if (outputPaths.Count == 0)
         {
             validationErrors.Add($"{nodePath}: outputPaths is required.");
@@ -113,7 +127,7 @@ internal static class RulesNormalizer
 
     private static RuleNode NormalizeArrayNode(RuleNode node, string nodePath, List<string> validationErrors)
     {
-        var outputPaths = NormalizeOutputPaths(node.OutputPaths);
+        var outputPaths = NormalizeOutputPaths(node.OutputPaths, nodePath, validationErrors);
         if (string.IsNullOrWhiteSpace(node.InputPath))
         {
             validationErrors.Add($"{nodePath}: inputPath is required.");
@@ -129,7 +143,7 @@ internal static class RulesNormalizer
             Kind = "array",
             InputPath = node.InputPath?.Trim() ?? string.Empty,
             OutputPaths = outputPaths,
-            ItemRules = NormalizeRuleNodes(node.ItemRules ?? new List<RuleNode>(), $"{nodePath}.itemRules", validationErrors)
+            ItemRules = NormalizeRuleNodes(node.ItemRules, $"{nodePath}.itemRules", validationErrors)
         };
     }
 
@@ -142,7 +156,7 @@ internal static class RulesNormalizer
         }
 
         var elseIf = new List<BranchElseIfRule>();
-        var elseIfRules = node.ElseIf ?? new List<BranchElseIfRule>();
+        var elseIfRules = node.ElseIf;
         for (var elseIfIndex = 0; elseIfIndex < elseIfRules.Count; elseIfIndex++)
         {
             var branch = elseIfRules[elseIfIndex] ?? new BranchElseIfRule();
@@ -156,7 +170,7 @@ internal static class RulesNormalizer
             elseIf.Add(branch with
             {
                 Expression = branchExpression,
-                Then = NormalizeRuleNodes(branch.Then ?? new List<RuleNode>(), $"{branchPath}.then", validationErrors)
+                Then = NormalizeRuleNodes(branch.Then, $"{branchPath}.then", validationErrors)
             });
         }
 
@@ -164,20 +178,45 @@ internal static class RulesNormalizer
         {
             Kind = "branch",
             Expression = expression,
-            Then = NormalizeRuleNodes(node.Then ?? new List<RuleNode>(), $"{nodePath}.then", validationErrors),
+            Then = NormalizeRuleNodes(node.Then, $"{nodePath}.then", validationErrors),
             ElseIf = elseIf,
-            Else = NormalizeRuleNodes(node.Else ?? new List<RuleNode>(), $"{nodePath}.else", validationErrors)
+            Else = NormalizeRuleNodes(node.Else, $"{nodePath}.else", validationErrors)
         };
     }
 
-    private static List<string> NormalizeOutputPaths(IEnumerable<string>? paths)
+    private static List<string> NormalizeOutputPaths(
+        IEnumerable<string>? paths,
+        string nodePath,
+        List<string> validationErrors)
     {
-        return (paths ?? Array.Empty<string>())
-            .Where(path => !string.IsNullOrWhiteSpace(path))
-            .Select(NormalizeWritePath)
-            .Where(path => !string.IsNullOrWhiteSpace(path))
-            .Distinct(StringComparer.Ordinal)
-            .ToList();
+        var normalizedPaths = new List<string>();
+
+        foreach (var rawPath in paths ?? Array.Empty<string>())
+        {
+            if (string.IsNullOrWhiteSpace(rawPath))
+            {
+                continue;
+            }
+
+            var normalized = NormalizeWritePath(rawPath);
+            if (normalized == "$")
+            {
+                validationErrors.Add($"{nodePath}: output path '$' is not supported.");
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(normalized))
+            {
+                continue;
+            }
+
+            if (!normalizedPaths.Contains(normalized, StringComparer.Ordinal))
+            {
+                normalizedPaths.Add(normalized);
+            }
+        }
+
+        return normalizedPaths;
     }
 
     private static string NormalizeWritePath(string path)
@@ -189,7 +228,7 @@ internal static class RulesNormalizer
 
         if (path == "$")
         {
-            return string.Empty;
+            return "$";
         }
 
         return path.Trim();
@@ -223,8 +262,11 @@ internal static class RulesNormalizer
     {
         return source with
         {
+            Type = (source.Type ?? string.Empty).Trim().ToLowerInvariant(),
+            Path = source.Path?.Trim(),
             Paths = source.Paths ?? new List<string>(),
             Expression = NormalizeExpression(source.Expression),
+            Separator = source.Separator,
             TrueSource = source.TrueSource is null ? null : NormalizeValueSource(source.TrueSource),
             FalseSource = source.FalseSource is null ? null : NormalizeValueSource(source.FalseSource),
             ElseIf = (source.ElseIf ?? new List<ConditionElseIfBranch>())

@@ -165,7 +165,7 @@ internal static partial class MappingExecutor
 
         if (path == "$")
         {
-            return string.Empty;
+            return "$";
         }
 
         return path;
@@ -176,7 +176,7 @@ internal static partial class MappingExecutor
         return rule.OutputPaths
             .Where(path => !string.IsNullOrWhiteSpace(path))
             .Select(NormalizeWritePath)
-            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .Where(path => !string.IsNullOrWhiteSpace(path) && path != "$")
             .Distinct(StringComparer.Ordinal)
             .ToList();
     }

@@ -116,7 +116,7 @@ public sealed record ConditionElseIfBranch
 public sealed record ValueSource
 {
     /// <summary>
-    /// Source type (for example, "path" or "value").
+    /// Source type (for example, "path" or "constant").
     /// </summary>
     [JsonPropertyName("type")]
     public string Type { get; init; } = "path";
@@ -134,7 +134,7 @@ public sealed record ValueSource
     public List<string> Paths { get; init; } = new();
 
     /// <summary>
-    /// Literal value for the source type "value".
+    /// Literal value for the source type "constant".
     /// </summary>
     [JsonPropertyName("value")]
     public string? Value { get; init; }

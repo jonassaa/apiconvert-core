@@ -1,0 +1,29 @@
+using Apiconvert.Core.Rules;
+
+namespace Apiconvert.Core.Converters;
+
+/// <summary>
+/// Compiled conversion plan that reuses normalized rules across conversions.
+/// </summary>
+public sealed class ConversionPlan
+{
+    internal ConversionPlan(ConversionRules rules)
+    {
+        Rules = rules ?? throw new ArgumentNullException(nameof(rules));
+    }
+
+    /// <summary>
+    /// Normalized rules used by this plan.
+    /// </summary>
+    public ConversionRules Rules { get; }
+
+    /// <summary>
+    /// Applies this plan to the provided input payload.
+    /// </summary>
+    /// <param name="input">Input payload (already parsed).</param>
+    /// <returns>Conversion result containing output and diagnostics.</returns>
+    public ConversionResult Apply(object? input)
+    {
+        return MappingExecutor.ApplyConversion(input, Rules);
+    }
+}
