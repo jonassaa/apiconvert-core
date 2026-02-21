@@ -16,6 +16,10 @@ Rules now use a single ordered `rules` array with recursive nodes:
 - `kind: "array"` for array mappings (`inputPath`, `outputPaths`, `itemRules`, optional `coerceSingle`)
 - `kind: "branch"` for conditional blocks (`expression`, `then`, optional `elseIf`, optional `else`)
 
+Rules can optionally define named fragments for reuse:
+- `fragments` is a map of named rule nodes
+- `{ "use": "fragmentName" }` expands a fragment, with optional overrides for rule fields
+
 ## Consistency Across C# and TypeScript
 
 - The C# rules models live in `src/Apiconvert.Core/Rules/Models.cs`.

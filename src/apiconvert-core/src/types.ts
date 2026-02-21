@@ -109,6 +109,7 @@ export type RuleNode = FieldRule | ArrayRule | BranchRule;
 export interface ConversionRules {
   inputFormat?: DataFormat;
   outputFormat?: DataFormat;
+  fragments?: Record<string, unknown> | null;
   rules?: RuleNode[] | null;
   validationErrors?: string[];
 }

@@ -1,0 +1,21 @@
+{
+  "inputFormat": "json",
+  "outputFormat": "json",
+  "fragments": {
+    "nameField": {
+      "kind": "field",
+      "outputPaths": ["user.name"],
+      "source": { "type": "path", "path": "customer.name" }
+    },
+    "cityField": {
+      "kind": "field",
+      "outputPaths": ["user.location.city"],
+      "source": { "type": "path", "path": "customer.city" }
+    }
+  },
+  "rules": [
+    { "use": "nameField" },
+    { "use": "nameField", "outputPaths": ["user.displayName"] },
+    { "use": "cityField" }
+  ]
+}
