@@ -59,6 +59,8 @@ function normalizeRules(rules: ConversionRules): ConversionRules {
   const validationErrors: string[] = [];
   const inputFormat = normalizeFormat(rules.inputFormat, "inputFormat", validationErrors);
   const outputFormat = normalizeFormat(rules.outputFormat, "outputFormat", validationErrors);
+  const fragments = normalizeFragments(rules.fragments, validationErrors);
+  const fragmentResolver = new FragmentResolver(fragments, validationErrors);
 
   const rawRules = rules.rules;
   if (rawRules != null && !Array.isArray(rawRules)) {
@@ -68,7 +70,12 @@ function normalizeRules(rules: ConversionRules): ConversionRules {
   return {
     inputFormat,
     outputFormat,
-    rules: normalizeRuleNodes(Array.isArray(rawRules) ? rawRules : [], "rules", validationErrors),
+    rules: normalizeRuleNodes(
+      Array.isArray(rawRules) ? rawRules : [],
+      "rules",
+      validationErrors,
+      fragmentResolver
+    ),
     validationErrors
   };
 }
@@ -255,7 +262,12 @@ function isConversionRules(value: unknown): value is ConversionRules {
   return "rules" in record || "inputFormat" in record || "outputFormat" in record;
 }
 
-function normalizeRuleNodes(nodes: unknown[], path: string, validationErrors: string[]): RuleNode[] {
+function normalizeRuleNodes(
+  nodes: unknown[],
+  path: string,
+  validationErrors: string[],
+  fragmentResolver: FragmentResolver
+): RuleNode[] {
   const normalized: RuleNode[] = [];
 
   nodes.forEach((node, index) => {
@@ -266,7 +278,8 @@ function normalizeRuleNodes(nodes: unknown[], path: string, validationErrors: st
       return;
     }
 
-    const kind = normalizeNodeKind(nodeRecord.kind);
+    const resolvedRecord = fragmentResolver.resolveUse(nodeRecord, nodePath);
+    const kind = normalizeNodeKind(resolvedRecord.kind);
     if (kind == null) {
       validationErrors.push(`${nodePath}: kind is required.`);
       return;
@@ -279,16 +292,16 @@ function normalizeRuleNodes(nodes: unknown[], path: string, validationErrors: st
 
     switch (kind) {
       case "field":
-        normalized.push(normalizeFieldRuleNode(nodeRecord, nodePath, validationErrors));
+        normalized.push(normalizeFieldRuleNode(resolvedRecord, nodePath, validationErrors));
         return;
       case "array":
-        normalized.push(normalizeArrayRuleNode(nodeRecord, nodePath, validationErrors));
+        normalized.push(normalizeArrayRuleNode(resolvedRecord, nodePath, validationErrors, fragmentResolver));
         return;
       case "map":
         normalized.push(...normalizeMapRuleNode(nodeRecord, nodePath, validationErrors));
         return;
       default:
-        normalized.push(normalizeBranchRuleNode(nodeRecord, nodePath, validationErrors));
+        normalized.push(normalizeBranchRuleNode(resolvedRecord, nodePath, validationErrors, fragmentResolver));
     }
   });
 
@@ -421,7 +434,8 @@ function readStringOrStringArray(value: unknown): string[] {
 function normalizeArrayRuleNode(
   array: Record<string, unknown>,
   nodePath: string,
-  validationErrors: string[]
+  validationErrors: string[],
+  fragmentResolver: FragmentResolver
 ): ArrayRule {
   const outputPaths = normalizeOutputPaths(array.outputPaths);
   const inputPath = normalizeString(array.inputPath) ?? "";
@@ -448,7 +462,8 @@ function normalizeArrayRuleNode(
     itemRules: normalizeRuleNodes(
       Array.isArray(array.itemRules) ? array.itemRules : [],
       `${nodePath}.itemRules`,
-      validationErrors
+      validationErrors,
+      fragmentResolver
     )
   };
 }
@@ -456,7 +471,8 @@ function normalizeArrayRuleNode(
 function normalizeBranchRuleNode(
   branch: Record<string, unknown>,
   nodePath: string,
-  validationErrors: string[]
+  validationErrors: string[],
+  fragmentResolver: FragmentResolver
 ): BranchRule {
   const expression = normalizeString(branch.expression);
   if (!expression) {
@@ -502,7 +518,8 @@ function normalizeBranchRuleNode(
       then: normalizeRuleNodes(
         Array.isArray(elseIfRecord.then) ? elseIfRecord.then : [],
         `${elseIfPath}.then`,
-        validationErrors
+        validationErrors,
+        fragmentResolver
       )
     };
   });
@@ -514,10 +531,159 @@ function normalizeBranchRuleNode(
   return {
     kind: "branch",
     expression,
-    then: normalizeRuleNodes(Array.isArray(branch.then) ? branch.then : [], `${nodePath}.then`, validationErrors),
+    then: normalizeRuleNodes(
+      Array.isArray(branch.then) ? branch.then : [],
+      `${nodePath}.then`,
+      validationErrors,
+      fragmentResolver
+    ),
     elseIf,
-    else: normalizeRuleNodes(Array.isArray(branch.else) ? branch.else : [], `${nodePath}.else`, validationErrors)
+    else: normalizeRuleNodes(
+      Array.isArray(branch.else) ? branch.else : [],
+      `${nodePath}.else`,
+      validationErrors,
+      fragmentResolver
+    )
   };
+}
+
+function normalizeFragments(
+  fragments: ConversionRules["fragments"],
+  validationErrors: string[]
+): Record<string, Record<string, unknown>> {
+  if (fragments == null) {
+    return {};
+  }
+
+  const record = toRecord(fragments);
+  if (!record) {
+    validationErrors.push("fragments: must be an object when provided.");
+    return {};
+  }
+
+  const normalized: Record<string, Record<string, unknown>> = {};
+  Object.entries(record).forEach(([key, value]) => {
+    const name = key.trim();
+    if (!name) {
+      validationErrors.push("fragments: fragment name is required.");
+      return;
+    }
+    if (normalized[name]) {
+      validationErrors.push(`fragments.${name}: duplicate fragment name.`);
+      return;
+    }
+
+    const fragmentRecord = toRecord(value);
+    if (!fragmentRecord) {
+      validationErrors.push(`fragments.${name}: must be an object.`);
+      return;
+    }
+
+    normalized[name] = fragmentRecord;
+  });
+
+  return normalized;
+}
+
+class FragmentResolver {
+  private fragments: Record<string, Record<string, unknown>>;
+  private cache: Record<string, Record<string, unknown>> = {};
+  private resolving = new Set<string>();
+  private validationErrors: string[];
+
+  constructor(fragments: Record<string, Record<string, unknown>>, validationErrors: string[]) {
+    this.fragments = fragments;
+    this.validationErrors = validationErrors;
+  }
+
+  resolveUse(node: Record<string, unknown>, nodePath: string): Record<string, unknown> {
+    const use = normalizeString(node.use);
+    if (!use) {
+      return node;
+    }
+
+    const fragment = this.resolveFragment(use, `${nodePath}.use`);
+    if (!fragment) {
+      const { use: _use, ...rest } = node;
+      return rest;
+    }
+
+    const merged = mergeRuleRecords(fragment, node);
+    const { use: _use, ...rest } = merged;
+    return rest;
+  }
+
+  private resolveFragment(name: string, path: string): Record<string, unknown> | null {
+    const cached = this.cache[name];
+    if (cached) {
+      return cached;
+    }
+
+    const fragment = this.fragments[name];
+    if (!fragment) {
+      this.validationErrors.push(`${path}: unknown fragment '${name}'.`);
+      return null;
+    }
+
+    if (this.resolving.has(name)) {
+      this.validationErrors.push(`${path}: fragment '${name}' introduces a cycle.`);
+      return null;
+    }
+
+    this.resolving.add(name);
+    let resolved = fragment;
+    if (normalizeString(fragment.use)) {
+      resolved = this.resolveUse(fragment, `fragments.${name}`);
+    }
+    this.resolving.delete(name);
+
+    const { use: _use, ...rest } = resolved;
+    this.cache[name] = rest;
+    return rest;
+  }
+}
+
+function mergeRuleRecords(
+  fragment: Record<string, unknown>,
+  overrideNode: Record<string, unknown>
+): Record<string, unknown> {
+  return {
+    ...fragment,
+    ...overrideNode,
+    kind: pickString(overrideNode.kind, fragment.kind),
+    outputPaths: pickArray(overrideNode.outputPaths, fragment.outputPaths),
+    source: toRecord(overrideNode.source) ?? fragment.source,
+    defaultValue: pickNonEmptyString(overrideNode.defaultValue, fragment.defaultValue),
+    inputPath: pickString(overrideNode.inputPath, fragment.inputPath),
+    itemRules: pickArray(overrideNode.itemRules, fragment.itemRules),
+    coerceSingle: overrideNode.coerceSingle === true || fragment.coerceSingle === true,
+    expression: pickString(overrideNode.expression, fragment.expression),
+    then: pickArray(overrideNode.then, fragment.then),
+    elseIf: pickArray(overrideNode.elseIf, fragment.elseIf),
+    else: pickArray(overrideNode.else, fragment.else)
+  };
+}
+
+function pickString(overrideValue: unknown, baseValue: unknown): unknown {
+  const override = normalizeString(overrideValue);
+  if (override) {
+    return override;
+  }
+  return baseValue;
+}
+
+function pickNonEmptyString(overrideValue: unknown, baseValue: unknown): unknown {
+  if (typeof overrideValue === "string" && overrideValue.length > 0) {
+    return overrideValue;
+  }
+  return baseValue;
+}
+
+function pickArray(overrideValue: unknown, baseValue: unknown): unknown {
+  if (Array.isArray(overrideValue) && overrideValue.length > 0) {
+    return overrideValue;
+  }
+  return baseValue;
 }
 
 function normalizeOutputPaths(paths: unknown): string[] {

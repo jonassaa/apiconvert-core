@@ -262,6 +262,12 @@ public sealed record BranchElseIfRule
 public sealed record RuleNode
 {
     /// <summary>
+    /// Optional fragment reference to expand.
+    /// </summary>
+    [JsonPropertyName("use")]
+    public string? Use { get; init; }
+
+    /// <summary>
     /// Rule discriminator. Supported values are "field", "array", and "branch".
     /// </summary>
     [JsonPropertyName("kind")]
@@ -382,6 +388,12 @@ public sealed record ConversionRules
     /// </summary>
     [JsonPropertyName("outputFormat")]
     public DataFormat OutputFormat { get; init; } = DataFormat.Json;
+
+    /// <summary>
+    /// Named rule fragments for reuse.
+    /// </summary>
+    [JsonPropertyName("fragments")]
+    public Dictionary<string, RuleNode> Fragments { get; init; } = new();
 
     /// <summary>
     /// Ordered, recursive conversion rules.

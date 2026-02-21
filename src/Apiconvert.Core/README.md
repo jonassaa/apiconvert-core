@@ -36,6 +36,10 @@ Rules use a single ordered `rules` array with recursive nodes:
 - `kind: "array"` maps array items using recursive `itemRules`
 - `kind: "branch"` evaluates an expression and runs `then` / `elseIf` / `else`
 
+Rules may also include optional reusable fragments:
+- `fragments` is a map of named rule nodes
+- `{ "use": "fragmentName" }` expands a fragment, with optional overrides for the rule fields
+
 Supported field source types:
 - `path`
 - `constant`
