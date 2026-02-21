@@ -26,8 +26,6 @@ Rules can optionally define named fragments for reuse:
 - The TypeScript contracts live in `src/apiconvert-core/src/index.ts`.
 - Any changes to rule models must update the next versioned schema, then update both implementations to match.
 - Released `vX.Y.Z/schema.json` files are immutable.
-- Rule definitions must stay runtime-neutral; avoid language-specific constructs in schema semantics.
-- Schema changes must be backward compatible unless introduced as a new explicit version.
 
 ## Condition Expressions
 
