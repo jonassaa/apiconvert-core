@@ -104,11 +104,26 @@ export interface BranchRule {
   else?: RuleNode[] | null;
 }
 
-export type RuleNode = FieldRule | ArrayRule | BranchRule;
+export interface UseRule {
+  use: string;
+  outputPaths?: string[] | null;
+  source?: ValueSource | null;
+  defaultValue?: string | null;
+  inputPath?: string | null;
+  itemRules?: RuleNode[] | null;
+  coerceSingle?: boolean;
+  expression?: string | null;
+  then?: RuleNode[] | null;
+  elseIf?: BranchElseIfRule[] | null;
+  else?: RuleNode[] | null;
+}
+
+export type RuleNode = FieldRule | ArrayRule | BranchRule | UseRule;
 
 export interface ConversionRules {
   inputFormat?: DataFormat;
   outputFormat?: DataFormat;
+  fragments?: Record<string, RuleNode> | null;
   rules?: RuleNode[] | null;
   validationErrors?: string[];
 }

@@ -9,6 +9,10 @@ Canonical rules are defined by one ordered `rules` array of recursive nodes:
 - `kind: "array"` with `inputPath`, `outputPaths`, and recursive `itemRules`
 - `kind: "branch"` with `expression`, `then`, optional `elseIf`, optional `else`
 
+Rules may also include optional reusable fragments:
+- `fragments` is a map of named rule nodes
+- `{ "use": "fragmentName" }` expands a fragment, with optional overrides for the rule fields
+
 Supported field source types:
 - `path`
 - `constant`
