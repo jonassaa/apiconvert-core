@@ -128,6 +128,7 @@ The package also exports:
 - `parsePayload(text, format)` for `json`, `xml`, and `query`
 - `formatPayload(value, format, pretty)`
 - `streamJsonArrayConversion(items, rawRules, options)` for async iterator item-by-item conversion
+- `streamConversion(input, rawRules, streamOptions, options)` for `jsonArray`, `ndjson`, `queryLines`, and `xmlElements`
 
 ## Output Collision Policy
 
@@ -209,5 +210,11 @@ Use the shared catalog for deterministic diagnostic mapping and remediation guid
 
 ## Streaming Notes
 
-- Streaming API currently processes top-level JSON array items from an `AsyncIterable`/`Iterable`.
-- For XML/query payloads, continue to use `parsePayload(...)` + `applyConversion(...)`.
+- `streamConversion` supports:
+  - `jsonArray`: top-level JSON array text or iterable item streams
+  - `ndjson`: one JSON object/value per non-empty line
+  - `queryLines`: one query record per non-empty line
+  - `xmlElements`: one item per matched `xmlItemPath` element path
+- `streamOptions.errorMode` controls item-level failures:
+  - `failFast` throws on first parse/conversion error
+  - `continueWithReport` yields per-item results with contextualized errors

@@ -130,6 +130,7 @@ Examples:
 - `ParsePayload(string, DataFormat)` and stream/`JsonNode` overloads
 - `FormatPayload(object?, DataFormat, bool)` and stream overload
 - `StreamJsonArrayConversionAsync(Stream, rawRules, ...)` for top-level JSON array item streaming
+- `StreamConversionAsync(Stream, rawRules, streamOptions, ...)` for `JsonArray`, `Ndjson`, `QueryLines`, and `XmlElements`
 
 ## Output Collision Policy
 
@@ -246,5 +247,11 @@ Use the shared catalog for deterministic diagnostic mapping and remediation guid
 
 ## Streaming Notes
 
-- Streaming API currently supports top-level JSON arrays only.
-- Unsupported/non-JSON stream scenarios should continue to use `ParsePayload(...)` + `ApplyConversion(...)`.
+- `StreamConversionAsync` supports:
+  - `JsonArray`: top-level JSON arrays
+  - `Ndjson`: one JSON object/value per non-empty line
+  - `QueryLines`: one query record per non-empty line
+  - `XmlElements`: one item per matched `XmlItemPath` element
+- `StreamConversionOptions.ErrorMode` controls item-level failures:
+  - `FailFast` throws on first parse/conversion error
+  - `ContinueWithReport` yields contextualized per-item `ConversionResult` errors

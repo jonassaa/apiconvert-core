@@ -1,4 +1,4 @@
-import { applyConversion, streamJsonArrayConversion } from "./mapping-engine";
+import { applyConversion, streamConversion, streamJsonArrayConversion } from "./mapping-engine";
 import { compileConversionPlan, computeRulesCacheKey } from "./conversion-plan";
 import { checkRulesCompatibility } from "./compatibility";
 import { formatPayload, parsePayload } from "./payload-converter";
@@ -26,6 +26,7 @@ export {
   lintConversionRules,
   profileConversionPlan,
   runRuleDoctor,
+  streamConversion,
   streamJsonArrayConversion,
   normalizeConversionRules,
   normalizeConversionRulesStrict,

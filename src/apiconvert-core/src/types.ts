@@ -36,6 +36,24 @@ export interface ApplyConversionOptions {
   transforms?: Record<string, (value: unknown) => unknown> | null;
 }
 
+export enum StreamInputKind {
+  JsonArray = "jsonArray",
+  Ndjson = "ndjson",
+  QueryLines = "queryLines",
+  XmlElements = "xmlElements"
+}
+
+export enum StreamErrorMode {
+  FailFast = "failFast",
+  ContinueWithReport = "continueWithReport"
+}
+
+export interface StreamConversionOptions {
+  inputKind?: StreamInputKind | null;
+  errorMode?: StreamErrorMode | null;
+  xmlItemPath?: string | null;
+}
+
 export enum RuleLintSeverity {
   Warning = "warning",
   Error = "error"

@@ -549,9 +549,37 @@ public static class ConversionEngine
     /// <param name="options">Optional execution options.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Async stream of per-item conversion results.</returns>
-    public static async IAsyncEnumerable<ConversionResult> StreamJsonArrayConversionAsync(
+    public static IAsyncEnumerable<ConversionResult> StreamJsonArrayConversionAsync(
         Stream stream,
         object? rawRules,
+        ConversionOptions? options = null,
+        CancellationToken cancellationToken = default)
+    {
+        return StreamConversionAsync(
+            stream,
+            rawRules,
+            new StreamConversionOptions
+            {
+                InputKind = StreamInputKind.JsonArray,
+                ErrorMode = StreamErrorMode.ContinueWithReport
+            },
+            options,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Streams conversion over supported stream input shapes.
+    /// </summary>
+    /// <param name="stream">Input stream.</param>
+    /// <param name="rawRules">Rules input (object or JSON-like model).</param>
+    /// <param name="streamOptions">Stream adapter and error handling options.</param>
+    /// <param name="options">Optional conversion execution options.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Async stream of per-item conversion results.</returns>
+    public static async IAsyncEnumerable<ConversionResult> StreamConversionAsync(
+        Stream stream,
+        object? rawRules,
+        StreamConversionOptions? streamOptions = null,
         ConversionOptions? options = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
@@ -561,11 +589,40 @@ public static class ConversionEngine
         }
 
         var rules = NormalizeConversionRules(rawRules);
-        var elements = JsonSerializer.DeserializeAsyncEnumerable<JsonElement>(stream, cancellationToken: cancellationToken);
-        await foreach (var element in elements.WithCancellation(cancellationToken))
+        var adapterOptions = streamOptions ?? new StreamConversionOptions();
+        var index = 0;
+
+        await foreach (var item in ReadStreamItems(stream, adapterOptions, cancellationToken).WithCancellation(cancellationToken))
         {
-            var input = JsonConverter.ToObject(element);
-            yield return MappingExecutor.ApplyConversion(input, rules, options);
+            if (item.Error is not null)
+            {
+                if (adapterOptions.ErrorMode == StreamErrorMode.FailFast)
+                {
+                    throw new InvalidOperationException(item.Error);
+                }
+
+                yield return CreateStreamErrorResult(index, item.Error);
+                index += 1;
+                continue;
+            }
+
+            var conversion = MappingExecutor.ApplyConversion(item.Value, rules, options);
+            if (adapterOptions.ErrorMode == StreamErrorMode.FailFast && conversion.Errors.Count > 0)
+            {
+                var firstError = conversion.Errors[0];
+                throw new InvalidOperationException($"stream[{index}]: conversion failed: {firstError}");
+            }
+
+            if (adapterOptions.ErrorMode == StreamErrorMode.ContinueWithReport)
+            {
+                yield return AddStreamContext(conversion, index);
+            }
+            else
+            {
+                yield return conversion;
+            }
+
+            index += 1;
         }
     }
 
@@ -599,5 +656,261 @@ public static class ConversionEngine
         bool leaveOpen = true)
     {
         PayloadConverter.FormatPayload(value, format, stream, pretty, encoding, leaveOpen);
+    }
+
+    private static async IAsyncEnumerable<(object? Value, string? Error)> ReadStreamItems(
+        Stream stream,
+        StreamConversionOptions options,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        switch (options.InputKind)
+        {
+            case StreamInputKind.Ndjson:
+                await foreach (var item in ReadNdjsonItems(stream, options.Encoding, cancellationToken).WithCancellation(cancellationToken))
+                {
+                    yield return item;
+                }
+                yield break;
+            case StreamInputKind.QueryLines:
+                await foreach (var item in ReadQueryLineItems(stream, options.Encoding, cancellationToken).WithCancellation(cancellationToken))
+                {
+                    yield return item;
+                }
+                yield break;
+            case StreamInputKind.XmlElements:
+                await foreach (var item in ReadXmlElementItems(stream, options.XmlItemPath, cancellationToken).WithCancellation(cancellationToken))
+                {
+                    yield return item;
+                }
+                yield break;
+            default:
+                await foreach (var item in ReadJsonArrayItems(stream, cancellationToken).WithCancellation(cancellationToken))
+                {
+                    yield return item;
+                }
+                yield break;
+        }
+    }
+
+    private static async IAsyncEnumerable<(object? Value, string? Error)> ReadJsonArrayItems(
+        Stream stream,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        var elements = JsonSerializer.DeserializeAsyncEnumerable<JsonElement>(stream, cancellationToken: cancellationToken);
+        await foreach (var element in elements.WithCancellation(cancellationToken))
+        {
+            yield return (JsonConverter.ToObject(element), null);
+        }
+    }
+
+    private static async IAsyncEnumerable<(object? Value, string? Error)> ReadNdjsonItems(
+        Stream stream,
+        Encoding? encoding,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        using var reader = new StreamReader(
+            stream,
+            encoding ?? Encoding.UTF8,
+            detectEncodingFromByteOrderMarks: true,
+            bufferSize: 1024,
+            leaveOpen: true);
+
+        while (true)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var line = await reader.ReadLineAsync(cancellationToken);
+            if (line is null)
+            {
+                yield break;
+            }
+
+            var trimmed = line.Trim();
+            if (trimmed.Length == 0)
+            {
+                continue;
+            }
+
+            (object? Value, string? Error) result;
+            try
+            {
+                result = (JsonConverter.ParseJson(trimmed), null);
+            }
+            catch (Exception ex)
+            {
+                result = (null, $"failed to parse NDJSON line: {ex.Message}");
+            }
+
+            yield return result;
+        }
+    }
+
+    private static async IAsyncEnumerable<(object? Value, string? Error)> ReadQueryLineItems(
+        Stream stream,
+        Encoding? encoding,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        using var reader = new StreamReader(
+            stream,
+            encoding ?? Encoding.UTF8,
+            detectEncodingFromByteOrderMarks: true,
+            bufferSize: 1024,
+            leaveOpen: true);
+
+        while (true)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var line = await reader.ReadLineAsync(cancellationToken);
+            if (line is null)
+            {
+                yield break;
+            }
+
+            var trimmed = line.Trim();
+            if (trimmed.Length == 0)
+            {
+                continue;
+            }
+
+            (object? Value, string? Error) result;
+            try
+            {
+                result = (QueryStringConverter.ParseQueryString(trimmed), null);
+            }
+            catch (Exception ex)
+            {
+                result = (null, $"failed to parse query record: {ex.Message}");
+            }
+
+            yield return result;
+        }
+    }
+
+    private static async IAsyncEnumerable<(object? Value, string? Error)> ReadXmlElementItems(
+        Stream stream,
+        string? xmlItemPath,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(xmlItemPath))
+        {
+            throw new InvalidOperationException("XmlElements streaming requires StreamConversionOptions.XmlItemPath.");
+        }
+
+        var segments = xmlItemPath
+            .Split('.', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        if (segments.Length == 0)
+        {
+            throw new InvalidOperationException("XmlElements streaming requires a non-empty XmlItemPath.");
+        }
+
+        string xmlText;
+        using (var reader = new StreamReader(
+                   stream,
+                   Encoding.UTF8,
+                   detectEncodingFromByteOrderMarks: true,
+                   bufferSize: 1024,
+                   leaveOpen: true))
+        {
+            xmlText = await reader.ReadToEndAsync(cancellationToken);
+        }
+
+        object? parsedXml = null;
+        string? parseError = null;
+        try
+        {
+            parsedXml = XmlConverter.ParseXml(xmlText);
+        }
+        catch (Exception ex)
+        {
+            parseError = $"failed to parse XML stream: {ex.Message}";
+        }
+
+        if (parseError is not null)
+        {
+            yield return (null, parseError);
+            yield break;
+        }
+
+        foreach (var item in SelectXmlItems(parsedXml, segments))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            yield return (item, null);
+        }
+    }
+
+    private static IEnumerable<object?> SelectXmlItems(object? root, string[] pathSegments)
+    {
+        var current = new List<object?> { root };
+        foreach (var segment in pathSegments)
+        {
+            var next = new List<object?>();
+            foreach (var item in current)
+            {
+                if (item is not Dictionary<string, object?> obj)
+                {
+                    continue;
+                }
+
+                if (!obj.TryGetValue(segment, out var value))
+                {
+                    continue;
+                }
+
+                if (value is List<object?> list)
+                {
+                    next.AddRange(list);
+                }
+                else
+                {
+                    next.Add(value);
+                }
+            }
+
+            current = next;
+        }
+
+        return current;
+    }
+
+    private static ConversionResult CreateStreamErrorResult(int index, string error)
+    {
+        var message = $"stream[{index}]: {error}";
+        return new ConversionResult
+        {
+            Output = new Dictionary<string, object?>(),
+            Errors = [message],
+            Warnings = [],
+            Trace = [],
+            Diagnostics =
+            [
+                new ConversionDiagnostic
+                {
+                    Code = "ACV-STR-001",
+                    RulePath = $"stream[{index}]",
+                    Message = message,
+                    Severity = ConversionDiagnosticSeverity.Error
+                }
+            ]
+        };
+    }
+
+    private static ConversionResult AddStreamContext(ConversionResult result, int index)
+    {
+        var prefix = $"stream[{index}]";
+        return new ConversionResult
+        {
+            Output = result.Output,
+            Errors = result.Errors.Select(error => $"{prefix}: {error}").ToList(),
+            Warnings = result.Warnings.Select(warning => $"{prefix}: {warning}").ToList(),
+            Trace = result.Trace,
+            Diagnostics = result.Diagnostics
+                .Select(diagnostic => new ConversionDiagnostic
+                {
+                    Code = diagnostic.Code,
+                    RulePath = $"{prefix}.{diagnostic.RulePath}",
+                    Message = $"{prefix}: {diagnostic.Message}",
+                    Severity = diagnostic.Severity
+                })
+                .ToList()
+        };
     }
 }
