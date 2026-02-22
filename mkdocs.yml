@@ -86,6 +86,7 @@ nav:
       - Plan Profiling: cli-tooling/plan-profiling.md
       - Compatibility Checks: cli-tooling/compatibility-checks.md
   - Contributing:
+      - Overview: contributing/index.md
       - Local Setup: contributing/local-setup.md
       - Docs Authoring Guide: contributing/docs-authoring-guide.md
       - Release Flow: contributing/release-flow.md
