@@ -7,7 +7,6 @@ import test from "node:test";
 
 const repoRoot = path.resolve(__dirname, "../../../..");
 const parityGatePath = path.join(repoRoot, "tests", "parity", "parity-gate.mjs");
-const parityReportPath = path.join(repoRoot, "tests", "parity", "parity-report.json");
 
 test("parity gate entrypoint supports dry-run", () => {
   const summaryPath = path.join(os.tmpdir(), `parity-summary-${Date.now()}.json`);
@@ -23,7 +22,16 @@ test("parity gate entrypoint supports dry-run", () => {
 });
 
 test("parity report schema contains stable required fields", () => {
-  const report = JSON.parse(fs.readFileSync(parityReportPath, "utf8")) as {
+  const reportPath = path.join(os.tmpdir(), `parity-report-${Date.now()}.json`);
+  const summaryPath = path.join(os.tmpdir(), `parity-summary-${Date.now()}.json`);
+
+  execFileSync(
+    process.execPath,
+    [parityGatePath, "--report", reportPath, "--summary", summaryPath, "--max-mismatches", "999999"],
+    { cwd: repoRoot, encoding: "utf8" }
+  );
+
+  const report = JSON.parse(fs.readFileSync(reportPath, "utf8")) as {
     generatedAtUtc?: string;
     totalCases?: number;
     matchingCases?: number;
