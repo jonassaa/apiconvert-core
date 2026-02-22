@@ -1,8 +1,8 @@
 site_name: Apiconvert.Core Docs
 site_description: Rule-driven API payload conversion docs for .NET and TypeScript.
-site_url: https://jonas.github.io/apiconvert-core/
-repo_url: https://github.com/jonas/apiconvert-core
-repo_name: jonas/apiconvert-core
+site_url: https://jonassaa.github.io/apiconvert-core/
+repo_url: https://github.com/jonassaa/apiconvert-core
+repo_name: jonassaa/apiconvert-core
 
 theme:
   name: material
