@@ -47,6 +47,8 @@ jobs:
           pip install -r requirements-docs.txt
       - name: Build docs (strict)
         run: mkdocs build --strict
+      - name: Runtime selector smoke test
+        run: node tests/docs/runtime-selector.smoke.mjs
 
   deploy:
     if: github.event_name != 'pull_request'
