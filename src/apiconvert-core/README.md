@@ -205,8 +205,8 @@ apiconvert benchmark --rules rules.json --input samples.ndjson --iterations 1000
 ## Error Codes and Troubleshooting
 
 Use the shared catalog for deterministic diagnostic mapping and remediation guidance:
-- [`docs/error-code-catalog.md`](../../docs/error-code-catalog.md)
-- [`docs/consumer-cookbook.md`](../../docs/consumer-cookbook.md)
+- [`docs/diagnostics/error-codes.md`](../../docs/diagnostics/error-codes.md)
+- [`docs/recipes/json-and-xml.md`](../../docs/recipes/json-and-xml.md)
 
 ## Streaming Notes
 

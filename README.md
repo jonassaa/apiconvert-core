@@ -159,8 +159,23 @@ npm --prefix tests/npm/apiconvert-core-tests run parity:check
 Shared conversion behavior should be validated through `tests/cases` in both runtimes.
 The parity suite emits a machine-readable report at `tests/parity/parity-report.json`.
 The parity gate also emits `tests/parity/parity-summary.json` with pass/fail criteria.
-Toolkit docs: [`docs/parity-gate-toolkit.md`](docs/parity-gate-toolkit.md).
-Consumer recipes: [`docs/consumer-cookbook.md`](docs/consumer-cookbook.md).
+Toolkit docs: [`docs/parity-testing/parity-gate-ci.md`](docs/parity-testing/parity-gate-ci.md).
+Consumer recipes: [`docs/recipes`](docs/recipes).
+
+## GitHub Pages Docs
+
+The repository includes a full GitHub Pages docs site powered by MkDocs + Material.
+
+- Site source: [`docs/`](docs/)
+- Build config: [`mkdocs.yml`](mkdocs.yml)
+- Docs authoring rules: [`docs/contributing/docs-authoring-guide.md`](docs/contributing/docs-authoring-guide.md)
+
+Local docs commands:
+
+```bash
+bash scripts/docs-build.sh
+bash scripts/docs-serve.sh
+```
 
 ## Release
 

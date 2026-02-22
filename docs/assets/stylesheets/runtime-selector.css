@@ -1,0 +1,23 @@
+.runtime-selector-control {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.runtime-selector-control select {
+  background: #ffffff;
+  border: 1px solid #c7ced8;
+  border-radius: 0.3rem;
+  color: #17233a;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.15rem 0.4rem;
+}
+
+body[data-runtime="dotnet"] .runtime-typescript {
+  display: none !important;
+}
+
+body[data-runtime="typescript"] .runtime-dotnet {
+  display: none !important;
+}

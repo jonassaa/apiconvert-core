@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block announce %}
+  <div class="runtime-selector-control" role="region" aria-label="Runtime selector">
+    <label for="runtime-selector"><strong>Runtime:</strong></label>
+    <select id="runtime-selector" aria-label="Select runtime">
+      <option value="dotnet">.NET</option>
+      <option value="typescript">TypeScript</option>
+    </select>
+  </div>
+{% endblock %}
