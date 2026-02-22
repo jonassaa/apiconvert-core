@@ -173,11 +173,8 @@ The repository includes a full GitHub Pages docs site powered by MkDocs + Materi
 Local docs commands:
 
 ```bash
-python3 -m venv .venv-docs
-source .venv-docs/bin/activate
-pip install -r requirements-docs.txt
-mkdocs build --strict
-mkdocs serve
+bash scripts/docs-build.sh
+bash scripts/docs-serve.sh
 ```
 
 ## Release
