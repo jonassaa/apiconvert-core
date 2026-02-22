@@ -1,0 +1,88 @@
+name: Docs Pages
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - "requirements-docs.txt"
+      - ".github/workflows/docs-pages.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - "requirements-docs.txt"
+      - ".github/workflows/docs-pages.yml"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Optional docs version label override (for example 1.2.3)
+        required: false
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: docs-pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install docs dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-docs.txt
+      - name: Build docs (strict)
+        run: mkdocs build --strict
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install docs dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-docs.txt
+      - name: Resolve docs version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          label="${{ github.event.inputs.version }}"
+          if [[ -z "$label" ]]; then
+            if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+              label="${GITHUB_REF_NAME#v}"
+            else
+              label="main"
+            fi
+          fi
+          echo "label=$label" >> "$GITHUB_OUTPUT"
+          echo "Resolved docs version label: $label"
+      - name: Configure git identity for mike
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+      - name: Deploy docs version and update latest alias
+        run: |
+          mike deploy --push --branch gh-pages --update-aliases "${{ steps.version.outputs.label }}" latest
+          mike set-default --push --branch gh-pages latest
