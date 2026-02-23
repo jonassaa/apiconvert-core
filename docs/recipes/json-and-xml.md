@@ -1,33 +1,69 @@
-# JSON and XML Recipes
+# JSON And XML Recipe
 
-- map JSON fields into XML elements/attributes
-- map XML attributes into JSON fields
-- use arrays and branches for mixed nested structures
+This intermediate example maps JSON order data into XML-like output structure.
 
-Use shared cases under `tests/cases` for parity verification.
+## Input (JSON)
 
-<div class="runtime-dotnet">
-
-<h2 id="json-xml-dotnet-runner">.NET runner sketch</h2>
-
-```csharp
-var rules = ConversionEngine.NormalizeConversionRulesStrict(File.ReadAllText("rules.json"));
-var (input, err) = ConversionEngine.ParsePayload(File.ReadAllText("input.json"), rules.InputFormat);
-var result = ConversionEngine.ApplyConversion(input!, rules);
-var output = ConversionEngine.FormatPayload(result.Output, rules.OutputFormat, pretty: true);
+```json
+{
+  "order": {
+    "id": "PO-1001",
+    "customer": "Ada",
+    "priority": "high"
+  }
+}
 ```
 
-</div>
+## Rules
 
-<div class="runtime-typescript">
-
-<h2 id="json-xml-typescript-runner">TypeScript runner sketch</h2>
-
-```ts
-const rules = normalizeConversionRulesStrict(readFileSync("rules.json", "utf8"));
-const { value } = parsePayload(readFileSync("input.json", "utf8"), rules.inputFormat!);
-const result = applyConversion(value, rules);
-const output = formatPayload(result.output, rules.outputFormat!, true);
+```json
+{
+  "inputFormat": "json",
+  "outputFormat": "xml",
+  "rules": [
+    {
+      "kind": "field",
+      "outputPaths": ["PurchaseOrder.@id"],
+      "source": { "type": "path", "path": "order.id" }
+    },
+    {
+      "kind": "field",
+      "outputPaths": ["PurchaseOrder.Customer"],
+      "source": { "type": "path", "path": "order.customer" }
+    },
+    {
+      "kind": "branch",
+      "expression": "path(order.priority) == 'high'",
+      "then": [
+        {
+          "kind": "field",
+          "outputPaths": ["PurchaseOrder.Flags.Expedite"],
+          "source": { "type": "constant", "value": "true" }
+        }
+      ]
+    }
+  ]
+}
 ```
 
-</div>
+## Runtime runner (same flow)
+
+- .NET: `NormalizeConversionRulesStrict` -> `ParsePayload` -> `ApplyConversion` -> `FormatPayload`
+- TypeScript: `normalizeConversionRulesStrict` -> `parsePayload` -> `applyConversion` -> `formatPayload`
+
+See complete runnable snippets in:
+
+- [Getting started](../getting-started/index.md)
+
+## Expected output (XML)
+
+```xml
+<PurchaseOrder id="PO-1001">
+  <Customer>Ada</Customer>
+  <Flags>
+    <Expedite>true</Expedite>
+  </Flags>
+</PurchaseOrder>
+```
+
+Related: [Rules schema reference](../reference/rules-schema.md), [Condition expressions](../reference/conditions.md).

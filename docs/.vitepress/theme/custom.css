@@ -8,6 +8,10 @@
   --vp-home-hero-image-filter: blur(42px) opacity(58%);
 }
 
+.dark .vp-doc :not(pre, h1, h2, h3, h4, h5, h6) > code {
+  color: #11b4a9;
+}
+
 .VPHero .image {
   max-width: 220px;
   margin-left: auto;

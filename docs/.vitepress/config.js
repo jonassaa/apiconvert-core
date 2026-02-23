@@ -23,68 +23,68 @@ export default defineConfig({
       provider: "local"
     },
     nav: [
-      { text: "Start Here", link: "/start-here/install" },
-      { text: "Guide", link: "/start-here/conversion-lifecycle" },
-      { text: "Rules", link: "/rules-reference/node-types" },
+      { text: "Overview", link: "/overview/what-is-apiconvert-core" },
+      { text: "Get Started", link: "/getting-started/" },
+      { text: "Guides", link: "/guides/runtime-api" },
+      { text: "Reference", link: "/reference/rules-schema" },
       { text: "GitHub", link: "https://github.com/jonassaa/apiconvert-core" }
     ],
     sidebar: [
       {
-        text: "Start Here",
+        text: "Start",
         items: [
-          { text: "Overview", link: "/" },
-          { text: "Install", link: "/start-here/install" },
-          { text: "First Conversion", link: "/start-here/first-conversion" },
-          { text: "Conversion Lifecycle", link: "/start-here/conversion-lifecycle" }
+          { text: "Home", link: "/" },
+          { text: "What Is Apiconvert.Core?", link: "/overview/what-is-apiconvert-core" },
+          { text: "Getting Started", link: "/getting-started/" },
+          { text: "First Conversion", link: "/getting-started/first-conversion" }
         ]
       },
       {
-        text: "Runtime Guides",
+        text: "Core Concepts",
         items: [
-          { text: "API Usage", link: "/runtime-guides/api-usage" },
-          { text: "Streaming", link: "/runtime-guides/streaming" },
-          { text: "Custom Transforms", link: "/runtime-guides/custom-transforms" },
-          { text: "Performance and Caching", link: "/runtime-guides/performance-and-caching" }
+          { text: "Rules Model", link: "/concepts/rules-model" },
+          { text: "Conversion Lifecycle", link: "/concepts/conversion-lifecycle" },
+          { text: "Determinism and Parity", link: "/concepts/determinism-and-parity" }
         ]
       },
       {
-        text: "Rules Reference",
+        text: "How-To Guides",
         items: [
-          { text: "Node Types", link: "/rules-reference/node-types" },
-          { text: "Sources and Transforms", link: "/rules-reference/sources-and-transforms" },
-          { text: "Condition Expressions", link: "/rules-reference/condition-expressions" },
-          { text: "Merge and Collision", link: "/rules-reference/merge-and-collision" },
-          { text: "Fragments and Includes", link: "/rules-reference/fragments-and-includes" },
-          { text: "Validation Modes", link: "/rules-reference/validation-modes" }
+          { text: "Runtime APIs", link: "/guides/runtime-api" },
+          { text: "Streaming", link: "/guides/streaming" },
+          { text: "Custom Transforms", link: "/guides/custom-transforms" },
+          { text: "Performance and Caching", link: "/guides/performance-and-caching" }
+        ]
+      },
+      {
+        text: "Reference",
+        items: [
+          { text: "Rules Schema", link: "/reference/rules-schema" },
+          { text: "Rule Nodes", link: "/reference/rule-nodes" },
+          { text: "Sources and Transforms", link: "/reference/sources-and-transforms" },
+          { text: "Condition Expressions", link: "/reference/conditions" },
+          { text: "Merge and Collision", link: "/reference/merge-and-collision" },
+          { text: "Fragments and Includes", link: "/reference/fragments-and-includes" },
+          { text: "Validation and Diagnostics", link: "/reference/validation-and-diagnostics" },
+          { text: "CLI", link: "/reference/cli" }
         ]
       },
       {
         text: "Recipes",
         items: [
+          { text: "Hello World", link: "/recipes/hello-world" },
           { text: "JSON and XML", link: "/recipes/json-and-xml" },
           { text: "JSON and Query", link: "/recipes/json-and-query" },
-          { text: "Arrays Branches Merge Split", link: "/recipes/arrays-branches-merge-split" },
-          { text: "Diagnostics-first Authoring", link: "/recipes/diagnostics-first-authoring" }
+          { text: "Arrays, Branches, Merge, Split", link: "/recipes/arrays-branches-merge-split" }
         ]
       },
       {
-        text: "Diagnostics and Troubleshooting",
+        text: "Troubleshooting",
         items: [
-          { text: "Error Codes", link: "/diagnostics/error-codes" },
-          { text: "Lint Diagnostics", link: "/diagnostics/lint-diagnostics" },
-          { text: "Rule Doctor Workflow", link: "/diagnostics/rule-doctor-workflow" },
-          { text: "Troubleshooting Tree", link: "/diagnostics/troubleshooting-tree" }
+          { text: "Error Codes", link: "/troubleshooting/error-codes" },
+          { text: "Troubleshooting Tree", link: "/troubleshooting/troubleshooting-tree" }
         ]
-      },
-      {
-        text: "CLI and Tooling",
-        items: [
-          { text: "CLI Reference", link: "/cli-tooling/cli-reference" },
-          { text: "Rules Bundling", link: "/cli-tooling/rules-bundling" },
-          { text: "Plan Profiling", link: "/cli-tooling/plan-profiling" },
-          { text: "Compatibility Checks", link: "/cli-tooling/compatibility-checks" }
-        ]
-      },
+      }
     ],
     socialLinks: [{ icon: "github", link: "https://github.com/jonassaa/apiconvert-core" }]
   }

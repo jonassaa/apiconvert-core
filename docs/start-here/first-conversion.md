@@ -96,4 +96,4 @@ console.log(output);
 
 1. Add branching and defaults: [/rules-reference/condition-expressions](/rules-reference/condition-expressions)
 2. Add array mapping: [/rules-reference/node-types](/rules-reference/node-types)
-3. Add quality gates: [/diagnostics/rule-doctor-workflow](/diagnostics/rule-doctor-workflow)
+3. Add quality gates: [/reference/validation-and-diagnostics](/reference/validation-and-diagnostics)
