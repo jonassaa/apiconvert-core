@@ -1,6 +1,11 @@
 import { defineConfig } from "vitepress";
 
-const base = "/apiconvert-core/";
+const configuredBase = process.env.DOCS_BASE;
+const base = configuredBase
+  ? configuredBase.endsWith("/")
+    ? configuredBase
+    : `${configuredBase}/`
+  : "/apiconvert-core/";
 
 export default defineConfig({
   base,
