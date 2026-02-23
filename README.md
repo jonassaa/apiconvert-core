@@ -164,10 +164,10 @@ Consumer recipes: [`docs/recipes`](docs/recipes).
 
 ## GitHub Pages Docs
 
-The repository includes a full GitHub Pages docs site powered by MkDocs + Material.
+The repository includes a full GitHub Pages docs site powered by VitePress.
 
 - Site source: [`docs/`](docs/)
-- Build config: [`mkdocs.yml`](mkdocs.yml)
+- VitePress config: [`docs/.vitepress/config.js`](docs/.vitepress/config.js)
 - Docs authoring rules: [`docs/contributing/docs-authoring-guide.md`](docs/contributing/docs-authoring-guide.md)
 
 Local docs commands:

@@ -1,0 +1,21 @@
+.home-wrapper {
+  margin-top: 1.75rem;
+}
+
+.home-wrapper pre {
+  border-radius: 12px;
+}
+
+.home-wrapper .sponsoring {
+  margin-top: 1.5rem;
+}
+
+.home-wrapper .sponsor {
+  border: 1px solid var(--vp-c-brand-1);
+  border-radius: 999px;
+  color: var(--vp-c-brand-1);
+  display: inline-block;
+  font-weight: 600;
+  padding: 0.45rem 0.9rem;
+  text-decoration: none;
+}

@@ -1,0 +1,66 @@
+:root {
+  --vp-c-brand-1: #0f766e;
+  --vp-c-brand-2: #0e8a81;
+  --vp-c-brand-3: #0a5d56;
+  --vp-home-hero-name-color: transparent;
+  --vp-home-hero-name-background: -webkit-linear-gradient(120deg, #0f766e 30%, #2563eb);
+  --vp-home-hero-image-background-image: linear-gradient(-45deg, #0f766e 50%, #60a5fa 50%);
+  --vp-home-hero-image-filter: blur(42px) opacity(58%);
+}
+
+.VPHero .image {
+  max-width: 220px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.VPHero .image img {
+  width: 100%;
+  height: auto;
+}
+
+@media (min-width: 960px) {
+  .VPHero .image-container {
+    display: flex;
+    justify-content: center;
+  }
+
+  .VPHero .image {
+    max-width: 280px;
+  }
+}
+
+.runtime-selector-control {
+  align-items: center;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 10px;
+  display: flex;
+  gap: 0.5rem;
+  margin-left: 1rem;
+  padding: 0.3rem 0.55rem;
+}
+
+.runtime-selector-control select {
+  background: #ffffff;
+  border: 1px solid #c7ced8;
+  border-radius: 6px;
+  color: #17233a;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.15rem 0.4rem;
+}
+
+@media (max-width: 960px) {
+  .runtime-selector-control {
+    display: none;
+  }
+}
+
+body[data-runtime="dotnet"] .runtime-typescript {
+  display: none !important;
+}
+
+body[data-runtime="typescript"] .runtime-dotnet {
+  display: none !important;
+}

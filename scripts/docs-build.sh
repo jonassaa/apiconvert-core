@@ -2,12 +2,8 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
-VENV_DIR="$ROOT_DIR/.venv-docs"
+DOCS_DIR="$ROOT_DIR/docs"
 
-if [[ ! -d "$VENV_DIR" ]]; then
-  python3 -m venv "$VENV_DIR"
-fi
-
-source "$VENV_DIR/bin/activate"
-python -m pip install -r "$ROOT_DIR/requirements-docs.txt" >/dev/null
-mkdocs build --strict
+cd "$DOCS_DIR"
+npm ci
+npm run docs:build

@@ -4,8 +4,8 @@ This section covers local setup, documentation conventions, release flow, and go
 
 ## GitHub Pages docs
 
-- Build locally with `mkdocs build --strict`.
-- Serve docs with `mkdocs serve`.
+- Build locally with `npm --prefix docs run docs:build`.
+- Serve docs with `npm --prefix docs run docs:dev`.
 - Follow the runtime-tagging rules in the docs authoring guide.
 
 Continue with:

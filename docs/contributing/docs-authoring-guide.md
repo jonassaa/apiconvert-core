@@ -15,7 +15,7 @@ Keep shared conceptual text untagged.
 - keep equivalent examples for both runtimes
 - update shared case references when examples change behavior
 
-## Versioning
+## Publishing
 
-- deploy versioned docs via `mike`
-- keep `latest` aligned with active release branch/tag stream
+- docs deploy from GitHub Actions using VitePress build output
+- keep changes to docs and `.vitepress` config in the same PR when behavior/layout changes
