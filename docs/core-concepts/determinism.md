@@ -1,10 +1,17 @@
 # Determinism
 
-Deterministic behavior means the same input payload + same normalized rules must produce the same output and diagnostics.
+Deterministic behavior means same input + same normalized rules => same output and diagnostics.
 
 ## In practice
 
-- rules are normalized before use
-- conversion does not mutate input payloads
-- collision handling is policy-based and explicit
-- tracing is ordered by rule execution path
+- Rules are normalized before use.
+- Conversion does not mutate input payloads.
+- Collision handling is explicit and policy-based.
+- Trace output is ordered by execution path.
+
+## Determinism risks to avoid
+
+- Random/time-dependent transforms
+- Network/filesystem reads in transform functions
+- Mutable shared state across conversions
+

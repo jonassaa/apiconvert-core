@@ -2,15 +2,17 @@
 
 ## Lifecycle
 
-1. Parse payload by `inputFormat`.
-2. Normalize rules (strict or lenient).
-3. Apply conversion.
-4. Inspect errors/warnings/trace.
-5. Format payload by `outputFormat`.
+1. Parse rules input.
+2. Normalize rules (strict/lenient).
+3. Parse payload by `inputFormat`.
+4. Apply conversion (rules or compiled plan).
+5. Inspect errors/warnings/trace.
+6. Format payload by `outputFormat`.
 
 ## Recommended production flow
 
-- normalize strict at startup or build time
+- normalize strict at startup/build time
 - compile conversion plan for repeated runs
-- apply with explicit collision policy
-- include trace mode when debugging
+- apply explicit collision policy
+- enable trace in debugging paths
+

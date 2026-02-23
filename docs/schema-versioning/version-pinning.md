@@ -1,7 +1,16 @@
 # Version Pinning
 
-Use immutable versioned schema paths for strict pinning:
+Use immutable schema versions when reproducibility matters.
 
-- `schemas/rules/vX.Y.Z/schema.json`
+## Paths
 
-Use `schemas/rules/current/schema.json` when tracking latest release.
+- Immutable: `schemas/rules/vX.Y.Z/schema.json`
+- Latest moving alias: `schemas/rules/current/schema.json`
+- Legacy alias: `schemas/rules/rules.schema.json`
+
+## Guidance
+
+- Pin immutable versions in long-lived integrations.
+- Use `current` only where continuous tracking is intentional.
+- Record pinned version in service configuration and change notes.
+

@@ -1,9 +1,69 @@
 # Fragments and Includes
 
-## Fragments
+## Fragments with `use`
 
-Use a `fragments` map for reusable nodes and reference by `{ "use": "name" }`.
+Declare reusable fragments under top-level `fragments`, then reference with `{ "use": "name" }`.
 
-## Includes
+```json
+{
+  "fragments": {
+    "customerName": {
+      "kind": "field",
+      "outputPaths": ["customer.name"],
+      "source": { "type": "path", "path": "user.fullName" }
+    }
+  },
+  "rules": [
+    { "use": "customerName" }
+  ]
+}
+```
 
-Use rules bundling to resolve modular include files into one deterministic rules object before deployment.
+## `use` overrides (simplification)
+
+`use` nodes can override fragment fields.
+
+```json
+{
+  "fragments": {
+    "copyValue": {
+      "kind": "field",
+      "outputPaths": ["a"],
+      "source": { "type": "path", "path": "input.value" }
+    }
+  },
+  "rules": [
+    {
+      "use": "copyValue",
+      "outputPaths": ["b"],
+      "source": { "type": "path", "path": "input.altValue" }
+    }
+  ]
+}
+```
+
+## Fragment safety
+
+Runtime normalizers detect:
+
+- unknown fragment names
+- fragment cycles (`A -> B -> A`)
+
+## Includes and bundling
+
+Use rules bundling to resolve include-based modular rules into a deterministic deploy artifact.
+
+## Runtime APIs
+
+<div class="runtime-dotnet">
+
+- `ConversionEngine.BundleRules(entryRulesPath)`
+
+</div>
+
+<div class="runtime-typescript">
+
+- `bundleConversionRules(entryRulesPath)`
+
+</div>
+

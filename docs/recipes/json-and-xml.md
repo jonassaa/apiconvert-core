@@ -8,7 +8,7 @@ Use shared cases under `tests/cases` for parity verification.
 
 <div class="runtime-dotnet">
 
-## .NET runner sketch
+<h2 id="json-xml-dotnet-runner">.NET runner sketch</h2>
 
 ```csharp
 var rules = ConversionEngine.NormalizeConversionRulesStrict(File.ReadAllText("rules.json"));
@@ -21,7 +21,7 @@ var output = ConversionEngine.FormatPayload(result.Output, rules.OutputFormat, p
 
 <div class="runtime-typescript">
 
-## TypeScript runner sketch
+<h2 id="json-xml-typescript-runner">TypeScript runner sketch</h2>
 
 ```ts
 const rules = normalizeConversionRulesStrict(readFileSync("rules.json", "utf8"));

@@ -15,6 +15,7 @@ const component = readFileSync(
 
 assert(component.includes('@change="updateRuntime('), "Selector component must react to runtime selection changes.");
 assert(component.includes("localStorage"), "Selector component must persist runtime state in localStorage.");
+assert(component.includes("syncOutline"), "Selector component must synchronize runtime-specific headings in the page outline.");
 assert(
   component.includes('document.body.setAttribute("data-runtime"') ||
     component.includes("document.body.setAttribute('data-runtime'"),

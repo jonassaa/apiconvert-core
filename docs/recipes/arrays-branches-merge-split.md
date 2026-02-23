@@ -9,7 +9,7 @@ Patterns:
 
 <div class="runtime-dotnet">
 
-## .NET policy hint
+<h2 id="arrays-branches-merge-split-dotnet-policy">.NET policy hint</h2>
 
 Set collision behavior with `new ConversionOptions { CollisionPolicy = OutputCollisionPolicy.Error }` during recipe validation.
 
@@ -17,7 +17,7 @@ Set collision behavior with `new ConversionOptions { CollisionPolicy = OutputCol
 
 <div class="runtime-typescript">
 
-## TypeScript policy hint
+<h2 id="arrays-branches-merge-split-typescript-policy">TypeScript policy hint</h2>
 
 Set collision behavior with `{ collisionPolicy: OutputCollisionPolicy.Error }` during recipe validation.
 

@@ -1,16 +1,15 @@
 # Contributing
 
-This section covers local setup, documentation conventions, release flow, and governance expectations for rule/schema changes.
+This section covers local setup, docs conventions, release flow, and governance expectations.
 
-## GitHub Pages docs
+This section is primarily for maintainers and contributors to this repository, not first-time package consumers.
 
-- Build locally with `npm --prefix docs run docs:build`.
-- Serve docs with `npm --prefix docs run docs:dev`.
-- Follow the runtime-tagging rules in the docs authoring guide.
+## Priorities
 
-Continue with:
+- preserve deterministic behavior
+- preserve cross-runtime parity
+- maintain schema contract compatibility
+- add/update shared cases for behavior changes
 
-- `Local Setup`
-- `Docs Authoring Guide`
-- `Release Flow`
-- `Governance`
+## Start here
+

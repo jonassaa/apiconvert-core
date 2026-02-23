@@ -1,11 +1,30 @@
 # Lint Diagnostics
 
-Lint diagnostics are non-mutating findings intended for author feedback.
+Lint diagnostics provide non-mutating feedback for authoring quality.
 
-Each includes:
+## Diagnostic fields
 
-- severity
-- code
-- rule path
-- message
-- optional fix hints
+- `severity`
+- `code`
+- `rulePath`
+- `message`
+- Optional fix hints
+
+## Runtime APIs
+
+<div class="runtime-dotnet">
+
+```csharp
+var diagnostics = ConversionEngine.LintRules(rawRules);
+```
+
+</div>
+
+<div class="runtime-typescript">
+
+```ts
+const lint = lintConversionRules(rawRules);
+```
+
+</div>
+

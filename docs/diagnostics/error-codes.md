@@ -1,8 +1,28 @@
 # Error Codes
 
-Diagnostics use stable, deterministic codes.
+Diagnostics include stable codes so CI and tooling can automate remediation.
 
-- conversion diagnostics: runtime mapping/execution issues
-- rules diagnostics: schema and semantic validation issues
+## Categories
 
-Use the catalog to map code to remediation steps.
+- Rules validation errors: schema/shape/semantic issues
+- Lint diagnostics: maintainability and rule quality findings
+- Runtime conversion errors: parse/source/write-path issues
+
+## Runtime collection points
+
+<div class="runtime-dotnet">
+
+- `ConversionEngine.NormalizeConversionRulesStrict`
+- `ConversionEngine.LintRules`
+- `ConversionEngine.RunRuleDoctor`
+
+</div>
+
+<div class="runtime-typescript">
+
+- `normalizeConversionRulesStrict`
+- `lintConversionRules`
+- `runRuleDoctor`
+
+</div>
+

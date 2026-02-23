@@ -53,14 +53,23 @@
 
 @media (max-width: 960px) {
   .runtime-selector-control {
+    margin-left: 0;
+    margin-right: 0.75rem;
+    max-width: 180px;
+    padding: 0.2rem 0.4rem;
+  }
+
+  .runtime-selector-control label {
     display: none;
   }
 }
 
+html[data-runtime="dotnet"] .runtime-typescript,
 body[data-runtime="dotnet"] .runtime-typescript {
   display: none !important;
 }
 
+html[data-runtime="typescript"] .runtime-dotnet,
 body[data-runtime="typescript"] .runtime-dotnet {
   display: none !important;
 }

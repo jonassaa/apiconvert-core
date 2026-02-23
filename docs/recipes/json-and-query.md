@@ -6,7 +6,7 @@
 
 <div class="runtime-dotnet">
 
-## .NET helpers
+<h2 id="json-query-dotnet-helpers">.NET helpers</h2>
 
 - `ConversionEngine.ParsePayload(..., DataFormat.Query)`
 - `ConversionEngine.FormatPayload(..., DataFormat.Query, pretty: false)`
@@ -15,7 +15,7 @@
 
 <div class="runtime-typescript">
 
-## TypeScript helpers
+<h2 id="json-query-typescript-helpers">TypeScript helpers</h2>
 
 - `parsePayload(..., DataFormat.Query)`
 - `formatPayload(..., DataFormat.Query, false)`

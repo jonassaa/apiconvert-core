@@ -10,7 +10,7 @@ Suggested loop:
 
 <div class="runtime-dotnet">
 
-## .NET commands
+<h2 id="diagnostics-first-authoring-dotnet-commands">.NET commands</h2>
 
 ```bash
 dotnet test Apiconvert.Core.sln --filter RuleDoctorTests
@@ -20,10 +20,10 @@ dotnet test Apiconvert.Core.sln --filter RuleDoctorTests
 
 <div class="runtime-typescript">
 
-## TypeScript commands
+<h2 id="diagnostics-first-authoring-typescript-commands">TypeScript commands</h2>
 
 ```bash
-npm --prefix tests/npm/apiconvert-core-tests test -- --grep \"rule doctor\"
+npm --prefix tests/npm/apiconvert-core-tests test -- --grep "rule doctor"
 ```
 
 </div>
