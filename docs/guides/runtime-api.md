@@ -37,10 +37,28 @@ ConversionEngine.ParsePayload(text, format)
 Parses text payload (`json`, `xml`, `query`) into runtime objects and returns `(Value, Error)`.
 
 ```csharp
+ConversionEngine.ParsePayload(stream, format, encoding?, leaveOpen?)
+```
+
+Parses payload text from a stream with optional encoding control.
+
+```csharp
+ConversionEngine.ParsePayload(jsonNode, DataFormat.Json)
+```
+
+Parses from an in-memory `JsonNode` when input is already JSON-shaped.
+
+```csharp
 ConversionEngine.FormatPayload(value, format, pretty)
 ```
 
 Formats converted output back to text (`json`, `xml`, `query`).
+
+```csharp
+ConversionEngine.FormatPayload(value, format, stream, pretty, encoding?, leaveOpen?)
+```
+
+Formats output and writes directly to a stream.
 
 </div>
 
@@ -69,6 +87,12 @@ runConversionCase({ rulesText, inputText, inputExtension, outputExtension })
 ```
 
 Convenience helper for case-runner style workflows using text inputs and file extensions.
+
+```ts
+validateConversionRules(raw)
+```
+
+Returns `{ rules, isValid, errors }` for explicit validation-only workflows.
 
 ```ts
 parsePayload(text, format)
@@ -117,6 +141,7 @@ ConversionEngine.BundleRules(entryRulesPath, options?)
 ```
 
 Resolves `include` chains into one bundled rules object.
+`options` is `RuleBundleOptions` (for example, `BaseDirectory` override for include resolution).
 
 </div>
 
@@ -250,9 +275,32 @@ streamConversion(input, rawRules, streamOptions?, options?)
 
 General streaming converter for `jsonArray`, `ndjson`, `queryLines`, and `xmlElements`.
 
+`input` supports plain text, iterable/async-iterable item streams, and iterable/async-iterable text chunks (`string | Uint8Array`) for line-based modes.
+
 </div>
 
 See [Streaming guide](./streaming.md).
+
+## Execution options
+
+<div class="runtime-dotnet">
+
+- `ConversionOptions.CollisionPolicy`: `LastWriteWins` (default), `FirstWriteWins`, `Error`
+- `ConversionOptions.Explain`: includes ordered `ConversionResult.Trace` events
+- `ConversionOptions.TransformRegistry`: runtime registry for `source.customTransform`
+- `StreamConversionOptions.InputKind`: `JsonArray`, `Ndjson`, `QueryLines`, `XmlElements`
+- `StreamConversionOptions.ErrorMode`: `FailFast` (default) or `ContinueWithReport`
+- `StreamConversionOptions.Encoding`: optional encoding for line-based readers
+- `StreamConversionOptions.XmlItemPath`: required when `InputKind = XmlElements`
+
+</div>
+
+<div class="runtime-typescript">
+
+- `collisionPolicy`, `explain`, and `transforms` control conversion behavior.
+- `inputKind`, `errorMode`, and `xmlItemPath` control streaming behavior.
+
+</div>
 
 ## Contracts for rules generation integration
 
@@ -265,12 +313,14 @@ ConversionRulesGenerationRequest
 ```
 
 Request model for generating rules from example input/output payloads.
+Key members: `InputFormat`, `OutputFormat`, `InputSample`, `OutputSample`, optional `Model`.
 
 ```csharp
 IConversionRulesGenerator
 ```
 
 Interface for pluggable rule generators.
+Primary method: `GenerateAsync(ConversionRulesGenerationRequest request, CancellationToken cancellationToken)`.
 
 </div>
 
@@ -289,6 +339,32 @@ ConversionRulesGenerator
 Interface for custom async rule generator implementations.
 
 </div>
+
+## Result model shapes (.NET)
+
+Use these return model contracts when consuming diagnostics and profiling output:
+
+- `ConversionResult`: `Output`, `Errors`, `Warnings`, `Diagnostics`, `Trace`
+- `RuleLintDiagnostic`: `Code`, `Severity`, `RulePath`, `Message`, `Suggestion`
+- `RuleDoctorReport`: `Findings`, `HasErrors`, `CanApplySafeFixes`, `SafeFixPreview`
+- `RulesCompatibilityReport`: `TargetVersion`, `SchemaVersion`, `SupportedRangeMin`, `SupportedRangeMax`, `IsCompatible`, `Diagnostics`
+- `ConversionProfileReport`: `PlanCacheKey`, `CompileMs`, `WarmupIterations`, `Iterations`, `TotalRuns`, `LatencyMs` (`Min`, `P50`, `P95`, `P99`, `Max`, `Mean`)
+
+## TypeScript contracts
+
+Key TypeScript option/result contracts exposed from `@apiconvert/core`:
+
+- `ApplyConversionOptions`: `collisionPolicy`, `explain`, `transforms`
+- `StreamConversionOptions`: `inputKind`, `errorMode`, `xmlItemPath`
+- `ConversionRulesLintResult`: `diagnostics`, `hasErrors`
+- `RuleDoctorOptions`: `sampleInputText`, `inputFormat`, `applySafeFixes`
+- `RulesCompatibilityOptions`: `targetVersion`
+- `ConversionRulesGenerator.generate(request, { signal? })`
+
+Schema constants:
+- `rulesSchemaPath`
+- `rulesSchemaVersion`
+- `rulesSchemaVersionedPath`
 
 ## Related references
 

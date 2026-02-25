@@ -31,6 +31,25 @@ Streaming mode is for large or continuous inputs where full payload materializat
 
 </div>
 
+## Stream options details
+
+<div class="runtime-dotnet">
+
+- `InputKind` defaults to `JsonArray`.
+- `ErrorMode` defaults to `FailFast`.
+- `Encoding` applies to `Ndjson` and `QueryLines`; UTF-8 is used when omitted.
+- `XmlItemPath` is required when `InputKind = XmlElements`.
+
+</div>
+
+<div class="runtime-typescript">
+
+- `inputKind` and `errorMode` select stream mode and failure behavior.
+- `xmlItemPath` is required for `xmlElements`.
+- For line-based modes, input can be full text or iterable/async-iterable chunks (`string | Uint8Array`).
+
+</div>
+
 <div class="runtime-typescript">
 
 - `failFast`

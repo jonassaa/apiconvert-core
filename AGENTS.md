@@ -79,6 +79,10 @@ When adding or changing behavior, validate:
 - PRs should include: a clear summary, rationale, and any API changes.
 - If you add public surface area, update `src/Apiconvert.Core/README.md` with usage examples.
 
+## Documentation Scope
+- Keep `docs/` focused on package-consumer usage only (API usage, configuration, examples, and troubleshooting).
+- Do not add internal process artifacts in `docs/` (for example: coverage audit checklists, task tracking notes, or implementation status pages).
+
 ## Configuration & Security Notes
 - The package metadata is defined in `src/Apiconvert.Core/Apiconvert.Core.csproj`.
 - License metadata is set to `LicenseRef-Proprietary`; confirm before publishing.

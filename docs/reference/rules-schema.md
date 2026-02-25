@@ -22,6 +22,8 @@ This is the primary source of truth for rules authoring.
 - `inputFormat`: `json` | `xml` | `query`
 - `outputFormat`: `json` | `xml` | `query`
 
+.NET enum mapping: `DataFormat.Json`, `DataFormat.Xml`, `DataFormat.Query`.
+
 ## Rule node kinds
 
 - `field`
@@ -38,6 +40,11 @@ See [Rule nodes](./rule-nodes.md).
 - `transform`
 - `merge`
 - `condition`
+
+.NET enum mapping:
+- transform values use `TransformType` (`ToLowerCase`, `ToUpperCase`, `Number`, `Boolean`, `Concat`, `Split`)
+- merge values use `MergeMode` (`Concat`, `FirstNonEmpty`, `Array`)
+- condition output mode uses `ConditionOutputMode` (`Branch`, `Match`)
 
 See [Sources and transforms](./sources-and-transforms.md).
 

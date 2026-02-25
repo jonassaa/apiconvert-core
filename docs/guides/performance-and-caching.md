@@ -53,4 +53,11 @@ Both runtimes include plan profiling utilities.
 - .NET: `ConversionEngine.ProfileConversionPlan(...)`
 - TypeScript: `profileConversionPlan(...)`
 
+### .NET profile options and report
+
+- `ConversionProfileOptions.Iterations`: measured iteration count (default `100`)
+- `ConversionProfileOptions.WarmupIterations`: pre-measure warmup runs (default `10`)
+- `ConversionProfileReport`: `PlanCacheKey`, `CompileMs`, `WarmupIterations`, `Iterations`, `TotalRuns`
+- `ConversionProfileReport.LatencyMs`: percentile summary (`Min`, `P50`, `P95`, `P99`, `Max`, `Mean`)
+
 See [CLI](../reference/cli.md) for benchmark command usage.

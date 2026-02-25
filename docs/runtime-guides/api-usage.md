@@ -8,8 +8,11 @@ This page is the unified runtime API reference. Use the runtime selector in the 
 
 - `ConversionEngine.NormalizeConversionRulesStrict(raw)`
 - `ConversionEngine.ParsePayload(text, format)`
+- `ConversionEngine.ParsePayload(stream, format, encoding?, leaveOpen?)`
+- `ConversionEngine.ParsePayload(jsonNode, DataFormat.Json)`
 - `ConversionEngine.ApplyConversion(input, rules, options?)`
 - `ConversionEngine.FormatPayload(output, format, pretty)`
+- `ConversionEngine.FormatPayload(output, format, stream, pretty, encoding?, leaveOpen?)`
 
 ```csharp
 using Apiconvert.Core.Converters;
@@ -87,6 +90,7 @@ const cacheKey = computeRulesCacheKey(rulesJson);
 - `ConversionEngine.LintRules(rawRules)`
 - `ConversionEngine.RunRuleDoctor(rawRules, options?)`
 - `ConversionEngine.CheckCompatibility(rawRules, targetVersion)`
+- `ConversionEngine.BundleRules(entryRulesPath, options?)` (`RuleBundleOptions.BaseDirectory` supported)
 
 </div>
 
@@ -95,6 +99,49 @@ const cacheKey = computeRulesCacheKey(rulesJson);
 - `lintConversionRules(rawRules)`
 - `runRuleDoctor(rawRules, options?)`
 - `checkRulesCompatibility(rawRules, { targetVersion })`
+- `validateConversionRules(rawRules)`
 
 </div>
 
+## Options and model contracts
+
+<div class="runtime-dotnet">
+
+- `ConversionOptions`: `CollisionPolicy`, `Explain`, `TransformRegistry`
+- `StreamConversionOptions`: `InputKind`, `ErrorMode`, optional `Encoding`, required `XmlItemPath` for `XmlElements`
+- `RuleLintDiagnostic`, `RuleDoctorReport`, `RulesCompatibilityReport`, `ConversionProfileReport`
+
+</div>
+
+<div class="runtime-typescript">
+
+- `ApplyConversionOptions`: `collisionPolicy`, `explain`, `transforms`
+- `StreamConversionOptions`: `inputKind`, `errorMode`, `xmlItemPath`
+- `ConversionRulesLintResult`: `{ diagnostics, hasErrors }`
+- `RuleDoctorOptions`: `{ sampleInputText, inputFormat, applySafeFixes }`
+- `RulesCompatibilityOptions`: `{ targetVersion }`
+- `RuleDoctorReport`, `RulesCompatibilityReport`, `ConversionProfileReport`
+
+</div>
+
+## Generation contracts
+
+<div class="runtime-dotnet">
+
+- `ConversionRulesGenerationRequest`: `InputFormat`, `OutputFormat`, `InputSample`, `OutputSample`, optional `Model`
+- `IConversionRulesGenerator.GenerateAsync(request, cancellationToken)`
+
+</div>
+
+<div class="runtime-typescript">
+
+- `ConversionRulesGenerationRequest`: `inputFormat`, `outputFormat`, `inputSample`, `outputSample`, optional `model`
+- `ConversionRulesGenerator.generate(request, { signal? })`
+
+</div>
+
+## Schema constants (TypeScript)
+
+- `rulesSchemaPath`
+- `rulesSchemaVersion`
+- `rulesSchemaVersionedPath`

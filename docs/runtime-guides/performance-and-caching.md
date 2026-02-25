@@ -19,6 +19,13 @@ Performance usually depends on two phases: rule normalization/plan compilation, 
 
 </div>
 
+## .NET profile options and report shape
+
+- `ConversionProfileOptions.Iterations` controls measured runs.
+- `ConversionProfileOptions.WarmupIterations` controls unmeasured warmup runs.
+- `ConversionProfileReport` returns `PlanCacheKey`, `CompileMs`, run counts, and `LatencyMs` percentiles.
+- `LatencyMs` fields are `Min`, `P50`, `P95`, `P99`, `Max`, and `Mean`.
+
 <div class="runtime-typescript">
 
 - `compileConversionPlan(rawRules)`
@@ -41,4 +48,3 @@ cacheKey = computeRulesCacheKey(rules)
 if (planCache has cacheKey) use cached plan
 else compile plan and store
 ```
-

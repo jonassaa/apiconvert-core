@@ -9,7 +9,6 @@ const base = configuredBase
 
 export default defineConfig({
   base,
-  srcExclude: ["plans/**"],
   title: "Apiconvert.Core",
   description: "Rule-driven API conversion docs for .NET and TypeScript",
   lang: "en-US",

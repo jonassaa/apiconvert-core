@@ -31,6 +31,25 @@ Use streaming when inputs are large or continuous and full materialization is ex
 
 </div>
 
+## Stream options details
+
+<div class="runtime-dotnet">
+
+- `InputKind` defaults to `JsonArray`.
+- `ErrorMode` defaults to `FailFast`.
+- `Encoding` applies to line-based adapters (`Ndjson`, `QueryLines`), default UTF-8.
+- `XmlItemPath` is required for `XmlElements`; missing/empty value fails streaming.
+
+</div>
+
+<div class="runtime-typescript">
+
+- `inputKind` and `errorMode` choose reader and failure behavior.
+- `xmlItemPath` is required for `xmlElements`.
+- For `ndjson`/`queryLines`, `input` can be a full string or iterable/async-iterable chunks (`string | Uint8Array`).
+
+</div>
+
 <div class="runtime-typescript">
 
 - `failFast`
