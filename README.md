@@ -152,6 +152,7 @@ const outputJson = formatPayload(result.output, rules.outputFormat!, true);
 ```bash
 dotnet build Apiconvert.Core.sln
 dotnet test Apiconvert.Core.sln
+bash scripts/test-coverage-all.sh
 npm --prefix tests/npm/apiconvert-core-tests test
 npm --prefix tests/npm/apiconvert-core-tests run parity:check
 ```
@@ -161,6 +162,13 @@ The parity suite emits a machine-readable report at `tests/parity/parity-report.
 The parity gate also emits `tests/parity/parity-summary.json` with pass/fail criteria.
 Toolkit docs: [`docs/parity-testing/parity-gate-ci.md`](docs/parity-testing/parity-gate-ci.md).
 Consumer recipes: [`docs/recipes`](docs/recipes).
+
+For .NET coverage, the script generates:
+- Cobertura XML under `tests/nuget/Apiconvert.Core.Tests/TestResults/Coverage/`
+- HTML report at `tests/nuget/Apiconvert.Core.Tests/TestResults/Coverage/report/index.html`
+
+It also runs TypeScript coverage for `@apiconvert/core` via the npm test suite and generates:
+- HTML report at `tests/npm/apiconvert-core-tests/coverage/index.html`
 
 ## GitHub Pages Docs
 

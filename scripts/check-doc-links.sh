@@ -10,7 +10,7 @@ declare -a markdown_files=(
 )
 
 declare -a required_links=(
-  "../../docs/diagnostics/error-codes.md"
+  "../../docs/troubleshooting/error-codes.md"
 )
 
 for markdown_file in "${markdown_files[@]}"; do
