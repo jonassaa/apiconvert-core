@@ -82,6 +82,7 @@ When adding or changing behavior, validate:
 ## Documentation Scope
 - Keep `docs/` focused on package-consumer usage only (API usage, configuration, examples, and troubleshooting).
 - Do not add internal process artifacts in `docs/` (for example: coverage audit checklists, task tracking notes, or implementation status pages).
+- Store implementation plans in `internal-docs/plans/` (not under `docs/`).
 
 ## Configuration & Security Notes
 - The package metadata is defined in `src/Apiconvert.Core/Apiconvert.Core.csproj`.
