@@ -237,7 +237,7 @@ Console.WriteLine($"P95(ms): {profile.LatencyMs.P95}");
 ## Error Codes and Troubleshooting
 
 Use the shared catalog for deterministic diagnostic mapping and remediation guidance:
-- [`docs/diagnostics/error-codes.md`](../../docs/diagnostics/error-codes.md)
+- [`docs/troubleshooting/error-codes.md`](../../docs/troubleshooting/error-codes.md)
 - [`docs/recipes/json-and-xml.md`](../../docs/recipes/json-and-xml.md)
 
 ## Thread Safety

@@ -3,7 +3,8 @@ import { execSync } from "node:child_process";
 const commands = [
   "node tests/docs/runtime-selector.component.smoke.mjs",
   "node tests/docs/runtime-selector.smoke.mjs",
-  "node tests/docs/docs-content-quality.smoke.mjs"
+  "node tests/docs/docs-content-quality.smoke.mjs",
+  "node tests/docs/error-codes-doc-coverage.smoke.mjs"
 ];
 
 for (const command of commands) {
