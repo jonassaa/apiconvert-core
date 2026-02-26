@@ -152,7 +152,7 @@ const outputJson = formatPayload(result.output, rules.outputFormat!, true);
 ```bash
 dotnet build Apiconvert.Core.sln
 dotnet test Apiconvert.Core.sln
-bash scripts/test-coverage-dotnet.sh
+bash scripts/test-coverage-all.sh
 npm --prefix tests/npm/apiconvert-core-tests test
 npm --prefix tests/npm/apiconvert-core-tests run parity:check
 ```

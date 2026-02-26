@@ -5,8 +5,10 @@
   "type": "commonjs",
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "pretest": "npm install && npm --prefix ../../../src/apiconvert-core install && npm --prefix ../../../src/apiconvert-core run build",
+    "setup:workspace": "npm install && npm --prefix ../../../src/apiconvert-core install && npm --prefix ../../../src/apiconvert-core run build",
+    "pretest": "npm run setup:workspace",
     "test": "npm run build && node --test dist/*.test.js",
+    "precoverage": "npm run setup:workspace",
     "coverage": "npm run build && c8 --allowExternal --all --src ../../../src/apiconvert-core/dist --exclude \"**/*.test.js\" --reporter text-summary --reporter html --reports-dir coverage node --test dist/*.test.js",
     "parity:check": "node ../../../tests/parity/parity-gate.mjs --report tests/parity/parity-report.json --summary tests/parity/parity-summary.json --max-mismatches 0"
   },
