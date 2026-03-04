@@ -58,10 +58,8 @@ jobs:
           npm run docs:build
           touch .vitepress/dist/.nojekyll
 
-      - name: Runtime selector smoke test
-        run: |
-          node tests/docs/runtime-selector.smoke.mjs
-          node tests/docs/runtime-selector.component.smoke.mjs
+      - name: Docs smoke tests
+        run: node tests/docs/run-docs-smoke.mjs
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

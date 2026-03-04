@@ -366,6 +366,123 @@ Schema constants:
 - `rulesSchemaVersion`
 - `rulesSchemaVersionedPath`
 
+## Canonical API inventory
+
+The inventory lists below are machine-validated by docs smoke tests and are the canonical API coverage contract for this page.
+
+### .NET inventory
+
+<!-- API-INVENTORY-DOTNET-START -->
+- `dotnet:ConversionEngine.ApplyConversion(object?,ConversionPlan,ConversionOptions?)`
+- `dotnet:ConversionEngine.ApplyConversion(object?,object?,ConversionOptions?)`
+- `dotnet:ConversionEngine.BundleRules(string,RuleBundleOptions?)`
+- `dotnet:ConversionEngine.CheckCompatibility(object?,string)`
+- `dotnet:ConversionEngine.CompileConversionPlan(object?)`
+- `dotnet:ConversionEngine.CompileConversionPlanStrict(object?)`
+- `dotnet:ConversionEngine.ComputeRulesCacheKey(object?)`
+- `dotnet:ConversionEngine.FormatConversionRules(object?,bool)`
+- `dotnet:ConversionEngine.FormatPayload(object?,DataFormat,Stream,bool,Encoding?,bool)`
+- `dotnet:ConversionEngine.FormatPayload(object?,DataFormat,bool)`
+- `dotnet:ConversionEngine.LintRules(object?)`
+- `dotnet:ConversionEngine.NormalizeConversionRules(object?)`
+- `dotnet:ConversionEngine.NormalizeConversionRulesStrict(object?)`
+- `dotnet:ConversionEngine.ParsePayload(JsonNode?,DataFormat)`
+- `dotnet:ConversionEngine.ParsePayload(Stream,DataFormat,Encoding?,bool)`
+- `dotnet:ConversionEngine.ParsePayload(string,DataFormat)`
+- `dotnet:ConversionEngine.ProfileConversionPlan(object?,IEnumerable<object?>,ConversionProfileOptions?)`
+- `dotnet:ConversionEngine.RunRuleDoctor(object?,string?,DataFormat,bool)`
+- `dotnet:ConversionEngine.StreamConversionAsync(Stream,object?,StreamConversionOptions?,ConversionOptions?,CancellationToken)`
+- `dotnet:ConversionEngine.StreamJsonArrayConversionAsync(Stream,object?,ConversionOptions?,CancellationToken)`
+- `dotnet:ConversionPlan.Apply(object?,ConversionOptions?)`
+- `dotnet:ConversionPlan.CacheKey`
+- `dotnet:ConversionPlan.Rules`
+- `dotnet:type:ConversionDiagnostic`
+- `dotnet:type:ConversionLatencyProfile`
+- `dotnet:type:ConversionProfileOptions`
+- `dotnet:type:ConversionProfileReport`
+- `dotnet:type:ConversionResult`
+- `dotnet:type:ConversionRulesGenerationRequest`
+- `dotnet:type:ConversionTraceEntry`
+- `dotnet:type:IConversionRulesGenerator`
+- `dotnet:type:RuleBundleOptions`
+- `dotnet:type:RuleDoctorFinding`
+- `dotnet:type:RuleDoctorFindingSeverity`
+- `dotnet:type:RuleDoctorReport`
+- `dotnet:type:RuleLintDiagnostic`
+- `dotnet:type:RuleLintSeverity`
+- `dotnet:type:RulesCompatibilityDiagnostic`
+- `dotnet:type:RulesCompatibilityReport`
+<!-- API-INVENTORY-DOTNET-END -->
+
+### TypeScript inventory
+
+<!-- API-INVENTORY-TYPESCRIPT-START -->
+- `typescript:ApplyConversionOptions`
+- `typescript:ArrayRule`
+- `typescript:BranchElseIfRule`
+- `typescript:BranchRule`
+- `typescript:CompiledConversionPlan`
+- `typescript:ConditionElseIfBranch`
+- `typescript:ConditionOutputMode`
+- `typescript:ConditionValueSource`
+- `typescript:ConstantValueSource`
+- `typescript:ConversionDiagnostic`
+- `typescript:ConversionDiagnosticSeverity`
+- `typescript:ConversionLatencyProfile`
+- `typescript:ConversionProfileOptions`
+- `typescript:ConversionProfileReport`
+- `typescript:ConversionResult`
+- `typescript:ConversionRules`
+- `typescript:ConversionRulesGenerationRequest`
+- `typescript:ConversionRulesGenerator`
+- `typescript:ConversionRulesLintResult`
+- `typescript:ConversionRulesValidationResult`
+- `typescript:ConversionTraceEntry`
+- `typescript:DataFormat`
+- `typescript:FieldRule`
+- `typescript:MergeMode`
+- `typescript:MergeValueSource`
+- `typescript:OutputCollisionPolicy`
+- `typescript:PathValueSource`
+- `typescript:RuleBundleOptions`
+- `typescript:RuleDoctorFinding`
+- `typescript:RuleDoctorFindingSeverity`
+- `typescript:RuleDoctorOptions`
+- `typescript:RuleDoctorReport`
+- `typescript:RuleLintDiagnostic`
+- `typescript:RuleLintSeverity`
+- `typescript:RuleNode`
+- `typescript:RulesCompatibilityDiagnostic`
+- `typescript:RulesCompatibilityOptions`
+- `typescript:RulesCompatibilityReport`
+- `typescript:StreamConversionOptions`
+- `typescript:StreamErrorMode`
+- `typescript:StreamInputKind`
+- `typescript:TransformType`
+- `typescript:TransformValueSource`
+- `typescript:ValueSource`
+- `typescript:applyConversion`
+- `typescript:bundleConversionRules`
+- `typescript:checkRulesCompatibility`
+- `typescript:compileConversionPlan`
+- `typescript:computeRulesCacheKey`
+- `typescript:formatConversionRules`
+- `typescript:formatPayload`
+- `typescript:lintConversionRules`
+- `typescript:normalizeConversionRules`
+- `typescript:normalizeConversionRulesStrict`
+- `typescript:parsePayload`
+- `typescript:profileConversionPlan`
+- `typescript:rulesSchemaPath`
+- `typescript:rulesSchemaVersion`
+- `typescript:rulesSchemaVersionedPath`
+- `typescript:runConversionCase`
+- `typescript:runRuleDoctor`
+- `typescript:streamConversion`
+- `typescript:streamJsonArrayConversion`
+- `typescript:validateConversionRules`
+<!-- API-INVENTORY-TYPESCRIPT-END -->
+
 ## Related references
 
 - [Rules schema reference](../reference/rules-schema.md)
