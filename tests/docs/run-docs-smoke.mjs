@@ -4,6 +4,7 @@ const commands = [
   "node tests/docs/runtime-selector.component.smoke.mjs",
   "node tests/docs/runtime-selector.smoke.mjs",
   "node tests/docs/docs-content-quality.smoke.mjs",
+  "node tests/docs/api-doc-coverage.smoke.mjs",
   "node tests/docs/error-codes-doc-coverage.smoke.mjs"
 ];
 

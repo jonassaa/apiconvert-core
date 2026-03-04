@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync } from "node:fs";
-import { join, relative } from "node:path";
+import { join, relative, sep } from "node:path";
 
 function assert(condition, message) {
   if (!condition) {
@@ -40,6 +40,13 @@ for (const file of markdownFiles) {
       dotnetCount > 0 && typescriptCount > 0,
       `Runtime-tag imbalance in ${rel}: dotnet=${dotnetCount}, typescript=${typescriptCount}`
     );
+  }
+
+  const legacyRoots = [join("docs", "start-here"), join("docs", "runtime-guides")];
+  const isLegacyDoc = legacyRoots.some((legacyRoot) => rel === legacyRoot || rel.startsWith(`${legacyRoot}${sep}`));
+  if (!isLegacyDoc) {
+    assert(!text.includes("/start-here/"), `Legacy docs link found in canonical docs: ${rel}`);
+    assert(!text.includes("/runtime-guides/"), `Legacy docs link found in canonical docs: ${rel}`);
   }
 }
 
